@@ -1,14 +1,23 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type DragEvent } from 'react';
 import Header, { type ServerStatus } from './components/Header';
 import Dashboard from './components/Dashboard';
 import DigitalClock from './components/DigitalClock';
 import DroneStatus from './components/DroneStatus';
+import WorkspaceBlock from './components/WorkspaceBlock';
 import type { UserInfo, PresenceStatus, Language, Theme } from './components/UserMenu';
 import './App.css';
+
+interface DroppedBlock {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+}
 
 function App() {
   const [serverStatus, setServerStatus] = useState<ServerStatus>('connected');
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [blocks, setBlocks] = useState<DroppedBlock[]>([]);
   const [user] = useState<UserInfo>({
     name: 'John Smith',
     email: 'john.smith@dronecontrol.io',
@@ -110,6 +119,35 @@ function App() {
     setPan({ x: 0, y: 0 });
   };
 
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    const blockType = e.dataTransfer.getData('blockType');
+
+    if (blockType && mainRef.current) {
+      const rect = mainRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const newBlock: DroppedBlock = {
+        id: `block-${Date.now()}`,
+        type: blockType,
+        x,
+        y
+      };
+
+      setBlocks(prev => [...prev, newBlock]);
+    }
+  };
+
+  const handleRemoveBlock = (id: string) => {
+    setBlocks(prev => prev.filter(block => block.id !== id));
+  };
+
   useEffect(() => {
     const mainElement = mainRef.current;
     if (mainElement) {
@@ -142,6 +180,8 @@ function App() {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
       >
         <div
           className="main-background"
@@ -150,6 +190,16 @@ function App() {
             transformOrigin: 'center center'
           }}
         />
+        {blocks.map(block => (
+          <WorkspaceBlock
+            key={block.id}
+            id={block.id}
+            type={block.type}
+            initialX={block.x}
+            initialY={block.y}
+            onRemove={handleRemoveBlock}
+          />
+        ))}
         <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
         <DigitalClock onReset={handleResetView} />
         <DroneStatus />

@@ -1,0 +1,83 @@
+.workspace-block {
+  position: absolute;
+  width: 280px;
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+  border: 2px solid rgba(0, 212, 255, 0.4);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
+              0 0 20px rgba(0, 212, 255, 0.15);
+  backdrop-filter: blur(10px);
+  cursor: move;
+  user-select: none;
+  transition: box-shadow 0.2s ease;
+  z-index: 10;
+}
+
+.workspace-block:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5),
+              0 0 25px rgba(0, 212, 255, 0.25);
+}
+
+.workspace-block.dragging {
+  cursor: grabbing;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6),
+              0 0 30px rgba(0, 212, 255, 0.35);
+  z-index: 20;
+}
+
+.workspace-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(0, 212, 255, 0.1);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 6px 6px 0 0;
+}
+
+.workspace-block-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0e0e0;
+  letter-spacing: 0.3px;
+}
+
+.workspace-block-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: rgba(255, 50, 50, 0.1);
+  border: 1px solid rgba(255, 50, 50, 0.3);
+  border-radius: 4px;
+  color: #ff5050;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.workspace-block-remove:hover {
+  background: rgba(255, 50, 50, 0.2);
+  border-color: rgba(255, 50, 50, 0.5);
+  color: #ff7070;
+}
+
+.workspace-block-body {
+  padding: 16px;
+  min-height: 120px;
+}
+
+.workspace-block-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 88px;
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  border: 1px dashed rgba(0, 212, 255, 0.2);
+  border-radius: 4px;
+  padding: 20px;
+}
