@@ -75,7 +75,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 4px;
   padding: 4px 0;
 }
 
@@ -342,7 +342,7 @@
 }
 
 .altitude-label {
-  font-size: 9px;
+  font-size: 10px;
   color: #888;
   font-weight: 500;
   letter-spacing: 0.5px;
