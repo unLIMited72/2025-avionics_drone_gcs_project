@@ -78,7 +78,7 @@ function App() {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock')) {
+    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block')) {
       return;
     }
     setIsDragging(true);
@@ -130,8 +130,11 @@ function App() {
 
     if (blockType && mainRef.current) {
       const rect = mainRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const dropX = e.clientX - rect.left;
+      const dropY = e.clientY - rect.top;
+
+      const x = (dropX - rect.width / 2 - pan.x) / zoom;
+      const y = (dropY - rect.height / 2 - pan.y) / zoom;
 
       const newBlock: DroppedBlock = {
         id: `block-${Date.now()}`,
@@ -190,16 +193,31 @@ function App() {
             transformOrigin: 'center center'
           }}
         />
-        {blocks.map(block => (
-          <WorkspaceBlock
-            key={block.id}
-            id={block.id}
-            type={block.type}
-            initialX={block.x}
-            initialY={block.y}
-            onRemove={handleRemoveBlock}
-          />
-        ))}
+        <div
+          className="workspace-blocks-container"
+          style={{
+            transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+            transformOrigin: 'center center'
+          }}
+        >
+          {blocks.map(block => (
+            <WorkspaceBlock
+              key={block.id}
+              id={block.id}
+              type={block.type}
+              initialX={block.x}
+              initialY={block.y}
+              zoom={zoom}
+              pan={pan}
+              onRemove={handleRemoveBlock}
+              onPositionChange={(id, newX, newY) => {
+                setBlocks(prev => prev.map(b =>
+                  b.id === id ? { ...b, x: newX, y: newY } : b
+                ));
+              }}
+            />
+          ))}
+        </div>
         <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
         <DigitalClock onReset={handleResetView} />
         <DroneStatus />

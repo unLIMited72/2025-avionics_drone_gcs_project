@@ -1,4 +1,4 @@
-import { useState, useRef, type MouseEvent } from 'react';
+import { useState, useRef, useEffect, type MouseEvent } from 'react';
 import './WorkspaceBlock.css';
 
 interface WorkspaceBlockProps {
@@ -6,21 +6,34 @@ interface WorkspaceBlockProps {
   type: string;
   initialX: number;
   initialY: number;
+  zoom: number;
+  pan: { x: number; y: number };
   onRemove: (id: string) => void;
+  onPositionChange: (id: string, x: number, y: number) => void;
 }
 
-export default function WorkspaceBlock({ id, initialX, initialY, onRemove }: WorkspaceBlockProps) {
+export default function WorkspaceBlock({
+  id,
+  initialX,
+  initialY,
+  zoom,
+  onRemove,
+  onPositionChange
+}: WorkspaceBlockProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const blockRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setPosition({ x: initialX, y: initialY });
+  }, [initialX, initialY]);
 
   const handleMouseDown = (e: MouseEvent) => {
     if (blockRef.current) {
-      const rect = blockRef.current.getBoundingClientRect();
-      setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
+      setDragStart({
+        x: e.clientX,
+        y: e.clientY
       });
       setIsDragging(true);
     }
@@ -28,19 +41,22 @@ export default function WorkspaceBlock({ id, initialX, initialY, onRemove }: Wor
   };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging && blockRef.current) {
-      const parent = blockRef.current.parentElement;
-      if (parent) {
-        const parentRect = parent.getBoundingClientRect();
-        setPosition({
-          x: e.clientX - parentRect.left - dragOffset.x,
-          y: e.clientY - parentRect.top - dragOffset.y
-        });
-      }
+    if (isDragging) {
+      const deltaX = (e.clientX - dragStart.x) / zoom;
+      const deltaY = (e.clientY - dragStart.y) / zoom;
+
+      const newX = position.x + deltaX;
+      const newY = position.y + deltaY;
+
+      setPosition({ x: newX, y: newY });
+      setDragStart({ x: e.clientX, y: e.clientY });
     }
   };
 
   const handleMouseUp = () => {
+    if (isDragging) {
+      onPositionChange(id, position.x, position.y);
+    }
     setIsDragging(false);
   };
 
