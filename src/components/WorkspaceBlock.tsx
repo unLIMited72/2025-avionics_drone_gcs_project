@@ -104,7 +104,7 @@ export default function WorkspaceBlock({
               <div
                 className="horizon-rotating"
                 style={{
-                  transform: `rotate(${roll}deg) translateY(${pitch * 2}px)`
+                  transform: `translate(-50%, -50%) rotate(${roll}deg) translateY(${pitch * 2}px)`
                 }}
               >
                 <div className="roll-tick tick-0"></div>
