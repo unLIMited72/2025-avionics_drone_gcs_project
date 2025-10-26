@@ -73,11 +73,10 @@
 
 .instruments-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 1px;
   padding: 4px 0;
-  position: relative;
 }
 
 .attitude-indicator {
@@ -340,10 +339,7 @@
   justify-content: center;
   gap: 3px;
   flex-shrink: 0;
-  position: absolute;
-  bottom: -9px;
-  left: 50%;
-  transform: translateX(-50%);
+  margin-top: -2px;
 }
 
 .altitude-label {
