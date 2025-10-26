@@ -135,11 +135,11 @@
 .roll-tick {
   position: absolute;
   width: 2px;
-  height: 12px;
+  height: 10px;
   background: #fff;
   left: 50%;
-  top: 3px;
-  transform-origin: 50% 50px;
+  top: 8px;
+  transform-origin: 50% 45px;
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
 }
 
@@ -147,20 +147,28 @@
   transform: translateX(-50%) rotate(0deg);
 }
 
-.roll-tick-30 {
-  transform: translateX(-50%) rotate(30deg);
+.roll-tick-20 {
+  transform: translateX(-50%) rotate(20deg);
+}
+
+.roll-tick-45 {
+  transform: translateX(-50%) rotate(45deg);
 }
 
 .roll-tick-60 {
   transform: translateX(-50%) rotate(60deg);
 }
 
-.roll-tick-300 {
-  transform: translateX(-50%) rotate(-60deg);
+.roll-tick-340 {
+  transform: translateX(-50%) rotate(-20deg);
 }
 
-.roll-tick-330 {
-  transform: translateX(-50%) rotate(-30deg);
+.roll-tick-315 {
+  transform: translateX(-50%) rotate(-45deg);
+}
+
+.roll-tick-300 {
+  transform: translateX(-50%) rotate(-60deg);
 }
 
 .horizon {
