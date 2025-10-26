@@ -37,7 +37,7 @@ export default function WorkspaceBlock({
 
     const animationInterval = setInterval(() => {
       const time = Date.now() / 1000;
-      setPitch(Math.sin(time * 0.5) * 20);
+      setPitch(Math.sin(time * 0.5) * 15);
       setRoll(Math.sin(time * 0.3) * 30);
     }, 50);
 
