@@ -81,6 +81,59 @@
 
 .attitude-indicator {
   flex-shrink: 0;
+  position: relative;
+}
+
+.attitude-outer-ring {
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid rgba(100, 100, 100, 0.8);
+  z-index: 15;
+  pointer-events: none;
+}
+
+.roll-marker {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 10px solid #ff3333;
+  z-index: 20;
+}
+
+.roll-tick {
+  position: absolute;
+  width: 2px;
+  height: 8px;
+  background: #ddd;
+  left: 50%;
+  top: 2px;
+  transform-origin: 50% 53px;
+}
+
+.tick-left-30 {
+  transform: translateX(-50%) rotate(-30deg);
+}
+
+.tick-left-60 {
+  transform: translateX(-50%) rotate(-60deg);
+}
+
+.tick-right-30 {
+  transform: translateX(-50%) rotate(30deg);
+}
+
+.tick-right-60 {
+  transform: translateX(-50%) rotate(60deg);
 }
 
 .horizon {
@@ -89,9 +142,9 @@
   height: 100px;
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid rgba(0, 212, 255, 0.6);
+  border: 3px solid rgba(80, 80, 80, 0.8);
   background: #000;
-  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 .pitch-scale {
@@ -107,55 +160,64 @@
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  width: 40px;
-  height: 2px;
-  background: #fff;
-  font-size: 9px;
-  color: #fff;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 4px;
 }
 
-.pitch-line::before,
-.pitch-line::after {
-  content: attr(data-value);
+.pitch-label {
+  font-size: 9px;
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
   position: absolute;
-  font-size: 8px;
-  font-weight: 600;
+}
+
+.pitch-label.left {
+  left: -24px;
+}
+
+.pitch-label.right {
+  right: -24px;
+}
+
+.pitch-bar {
+  height: 2px;
+  background: #fff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+}
+
+.pitch-bar {
+  width: 40px;
+}
+
+.pitch-bar.short {
+  width: 20px;
+}
+
+.pitch-bar.long {
+  width: 60px;
 }
 
 .pitch-10 {
   top: -20px;
 }
 
-.pitch-10::before {
-  content: '10';
-  left: -18px;
-}
-
-.pitch-10::after {
-  content: '10';
-  right: -18px;
+.pitch-5 {
+  top: -10px;
 }
 
 .pitch-0 {
   top: 0;
-  width: 60px;
+}
+
+.pitch-minus-5 {
+  top: 10px;
 }
 
 .pitch-minus-10 {
   top: 20px;
-}
-
-.pitch-minus-10::before {
-  content: '-10';
-  left: -22px;
-}
-
-.pitch-minus-10::after {
-  content: '-10';
-  right: -22px;
 }
 
 .sky {

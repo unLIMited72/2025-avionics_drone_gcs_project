@@ -90,11 +90,34 @@ export default function WorkspaceBlock({
       <div className="workspace-block-body">
         <div className="instruments-row">
           <div className="attitude-indicator">
+            <div className="attitude-outer-ring">
+              <div className="roll-marker"></div>
+              <div className="roll-tick tick-left-30"></div>
+              <div className="roll-tick tick-left-60"></div>
+              <div className="roll-tick tick-right-30"></div>
+              <div className="roll-tick tick-right-60"></div>
+            </div>
             <div className="horizon">
               <div className="pitch-scale">
-                <div className="pitch-line pitch-10">10</div>
-                <div className="pitch-line pitch-0"></div>
-                <div className="pitch-line pitch-minus-10">-10</div>
+                <div className="pitch-line pitch-10">
+                  <span className="pitch-label left">10</span>
+                  <span className="pitch-bar"></span>
+                  <span className="pitch-label right">10</span>
+                </div>
+                <div className="pitch-line pitch-5">
+                  <span className="pitch-bar short"></span>
+                </div>
+                <div className="pitch-line pitch-0">
+                  <span className="pitch-bar long"></span>
+                </div>
+                <div className="pitch-line pitch-minus-5">
+                  <span className="pitch-bar short"></span>
+                </div>
+                <div className="pitch-line pitch-minus-10">
+                  <span className="pitch-label left">-10</span>
+                  <span className="pitch-bar"></span>
+                  <span className="pitch-label right">-10</span>
+                </div>
               </div>
               <div className="sky"></div>
               <div className="ground"></div>
