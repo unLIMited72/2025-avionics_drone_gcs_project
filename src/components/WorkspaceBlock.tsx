@@ -186,18 +186,14 @@ export default function WorkspaceBlock({
           <div className="heading-indicator">
             <div className="compass">
               <div className="compass-rose">
-                <div className="compass-marker n">N</div>
-                <div className="compass-marker e">E</div>
-                <div className="compass-marker s">S</div>
-                <div className="compass-marker w">W</div>
-                <div className="compass-tick tick-30"></div>
-                <div className="compass-tick tick-60"></div>
-                <div className="compass-tick tick-120"></div>
-                <div className="compass-tick tick-150"></div>
-                <div className="compass-tick tick-210"></div>
-                <div className="compass-tick tick-240"></div>
-                <div className="compass-tick tick-300"></div>
-                <div className="compass-tick tick-330"></div>
+                <div className="compass-marker marker-0">N</div>
+                <div className="compass-marker marker-45">NE</div>
+                <div className="compass-marker marker-90">E</div>
+                <div className="compass-marker marker-135">SE</div>
+                <div className="compass-marker marker-180">S</div>
+                <div className="compass-marker marker-225">SW</div>
+                <div className="compass-marker marker-270">W</div>
+                <div className="compass-marker marker-315">NW</div>
               </div>
               <div className="heading-arrow"></div>
               <div className="heading-value">000</div>

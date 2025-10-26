@@ -383,54 +383,46 @@
 
 .compass-marker {
   position: absolute;
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 700;
   color: #333;
-  transform: translate(-50%, -50%);
+  left: 50%;
+  top: 50%;
+  transform-origin: 0 0;
 }
 
-.compass-marker.n {
-  top: 12%;
-  left: 50%;
+.compass-marker.marker-0 {
+  transform: translate(-50%, -50%) rotate(0deg) translateY(-40px) rotate(0deg);
   color: #c41e3a;
 }
 
-.compass-marker.e {
-  top: 50%;
-  right: 8%;
-  transform: translate(50%, -50%);
+.compass-marker.marker-45 {
+  transform: translate(-50%, -50%) rotate(45deg) translateY(-40px) rotate(-45deg);
 }
 
-.compass-marker.s {
-  bottom: 8%;
-  left: 50%;
-  transform: translate(-50%, 50%);
+.compass-marker.marker-90 {
+  transform: translate(-50%, -50%) rotate(90deg) translateY(-40px) rotate(-90deg);
 }
 
-.compass-marker.w {
-  top: 50%;
-  left: 8%;
-  transform: translate(-50%, -50%);
+.compass-marker.marker-135 {
+  transform: translate(-50%, -50%) rotate(135deg) translateY(-40px) rotate(-135deg);
 }
 
-.compass-tick {
-  position: absolute;
-  width: 2px;
-  height: 8px;
-  background: #666;
-  left: 50%;
-  top: 8px;
-  transform-origin: 50% 42px;
+.compass-marker.marker-180 {
+  transform: translate(-50%, -50%) rotate(180deg) translateY(-40px) rotate(-180deg);
 }
 
-.tick-30 { transform: translateX(-50%) rotate(30deg); }
-.tick-60 { transform: translateX(-50%) rotate(60deg); }
-.tick-120 { transform: translateX(-50%) rotate(120deg); }
-.tick-150 { transform: translateX(-50%) rotate(150deg); }
-.tick-210 { transform: translateX(-50%) rotate(210deg); }
-.tick-240 { transform: translateX(-50%) rotate(240deg); }
-.tick-300 { transform: translateX(-50%) rotate(300deg); }
-.tick-330 { transform: translateX(-50%) rotate(330deg); }
+.compass-marker.marker-225 {
+  transform: translate(-50%, -50%) rotate(225deg) translateY(-40px) rotate(-225deg);
+}
+
+.compass-marker.marker-270 {
+  transform: translate(-50%, -50%) rotate(270deg) translateY(-40px) rotate(-270deg);
+}
+
+.compass-marker.marker-315 {
+  transform: translate(-50%, -50%) rotate(315deg) translateY(-40px) rotate(-315deg);
+}
 
 .heading-arrow {
   position: absolute;
