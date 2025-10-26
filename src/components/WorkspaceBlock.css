@@ -65,18 +65,18 @@
 }
 
 .workspace-block-body {
-  padding: 12px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .instruments-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 4px 0 8px 0;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 0;
 }
 
 .attitude-indicator {
@@ -336,27 +336,28 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 3px;
   flex-shrink: 0;
 }
 
 .altitude-label {
-  font-size: 11px;
+  font-size: 9px;
   color: #888;
   font-weight: 500;
   letter-spacing: 0.5px;
 }
 
 .altitude-value {
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 700;
   color: #00d4ff;
   font-family: 'Courier New', monospace;
   background: rgba(0, 212, 255, 0.1);
   border: 2px solid rgba(0, 212, 255, 0.4);
-  border-radius: 6px;
-  padding: 4px 12px;
-  min-width: 70px;
+  border-radius: 4px;
+  padding: 2px 8px;
+  min-width: 50px;
   text-align: center;
 }
 

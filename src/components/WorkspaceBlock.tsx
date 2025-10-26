@@ -182,8 +182,8 @@ export default function WorkspaceBlock({
           </div>
 
           <div className="altitude-display">
-            <div className="altitude-label">Alt ft.</div>
-            <div className="altitude-value">396</div>
+            <div className="altitude-label">Alt m</div>
+            <div className="altitude-value">120</div>
           </div>
 
           <div className="heading-indicator">
