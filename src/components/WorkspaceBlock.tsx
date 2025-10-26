@@ -25,6 +25,7 @@ export default function WorkspaceBlock({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [pitch, setPitch] = useState(0);
   const [roll, setRoll] = useState(0);
+  const [heading, setHeading] = useState(0);
   const blockRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,11 +35,13 @@ export default function WorkspaceBlock({
   useEffect(() => {
     setPitch(0);
     setRoll(0);
+    setHeading(0);
 
     const animationInterval = setInterval(() => {
       const time = Date.now() / 1000;
       setPitch(Math.sin(time * 0.5) * 15);
       setRoll(Math.sin(time * 0.3) * 30);
+      setHeading((prev) => (prev + 1) % 360);
     }, 50);
 
     return () => clearInterval(animationInterval);
@@ -185,7 +188,7 @@ export default function WorkspaceBlock({
 
           <div className="heading-indicator">
             <div className="compass">
-              <div className="compass-rose">
+              <div className="compass-rose" style={{ transform: `rotate(${-heading}deg)` }}>
                 <div className="compass-marker marker-0">N</div>
                 <div className="compass-marker marker-90">E</div>
                 <div className="compass-marker marker-180">S</div>
@@ -200,7 +203,7 @@ export default function WorkspaceBlock({
                 <div className="compass-tick tick-330"></div>
               </div>
               <div className="heading-arrow"></div>
-              <div className="heading-value">000°</div>
+              <div className="heading-value">{String(heading).padStart(3, '0')}°</div>
             </div>
           </div>
         </div>
