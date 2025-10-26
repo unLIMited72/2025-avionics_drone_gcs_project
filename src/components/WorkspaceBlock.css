@@ -75,7 +75,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 0px;
+  gap: 6px;
   padding: 4px 0;
   position: relative;
 }
@@ -341,7 +341,7 @@
   gap: 3px;
   flex-shrink: 0;
   position: absolute;
-  bottom: -15px;
+  bottom: -9px;
   left: 50%;
   transform: translateX(-50%);
 }
