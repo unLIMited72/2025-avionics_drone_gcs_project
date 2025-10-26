@@ -175,11 +175,11 @@
 }
 
 .pitch-label.left {
-  left: -24px;
+  left: -18px;
 }
 
 .pitch-label.right {
-  right: -24px;
+  right: -18px;
 }
 
 .pitch-bar {
@@ -189,15 +189,15 @@
 }
 
 .pitch-bar {
-  width: 40px;
+  width: 30px;
 }
 
 .pitch-bar.short {
-  width: 20px;
+  width: 16px;
 }
 
 .pitch-bar.long {
-  width: 60px;
+  width: 50px;
 }
 
 .pitch-10 {
