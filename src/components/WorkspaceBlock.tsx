@@ -188,7 +188,7 @@ export default function WorkspaceBlock({
 
           <div className="heading-indicator">
             <div className="compass">
-              <div className="compass-rose" style={{ transform: `rotate(${-heading}deg)` }}>
+              <div className="compass-rose">
                 <div className="compass-marker marker-0">N</div>
                 <div className="compass-marker marker-90">E</div>
                 <div className="compass-marker marker-180">S</div>
@@ -202,7 +202,7 @@ export default function WorkspaceBlock({
                 <div className="compass-tick tick-300"></div>
                 <div className="compass-tick tick-330"></div>
               </div>
-              <div className="heading-arrow"></div>
+              <div className="heading-arrow" style={{ transform: `translate(-50%, -50%) rotate(${heading}deg)` }}></div>
               <div className="heading-value">{String(heading).padStart(3, '0')}°</div>
             </div>
           </div>
