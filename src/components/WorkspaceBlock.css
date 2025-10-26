@@ -124,11 +124,12 @@
 .roll-tick {
   position: absolute;
   width: 2px;
-  height: 6px;
+  height: 8px;
   background: #fff;
   left: 50%;
-  top: 3px;
-  transform-origin: 50% 50px;
+  top: -4px;
+  transform-origin: 50% 204px;
+  z-index: 7;
 }
 
 .tick-0 {
@@ -178,7 +179,7 @@
   transform: translate(-50%, -50%);
   width: 400px;
   height: 400px;
-  z-index: 5;
+  z-index: 6;
 }
 
 .pitch-line {
@@ -188,61 +189,46 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .pitch-label {
-  font-size: 9px;
+  font-size: 10px;
   color: #fff;
   font-weight: 700;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
   position: absolute;
 }
 
 .pitch-label.left {
-  left: -18px;
+  left: -22px;
 }
 
 .pitch-label.right {
-  right: -18px;
+  right: -22px;
 }
 
 .pitch-bar {
   height: 2px;
   background: #fff;
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+  width: 40px;
 }
 
-.pitch-bar {
-  width: 30px;
-}
-
-.pitch-bar.short {
-  width: 16px;
-}
-
-.pitch-bar.long {
-  width: 50px;
+.pitch-20 {
+  top: -40px;
 }
 
 .pitch-10 {
   top: -20px;
 }
 
-.pitch-5 {
-  top: -10px;
-}
-
-.pitch-0 {
-  top: 0;
-}
-
-.pitch-minus-5 {
-  top: 10px;
-}
-
 .pitch-minus-10 {
   top: 20px;
+}
+
+.pitch-minus-20 {
+  top: 40px;
 }
 
 .sky {
@@ -251,7 +237,8 @@
   left: 0;
   right: 0;
   height: 50%;
-  background: linear-gradient(180deg, #4a7ba7 0%, #6b9bc9 100%);
+  background: #6ba3d8;
+  z-index: 1;
 }
 
 .ground {
@@ -260,7 +247,8 @@
   left: 0;
   right: 0;
   height: 50%;
-  background: linear-gradient(180deg, #6b8e4e 0%, #8fb171 100%);
+  background: #7fa857;
+  z-index: 1;
 }
 
 .horizon-line {
@@ -268,11 +256,11 @@
   top: 50%;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 2px;
   background: #fff;
   transform: translateY(-50%);
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
-  z-index: 3;
+  z-index: 5;
 }
 
 .aircraft-symbol {
