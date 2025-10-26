@@ -32,11 +32,8 @@ export default function WorkspaceBlock({
   }, [initialX, initialY]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setPitch(Math.sin(Date.now() / 1000) * 15);
-      setRoll(Math.cos(Date.now() / 1500) * 30);
-    }, 50);
-    return () => clearInterval(interval);
+    setPitch(0);
+    setRoll(0);
   }, []);
 
   const handleMouseDown = (e: MouseEvent) => {
