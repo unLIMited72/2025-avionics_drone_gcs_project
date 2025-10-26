@@ -117,10 +117,8 @@ export default function WorkspaceBlock({
               <div className="roll-tick roll-tick-0"></div>
               <div className="roll-tick roll-tick-20"></div>
               <div className="roll-tick roll-tick-45"></div>
-              <div className="roll-tick roll-tick-60"></div>
               <div className="roll-tick roll-tick-340"></div>
               <div className="roll-tick roll-tick-315"></div>
-              <div className="roll-tick roll-tick-300"></div>
             </div>
             <div className="horizon" style={{ clipPath: 'circle(50px at 50px 50px)' }}>
               <div
