@@ -14,7 +14,6 @@ export default function Dashboard({ isOpen }: DashboardProps) {
       </div>
       <div className="dashboard-content">
         <div className="blocks-section">
-          <h3 className="section-title">Available Blocks</h3>
           <div className="blocks-list">
             <FlightStateBlock />
           </div>

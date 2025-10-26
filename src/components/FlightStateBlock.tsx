@@ -29,7 +29,7 @@ export default function FlightStateBlock({ onDragStart }: FlightStateBlockProps)
       </div>
       <div className="block-content">
         <div className="block-title">Flight State Information</div>
-        <div className="block-description">Drag to workspace</div>
+        <div className="block-description">Displays attitude, position, velocity, status, and mode information.</div>
       </div>
     </div>
   );
