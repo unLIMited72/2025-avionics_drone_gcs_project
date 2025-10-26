@@ -19,7 +19,7 @@ export default function DroneStatus() {
         </svg>
       </div>
       <div className="drone-status-display">
-        <div className="drone-status-label">Connected</div>
+        <div className="drone-status-label">Drone Count</div>
         <div className="drone-status-count">{activeDrones}</div>
       </div>
     </div>
