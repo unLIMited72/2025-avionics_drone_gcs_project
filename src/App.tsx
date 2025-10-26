@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import Header, { type ServerStatus } from './components/Header';
 import Dashboard from './components/Dashboard';
 import DigitalClock from './components/DigitalClock';
+import DroneStatus from './components/DroneStatus';
 import type { UserInfo, PresenceStatus, Language, Theme } from './components/UserMenu';
 import './App.css';
 
@@ -151,6 +152,7 @@ function App() {
         />
         <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
         <DigitalClock onReset={handleResetView} />
+        <DroneStatus />
       </main>
     </div>
   );
