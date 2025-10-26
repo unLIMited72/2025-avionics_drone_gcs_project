@@ -187,6 +187,8 @@ export default function WorkspaceBlock({
           </div>
 
           <div className="heading-indicator">
+            <div className="heading-frame-outer"></div>
+            <div className="heading-frame-inner"></div>
             <div className="compass">
               <div className="compass-rose">
                 <div className="compass-marker marker-0">N</div>
