@@ -34,6 +34,14 @@ export default function WorkspaceBlock({
   useEffect(() => {
     setPitch(0);
     setRoll(0);
+
+    const animationInterval = setInterval(() => {
+      const time = Date.now() / 1000;
+      setPitch(Math.sin(time * 0.5) * 20);
+      setRoll(Math.sin(time * 0.3) * 30);
+    }, 50);
+
+    return () => clearInterval(animationInterval);
   }, []);
 
   const handleMouseDown = (e: MouseEvent) => {
