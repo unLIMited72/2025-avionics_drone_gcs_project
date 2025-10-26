@@ -135,25 +135,31 @@ export default function WorkspaceBlock({
         </div>
 
         <div className="flight-data-grid">
-          <div className="data-item">
-            <div className="data-label">Latitude</div>
-            <div className="data-value">37.7749°</div>
+          <div className="data-group">
+            <div className="group-label">Position</div>
+            <div className="group-items">
+              <div className="group-item">
+                <span className="item-label">Lat:</span>
+                <span className="item-value">37.7749°</span>
+              </div>
+              <div className="group-item">
+                <span className="item-label">Lon:</span>
+                <span className="item-value">-122.4194°</span>
+              </div>
+            </div>
           </div>
-          <div className="data-item">
-            <div className="data-label">Longitude</div>
-            <div className="data-value">-122.4194°</div>
-          </div>
-          <div className="data-item">
-            <div className="data-label">Altitude</div>
-            <div className="data-value">120.5 m</div>
-          </div>
-          <div className="data-item">
-            <div className="data-label">Velocity</div>
-            <div className="data-value">15.2 m/s</div>
-          </div>
-          <div className="data-item">
-            <div className="data-label">Acceleration</div>
-            <div className="data-value">2.3 m/s²</div>
+          <div className="data-group">
+            <div className="group-label">Motion</div>
+            <div className="group-items">
+              <div className="group-item">
+                <span className="item-label">Vel:</span>
+                <span className="item-value">15.2 m/s</span>
+              </div>
+              <div className="group-item">
+                <span className="item-label">Acc:</span>
+                <span className="item-value">2.3 m/s²</span>
+              </div>
+            </div>
           </div>
         </div>
 

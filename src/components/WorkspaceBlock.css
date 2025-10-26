@@ -1,6 +1,6 @@
 .workspace-block {
   position: absolute;
-  width: 280px;
+  width: 340px;
   background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
   border: 2px solid rgba(0, 212, 255, 0.4);
   border-radius: 8px;
@@ -75,8 +75,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0;
+  gap: 10px;
+  padding: 4px 0 8px 0;
 }
 
 .attitude-indicator {
@@ -344,29 +344,51 @@
 .flight-data-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
 }
 
-.data-item {
+.data-group {
   background: rgba(0, 212, 255, 0.05);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  border-radius: 4px;
-  padding: 6px 8px;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 6px;
+  padding: 8px 10px;
 }
 
-.data-label {
-  font-size: 10px;
-  color: #888;
-  margin-bottom: 2px;
+.group-label {
+  font-size: 11px;
+  color: #00d4ff;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
 }
 
-.data-value {
-  font-size: 12px;
+.group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.group-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.item-label {
+  color: #888;
+  font-weight: 500;
+  min-width: 35px;
+}
+
+.item-value {
+  color: #e0e0e0;
   font-weight: 600;
-  color: #00d4ff;
   font-family: 'Courier New', monospace;
+  font-size: 11px;
 }
 
 .flight-status {
