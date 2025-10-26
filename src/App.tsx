@@ -104,6 +104,11 @@ function App() {
     setIsDragging(false);
   };
 
+  const handleResetView = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
   useEffect(() => {
     const mainElement = mainRef.current;
     if (mainElement) {
@@ -145,7 +150,7 @@ function App() {
           }}
         />
         <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
-        <DigitalClock />
+        <DigitalClock onReset={handleResetView} />
       </main>
     </div>
   );
