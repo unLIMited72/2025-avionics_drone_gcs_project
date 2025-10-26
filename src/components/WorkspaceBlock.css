@@ -175,13 +175,14 @@
 .pitch-line {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   z-index: 4;
   width: 100px;
+  height: 2px;
 }
 
 .pitch-label {
