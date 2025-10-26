@@ -434,9 +434,9 @@
   transform: translate(-50%, -50%);
   width: 0;
   height: 0;
-  border-left: 12px solid transparent;
-  border-right: 12px solid transparent;
-  border-bottom: 30px solid #c41e3a;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 45px solid #c41e3a;
   z-index: 10;
 }
 

@@ -200,7 +200,7 @@ export default function WorkspaceBlock({
                 <div className="compass-tick tick-330"></div>
               </div>
               <div className="heading-arrow"></div>
-              <div className="heading-value">000</div>
+              <div className="heading-value">000°</div>
             </div>
           </div>
         </div>
