@@ -414,18 +414,18 @@
   height: 8px;
   background: #666;
   left: 50%;
-  top: 8px;
-  transform-origin: center 42px;
+  top: 50%;
+  transform-origin: center center;
 }
 
-.tick-30 { transform: translateX(-50%) rotate(30deg); }
-.tick-60 { transform: translateX(-50%) rotate(60deg); }
-.tick-120 { transform: translateX(-50%) rotate(120deg); }
-.tick-150 { transform: translateX(-50%) rotate(150deg); }
-.tick-210 { transform: translateX(-50%) rotate(210deg); }
-.tick-240 { transform: translateX(-50%) rotate(240deg); }
-.tick-300 { transform: translateX(-50%) rotate(300deg); }
-.tick-330 { transform: translateX(-50%) rotate(330deg); }
+.tick-30 { transform: translate(-50%, -50%) rotate(30deg) translateY(-42px); }
+.tick-60 { transform: translate(-50%, -50%) rotate(60deg) translateY(-42px); }
+.tick-120 { transform: translate(-50%, -50%) rotate(120deg) translateY(-42px); }
+.tick-150 { transform: translate(-50%, -50%) rotate(150deg) translateY(-42px); }
+.tick-210 { transform: translate(-50%, -50%) rotate(210deg) translateY(-42px); }
+.tick-240 { transform: translate(-50%, -50%) rotate(240deg) translateY(-42px); }
+.tick-300 { transform: translate(-50%, -50%) rotate(300deg) translateY(-42px); }
+.tick-330 { transform: translate(-50%, -50%) rotate(330deg) translateY(-42px); }
 
 .heading-arrow {
   position: absolute;
