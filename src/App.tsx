@@ -130,11 +130,14 @@ function App() {
 
     if (blockType && mainRef.current) {
       const rect = mainRef.current.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
       const dropX = e.clientX - rect.left;
       const dropY = e.clientY - rect.top;
 
-      const x = (dropX - rect.width / 2 - pan.x) / zoom;
-      const y = (dropY - rect.height / 2 - pan.y) / zoom;
+      const x = (dropX - centerX - pan.x) / zoom;
+      const y = (dropY - centerY - pan.y) / zoom;
 
       const newBlock: DroppedBlock = {
         id: `block-${Date.now()}`,
