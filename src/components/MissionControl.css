@@ -1,0 +1,161 @@
+.mission-control {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #1a1a2e;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.control-content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+}
+
+.control-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.control-btn {
+  padding: 14px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.control-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.control-btn:active {
+  transform: translateY(0);
+}
+
+.arm-btn {
+  background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+  color: #0a1f15;
+}
+
+.disarm-btn {
+  background: linear-gradient(135deg, #888 0%, #666 100%);
+  color: #fff;
+}
+
+.takeoff-btn {
+  background: linear-gradient(135deg, #00d4ff 0%, #0088ff 100%);
+  color: #fff;
+}
+
+.land-btn {
+  background: linear-gradient(135deg, #ffaa00 0%, #ff8800 100%);
+  color: #fff;
+}
+
+.rth-btn {
+  background: linear-gradient(135deg, #0088ff 0%, #0055cc 100%);
+  color: #fff;
+}
+
+.emergency-btn {
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  color: #fff;
+  grid-column: span 2;
+  font-weight: 700;
+}
+
+.altitude-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(22, 33, 62, 0.5);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.altitude-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #00d4ff;
+  font-family: 'Courier New', monospace;
+}
+
+.altitude-input:focus {
+  outline: none;
+  border-color: #00d4ff;
+}
+
+.input-unit {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+}
+
+.set-altitude-btn {
+  background: linear-gradient(135deg, #00d4ff 0%, #0088ff 100%);
+  color: #fff;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.mode-btn {
+  padding: 12px 16px;
+  background: rgba(22, 33, 62, 0.5);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #00d4ff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mode-btn:hover {
+  background: rgba(0, 212, 255, 0.2);
+  border-color: #00d4ff;
+  transform: translateY(-2px);
+}
+
+.mode-btn:active {
+  transform: translateY(0);
+}

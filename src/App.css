@@ -1,0 +1,71 @@
+.gcs-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: #0f1419;
+  overflow: hidden;
+}
+
+.gcs-main {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  background-color: #0a0e14;
+  cursor: grab;
+  user-select: none;
+}
+
+.gcs-main:active {
+  cursor: grabbing;
+}
+
+.main-background {
+  position: absolute;
+  top: -200%;
+  left: -200%;
+  width: 500%;
+  height: 500%;
+  background-image:
+    linear-gradient(rgba(0, 212, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center center;
+  transition: transform 0.1s ease-out;
+  pointer-events: none;
+}
+
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.right-panel > * {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 1200px) {
+  .gcs-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .gcs-main {
+    padding: 8px;
+    gap: 8px;
+  }
+}

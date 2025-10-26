@@ -1,0 +1,63 @@
+.digital-clock {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  border-radius: 8px;
+  padding: 8px 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
+              0 0 15px rgba(0, 212, 255, 0.15);
+  backdrop-filter: blur(10px);
+  z-index: 50;
+}
+
+.clock-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+}
+
+.time-segment {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  color: #00d4ff;
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.time-segment.milliseconds {
+  font-size: 14px;
+  color: rgba(0, 212, 255, 0.7);
+}
+
+.time-separator {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  color: rgba(0, 212, 255, 0.6);
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .digital-clock {
+    top: 12px;
+    right: 12px;
+    padding: 6px 12px;
+  }
+
+  .time-segment {
+    font-size: 16px;
+  }
+
+  .time-segment.milliseconds {
+    font-size: 12px;
+  }
+
+  .time-separator {
+    font-size: 16px;
+  }
+}
