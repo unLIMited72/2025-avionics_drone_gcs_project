@@ -88,8 +88,51 @@ export default function WorkspaceBlock({
         </button>
       </div>
       <div className="workspace-block-body">
-        <div className="workspace-block-placeholder">
-          Block content will be defined later
+        <div className="attitude-indicator">
+          <div className="horizon">
+            <div className="sky"></div>
+            <div className="ground"></div>
+            <div className="horizon-line"></div>
+            <div className="aircraft-symbol">
+              <div className="aircraft-line left"></div>
+              <div className="aircraft-center"></div>
+              <div className="aircraft-line right"></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flight-data-grid">
+          <div className="data-item">
+            <div className="data-label">Latitude</div>
+            <div className="data-value">37.7749°</div>
+          </div>
+          <div className="data-item">
+            <div className="data-label">Longitude</div>
+            <div className="data-value">-122.4194°</div>
+          </div>
+          <div className="data-item">
+            <div className="data-label">Altitude</div>
+            <div className="data-value">120.5 m</div>
+          </div>
+          <div className="data-item">
+            <div className="data-label">Velocity</div>
+            <div className="data-value">15.2 m/s</div>
+          </div>
+          <div className="data-item">
+            <div className="data-label">Acceleration</div>
+            <div className="data-value">2.3 m/s²</div>
+          </div>
+        </div>
+
+        <div className="flight-status">
+          <div className="status-item">
+            <div className="status-label">Mode</div>
+            <div className="status-value mode">Mission</div>
+          </div>
+          <div className="status-item">
+            <div className="status-label">Status</div>
+            <div className="status-value armed">ARMED</div>
+          </div>
         </div>
       </div>
     </div>

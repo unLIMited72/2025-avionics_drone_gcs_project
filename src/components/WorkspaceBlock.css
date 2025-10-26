@@ -30,7 +30,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 8px 16px;
   background: rgba(0, 212, 255, 0.1);
   border-bottom: 1px solid rgba(0, 212, 255, 0.3);
   border-radius: 6px 6px 0 0;
@@ -65,20 +65,159 @@
 }
 
 .workspace-block-body {
-  padding: 16px;
-  min-height: 120px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.workspace-block-placeholder {
+.attitude-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.horizon {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(0, 212, 255, 0.5);
+  background: #000;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+.sky {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, #1e3a5f 0%, #2a5885 100%);
+}
+
+.ground {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, #3d2817 0%, #5c3d28 100%);
+}
+
+.horizon-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+}
+
+.aircraft-symbol {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 100%;
-  min-height: 88px;
-  font-size: 12px;
-  color: #666;
-  text-align: center;
-  border: 1px dashed rgba(0, 212, 255, 0.2);
+  gap: 4px;
+  z-index: 10;
+}
+
+.aircraft-line {
+  width: 20px;
+  height: 2px;
+  background: #ffcc00;
+  box-shadow: 0 0 4px rgba(255, 204, 0, 0.8);
+}
+
+.aircraft-center {
+  width: 6px;
+  height: 6px;
+  background: #ffcc00;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255, 204, 0, 0.8);
+}
+
+.flight-data-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.data-item {
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.2);
   border-radius: 4px;
-  padding: 20px;
+  padding: 6px 8px;
+}
+
+.data-label {
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #00d4ff;
+  font-family: 'Courier New', monospace;
+}
+
+.flight-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.status-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-value {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-value.mode {
+  background: rgba(0, 212, 255, 0.15);
+  color: #00d4ff;
+  border: 1px solid rgba(0, 212, 255, 0.4);
+}
+
+.status-value.armed {
+  background: rgba(46, 213, 115, 0.15);
+  color: #2ed573;
+  border: 1px solid rgba(46, 213, 115, 0.4);
+}
+
+.status-value.disarmed {
+  background: rgba(255, 71, 87, 0.15);
+  color: #ff4757;
+  border: 1px solid rgba(255, 71, 87, 0.4);
 }
