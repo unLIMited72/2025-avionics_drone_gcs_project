@@ -87,6 +87,54 @@
   max-width: 250px;
 }
 
+.drone-status-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  margin: 0;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 150, 255, 0.05) 100%);
+  border-top: 1px solid rgba(0, 212, 255, 0.3);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.drone-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 150, 255, 0.1) 100%);
+  border: 2px solid rgba(0, 212, 255, 0.4);
+  border-radius: 50%;
+  color: #00d4ff;
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2),
+              inset 0 0 20px rgba(0, 212, 255, 0.1);
+}
+
+.drone-status-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drone-status-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.drone-status-count {
+  font-size: 32px;
+  font-weight: 700;
+  color: #00d4ff;
+  line-height: 1;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
 @media (max-width: 768px) {
   .dashboard-panel {
     width: 280px;
@@ -98,5 +146,24 @@
 
   .dashboard-content {
     padding: 20px;
+  }
+
+  .drone-status-box {
+    padding: 16px 20px;
+    gap: 12px;
+  }
+
+  .drone-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .drone-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .drone-status-count {
+    font-size: 28px;
   }
 }
