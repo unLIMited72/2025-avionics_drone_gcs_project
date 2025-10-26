@@ -207,20 +207,48 @@
   width: 40px;
 }
 
+.pitch-bar.short {
+  width: 20px;
+}
+
+.pitch-25 {
+  top: calc(50% - 50px);
+}
+
 .pitch-20 {
   top: calc(50% - 40px);
+}
+
+.pitch-15 {
+  top: calc(50% - 30px);
 }
 
 .pitch-10 {
   top: calc(50% - 20px);
 }
 
+.pitch-5 {
+  top: calc(50% - 10px);
+}
+
+.pitch-minus-5 {
+  top: calc(50% + 10px);
+}
+
 .pitch-minus-10 {
   top: calc(50% + 20px);
 }
 
+.pitch-minus-15 {
+  top: calc(50% + 30px);
+}
+
 .pitch-minus-20 {
   top: calc(50% + 40px);
+}
+
+.pitch-minus-25 {
+  top: calc(50% + 50px);
 }
 
 .sky {

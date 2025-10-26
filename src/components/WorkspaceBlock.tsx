@@ -119,25 +119,43 @@ export default function WorkspaceBlock({
                 <div className="ground"></div>
                 <div className="horizon-line"></div>
 
+                <div className="pitch-line pitch-25">
+                  <span className="pitch-bar short"></span>
+                </div>
                 <div className="pitch-line pitch-20">
                   <span className="pitch-label left">20</span>
                   <span className="pitch-bar"></span>
                   <span className="pitch-label right">20</span>
+                </div>
+                <div className="pitch-line pitch-15">
+                  <span className="pitch-bar short"></span>
                 </div>
                 <div className="pitch-line pitch-10">
                   <span className="pitch-label left">10</span>
                   <span className="pitch-bar"></span>
                   <span className="pitch-label right">10</span>
                 </div>
+                <div className="pitch-line pitch-5">
+                  <span className="pitch-bar short"></span>
+                </div>
+                <div className="pitch-line pitch-minus-5">
+                  <span className="pitch-bar short"></span>
+                </div>
                 <div className="pitch-line pitch-minus-10">
-                  <span className="pitch-label left">-10</span>
+                  <span className="pitch-label left">10</span>
                   <span className="pitch-bar"></span>
-                  <span className="pitch-label right">-10</span>
+                  <span className="pitch-label right">10</span>
+                </div>
+                <div className="pitch-line pitch-minus-15">
+                  <span className="pitch-bar short"></span>
                 </div>
                 <div className="pitch-line pitch-minus-20">
-                  <span className="pitch-label left">-20</span>
+                  <span className="pitch-label left">20</span>
                   <span className="pitch-bar"></span>
-                  <span className="pitch-label right">-20</span>
+                  <span className="pitch-label right">20</span>
+                </div>
+                <div className="pitch-line pitch-minus-25">
+                  <span className="pitch-bar short"></span>
                 </div>
               </div>
               <div className="aircraft-symbol">
