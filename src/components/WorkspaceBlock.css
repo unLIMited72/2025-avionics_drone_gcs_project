@@ -171,15 +171,6 @@
   transition: transform 0.05s linear;
 }
 
-.pitch-scale {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 400px;
-  height: 400px;
-  z-index: 4;
-}
 
 .pitch-line {
   position: absolute;
@@ -189,6 +180,8 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  z-index: 4;
+  width: 100px;
 }
 
 .pitch-label {
@@ -215,19 +208,19 @@
 }
 
 .pitch-20 {
-  top: -40px;
+  top: calc(50% - 40px);
 }
 
 .pitch-10 {
-  top: -20px;
+  top: calc(50% - 20px);
 }
 
 .pitch-minus-10 {
-  top: 20px;
+  top: calc(50% + 20px);
 }
 
 .pitch-minus-20 {
-  top: 40px;
+  top: calc(50% + 40px);
 }
 
 .sky {

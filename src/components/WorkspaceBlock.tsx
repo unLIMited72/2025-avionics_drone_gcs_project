@@ -115,35 +115,29 @@ export default function WorkspaceBlock({
                   transform: `translate(-50%, -50%) rotate(${roll}deg) translateY(${pitch * 2}px)`
                 }}
               >
-                <div className="roll-tick tick-0"></div>
-                <div className="roll-tick tick-left-30"></div>
-                <div className="roll-tick tick-left-60"></div>
-                <div className="roll-tick tick-right-30"></div>
-                <div className="roll-tick tick-right-60"></div>
                 <div className="sky"></div>
                 <div className="ground"></div>
                 <div className="horizon-line"></div>
-                <div className="pitch-scale">
-                  <div className="pitch-line pitch-20">
-                    <span className="pitch-label left">20</span>
-                    <span className="pitch-bar"></span>
-                    <span className="pitch-label right">20</span>
-                  </div>
-                  <div className="pitch-line pitch-10">
-                    <span className="pitch-label left">10</span>
-                    <span className="pitch-bar"></span>
-                    <span className="pitch-label right">10</span>
-                  </div>
-                  <div className="pitch-line pitch-minus-10">
-                    <span className="pitch-label left">-10</span>
-                    <span className="pitch-bar"></span>
-                    <span className="pitch-label right">-10</span>
-                  </div>
-                  <div className="pitch-line pitch-minus-20">
-                    <span className="pitch-label left">-20</span>
-                    <span className="pitch-bar"></span>
-                    <span className="pitch-label right">-20</span>
-                  </div>
+
+                <div className="pitch-line pitch-20">
+                  <span className="pitch-label left">20</span>
+                  <span className="pitch-bar"></span>
+                  <span className="pitch-label right">20</span>
+                </div>
+                <div className="pitch-line pitch-10">
+                  <span className="pitch-label left">10</span>
+                  <span className="pitch-bar"></span>
+                  <span className="pitch-label right">10</span>
+                </div>
+                <div className="pitch-line pitch-minus-10">
+                  <span className="pitch-label left">-10</span>
+                  <span className="pitch-bar"></span>
+                  <span className="pitch-label right">-10</span>
+                </div>
+                <div className="pitch-line pitch-minus-20">
+                  <span className="pitch-label left">-20</span>
+                  <span className="pitch-bar"></span>
+                  <span className="pitch-label right">-20</span>
                 </div>
               </div>
               <div className="aircraft-symbol">
