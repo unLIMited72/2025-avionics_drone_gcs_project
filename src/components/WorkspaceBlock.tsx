@@ -108,6 +108,18 @@ export default function WorkspaceBlock({
             <div className="attitude-frame-outer"></div>
             <div className="attitude-frame-inner"></div>
             <div className="roll-marker"></div>
+            <div
+              className="roll-scale"
+              style={{
+                transform: `rotate(${roll}deg)`
+              }}
+            >
+              <div className="roll-tick roll-tick-0"></div>
+              <div className="roll-tick roll-tick-30"></div>
+              <div className="roll-tick roll-tick-60"></div>
+              <div className="roll-tick roll-tick-330"></div>
+              <div className="roll-tick roll-tick-300"></div>
+            </div>
             <div className="horizon" style={{ clipPath: 'circle(50px at 50px 50px)' }}>
               <div
                 className="horizon-rotating"

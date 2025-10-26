@@ -121,35 +121,46 @@
   pointer-events: none;
 }
 
+.roll-scale {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.05s linear;
+  pointer-events: none;
+  z-index: 6;
+}
+
 .roll-tick {
   position: absolute;
   width: 2px;
-  height: 8px;
+  height: 12px;
   background: #fff;
   left: 50%;
-  top: -4px;
-  transform-origin: 50% 204px;
-  z-index: 5;
+  top: 3px;
+  transform-origin: 50% 50px;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
 }
 
-.tick-0 {
+.roll-tick-0 {
   transform: translateX(-50%) rotate(0deg);
 }
 
-.tick-left-30 {
-  transform: translateX(-50%) rotate(-30deg);
-}
-
-.tick-left-60 {
-  transform: translateX(-50%) rotate(-60deg);
-}
-
-.tick-right-30 {
+.roll-tick-30 {
   transform: translateX(-50%) rotate(30deg);
 }
 
-.tick-right-60 {
+.roll-tick-60 {
   transform: translateX(-50%) rotate(60deg);
+}
+
+.roll-tick-300 {
+  transform: translateX(-50%) rotate(-60deg);
+}
+
+.roll-tick-330 {
+  transform: translateX(-50%) rotate(-30deg);
 }
 
 .horizon {
