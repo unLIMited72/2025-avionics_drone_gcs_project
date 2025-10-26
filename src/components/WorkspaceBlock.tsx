@@ -23,11 +23,21 @@ export default function WorkspaceBlock({
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [pitch, setPitch] = useState(0);
+  const [roll, setRoll] = useState(0);
   const blockRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setPosition({ x: initialX, y: initialY });
   }, [initialX, initialY]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPitch(Math.sin(Date.now() / 1000) * 15);
+      setRoll(Math.cos(Date.now() / 1500) * 30);
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleMouseDown = (e: MouseEvent) => {
     if (blockRef.current) {
@@ -90,38 +100,47 @@ export default function WorkspaceBlock({
       <div className="workspace-block-body">
         <div className="instruments-row">
           <div className="attitude-indicator">
-            <div className="attitude-outer-ring">
-              <div className="roll-marker"></div>
+            <div className="attitude-frame-outer"></div>
+            <div className="attitude-frame-inner">
+              <div className="roll-tick tick-0"></div>
               <div className="roll-tick tick-left-30"></div>
               <div className="roll-tick tick-left-60"></div>
               <div className="roll-tick tick-right-30"></div>
               <div className="roll-tick tick-right-60"></div>
             </div>
-            <div className="horizon">
-              <div className="pitch-scale">
-                <div className="pitch-line pitch-10">
-                  <span className="pitch-label left">10</span>
-                  <span className="pitch-bar"></span>
-                  <span className="pitch-label right">10</span>
+            <div className="roll-marker"></div>
+            <div className="horizon" style={{ clipPath: 'circle(50px at 50px 50px)' }}>
+              <div
+                className="horizon-rotating"
+                style={{
+                  transform: `rotate(${roll}deg) translateY(${pitch * 2}px)`
+                }}
+              >
+                <div className="pitch-scale">
+                  <div className="pitch-line pitch-10">
+                    <span className="pitch-label left">10</span>
+                    <span className="pitch-bar"></span>
+                    <span className="pitch-label right">10</span>
+                  </div>
+                  <div className="pitch-line pitch-5">
+                    <span className="pitch-bar short"></span>
+                  </div>
+                  <div className="pitch-line pitch-0">
+                    <span className="pitch-bar long"></span>
+                  </div>
+                  <div className="pitch-line pitch-minus-5">
+                    <span className="pitch-bar short"></span>
+                  </div>
+                  <div className="pitch-line pitch-minus-10">
+                    <span className="pitch-label left">-10</span>
+                    <span className="pitch-bar"></span>
+                    <span className="pitch-label right">-10</span>
+                  </div>
                 </div>
-                <div className="pitch-line pitch-5">
-                  <span className="pitch-bar short"></span>
-                </div>
-                <div className="pitch-line pitch-0">
-                  <span className="pitch-bar long"></span>
-                </div>
-                <div className="pitch-line pitch-minus-5">
-                  <span className="pitch-bar short"></span>
-                </div>
-                <div className="pitch-line pitch-minus-10">
-                  <span className="pitch-label left">-10</span>
-                  <span className="pitch-bar"></span>
-                  <span className="pitch-label right">-10</span>
-                </div>
+                <div className="sky"></div>
+                <div className="ground"></div>
+                <div className="horizon-line"></div>
               </div>
-              <div className="sky"></div>
-              <div className="ground"></div>
-              <div className="horizon-line"></div>
               <div className="aircraft-symbol">
                 <div className="aircraft-line left"></div>
                 <div className="aircraft-center"></div>
