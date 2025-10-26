@@ -88,15 +88,48 @@ export default function WorkspaceBlock({
         </button>
       </div>
       <div className="workspace-block-body">
-        <div className="attitude-indicator">
-          <div className="horizon">
-            <div className="sky"></div>
-            <div className="ground"></div>
-            <div className="horizon-line"></div>
-            <div className="aircraft-symbol">
-              <div className="aircraft-line left"></div>
-              <div className="aircraft-center"></div>
-              <div className="aircraft-line right"></div>
+        <div className="instruments-row">
+          <div className="attitude-indicator">
+            <div className="horizon">
+              <div className="pitch-scale">
+                <div className="pitch-line pitch-10">10</div>
+                <div className="pitch-line pitch-0"></div>
+                <div className="pitch-line pitch-minus-10">-10</div>
+              </div>
+              <div className="sky"></div>
+              <div className="ground"></div>
+              <div className="horizon-line"></div>
+              <div className="aircraft-symbol">
+                <div className="aircraft-line left"></div>
+                <div className="aircraft-center"></div>
+                <div className="aircraft-line right"></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="altitude-display">
+            <div className="altitude-label">Alt ft.</div>
+            <div className="altitude-value">396</div>
+          </div>
+
+          <div className="heading-indicator">
+            <div className="compass">
+              <div className="compass-rose">
+                <div className="compass-marker n">N</div>
+                <div className="compass-marker e">E</div>
+                <div className="compass-marker s">S</div>
+                <div className="compass-marker w">W</div>
+                <div className="compass-tick tick-30"></div>
+                <div className="compass-tick tick-60"></div>
+                <div className="compass-tick tick-120"></div>
+                <div className="compass-tick tick-150"></div>
+                <div className="compass-tick tick-210"></div>
+                <div className="compass-tick tick-240"></div>
+                <div className="compass-tick tick-300"></div>
+                <div className="compass-tick tick-330"></div>
+              </div>
+              <div className="heading-arrow"></div>
+              <div className="heading-value">000</div>
             </div>
           </div>
         </div>

@@ -71,22 +71,91 @@
   gap: 12px;
 }
 
-.attitude-indicator {
+.instruments-row {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 8px 0;
+}
+
+.attitude-indicator {
+  flex-shrink: 0;
 }
 
 .horizon {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2px solid rgba(0, 212, 255, 0.5);
+  border: 3px solid rgba(0, 212, 255, 0.6);
   background: #000;
   box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+.pitch-scale {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 5;
+}
+
+.pitch-line {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: #fff;
+  font-size: 9px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pitch-line::before,
+.pitch-line::after {
+  content: attr(data-value);
+  position: absolute;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.pitch-10 {
+  top: -20px;
+}
+
+.pitch-10::before {
+  content: '10';
+  left: -18px;
+}
+
+.pitch-10::after {
+  content: '10';
+  right: -18px;
+}
+
+.pitch-0 {
+  top: 0;
+  width: 60px;
+}
+
+.pitch-minus-10 {
+  top: 20px;
+}
+
+.pitch-minus-10::before {
+  content: '-10';
+  left: -22px;
+}
+
+.pitch-minus-10::after {
+  content: '-10';
+  right: -22px;
 }
 
 .sky {
@@ -95,7 +164,7 @@
   left: 0;
   right: 0;
   height: 50%;
-  background: linear-gradient(180deg, #1e3a5f 0%, #2a5885 100%);
+  background: linear-gradient(180deg, #4a7ba7 0%, #6b9bc9 100%);
 }
 
 .ground {
@@ -104,7 +173,7 @@
   left: 0;
   right: 0;
   height: 50%;
-  background: linear-gradient(180deg, #3d2817 0%, #5c3d28 100%);
+  background: linear-gradient(180deg, #6b8e4e 0%, #8fb171 100%);
 }
 
 .horizon-line {
@@ -116,6 +185,7 @@
   background: #fff;
   transform: translateY(-1px);
   box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+  z-index: 6;
 }
 
 .aircraft-symbol {
@@ -125,23 +195,150 @@
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   z-index: 10;
 }
 
 .aircraft-line {
-  width: 20px;
+  width: 18px;
   height: 2px;
-  background: #ffcc00;
-  box-shadow: 0 0 4px rgba(255, 204, 0, 0.8);
+  background: #000;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
 .aircraft-center {
-  width: 6px;
-  height: 6px;
-  background: #ffcc00;
+  width: 4px;
+  height: 4px;
+  background: #000;
   border-radius: 50%;
-  box-shadow: 0 0 6px rgba(255, 204, 0, 0.8);
+}
+
+.altitude-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.altitude-label {
+  font-size: 11px;
+  color: #888;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.altitude-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #00d4ff;
+  font-family: 'Courier New', monospace;
+  background: rgba(0, 212, 255, 0.1);
+  border: 2px solid rgba(0, 212, 255, 0.4);
+  border-radius: 6px;
+  padding: 4px 12px;
+  min-width: 70px;
+  text-align: center;
+}
+
+.heading-indicator {
+  flex-shrink: 0;
+}
+
+.compass {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 212, 255, 0.6);
+  background: #fff;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+.compass-rose {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.compass-marker {
+  position: absolute;
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  transform: translate(-50%, -50%);
+}
+
+.compass-marker.n {
+  top: 12%;
+  left: 50%;
+  color: #c41e3a;
+}
+
+.compass-marker.e {
+  top: 50%;
+  right: 8%;
+  transform: translate(50%, -50%);
+}
+
+.compass-marker.s {
+  bottom: 8%;
+  left: 50%;
+  transform: translate(-50%, 50%);
+}
+
+.compass-marker.w {
+  top: 50%;
+  left: 8%;
+  transform: translate(-50%, -50%);
+}
+
+.compass-tick {
+  position: absolute;
+  width: 2px;
+  height: 8px;
+  background: #666;
+  left: 50%;
+  top: 8px;
+  transform-origin: 50% 42px;
+}
+
+.tick-30 { transform: translateX(-50%) rotate(30deg); }
+.tick-60 { transform: translateX(-50%) rotate(60deg); }
+.tick-120 { transform: translateX(-50%) rotate(120deg); }
+.tick-150 { transform: translateX(-50%) rotate(150deg); }
+.tick-210 { transform: translateX(-50%) rotate(210deg); }
+.tick-240 { transform: translateX(-50%) rotate(240deg); }
+.tick-300 { transform: translateX(-50%) rotate(300deg); }
+.tick-330 { transform: translateX(-50%) rotate(330deg); }
+
+.heading-arrow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 30px solid #c41e3a;
+  z-index: 10;
+}
+
+.heading-value {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  font-weight: 700;
+  color: #c41e3a;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  z-index: 11;
 }
 
 .flight-data-grid {
