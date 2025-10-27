@@ -211,27 +211,27 @@ export default function WorkspaceBlock({
         </div>
 
         <div className="flight-data-grid">
-          <div className="data-group">
-            <div className="group-label">Position</div>
-            <div className="group-items">
-              <div className="group-item">
+          <div className="data-row">
+            <div className="row-label">Position</div>
+            <div className="row-items">
+              <div className="row-item">
                 <span className="item-label">Lat:</span>
                 <span className="item-value">37.7749°</span>
               </div>
-              <div className="group-item">
+              <div className="row-item">
                 <span className="item-label">Lon:</span>
                 <span className="item-value">-122.4194°</span>
               </div>
             </div>
           </div>
-          <div className="data-group">
-            <div className="group-label">Motion</div>
-            <div className="group-items">
-              <div className="group-item">
+          <div className="data-row">
+            <div className="row-label">Motion</div>
+            <div className="row-items">
+              <div className="row-item">
                 <span className="item-label">Vel:</span>
                 <span className="item-value">15.2 m/s</span>
               </div>
-              <div className="group-item">
+              <div className="row-item">
                 <span className="item-label">Acc:</span>
                 <span className="item-value">2.3 m/s²</span>
               </div>
