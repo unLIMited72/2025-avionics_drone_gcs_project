@@ -238,17 +238,6 @@ export default function WorkspaceBlock({
             </div>
           </div>
         </div>
-
-        <div className="flight-status">
-          <div className="status-item">
-            <div className="status-label">Mode</div>
-            <div className="status-value mode">Mission</div>
-          </div>
-          <div className="status-item">
-            <div className="status-label">Status</div>
-            <div className="status-value armed">ARMED</div>
-          </div>
-        </div>
       </div>
     </div>
   );
