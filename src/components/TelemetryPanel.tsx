@@ -23,68 +23,72 @@ export default function TelemetryPanel({ data }: TelemetryPanelProps) {
   return (
     <div className="telemetry-panel">
       <div className="panel-header">
-        <h2>Telemetry</h2>
+        <h2>Primary Flight Display</h2>
       </div>
-      <div className="telemetry-grid">
-        <div className="telemetry-item">
-          <div className="telemetry-icon">ALT</div>
-          <div className="telemetry-data">
-            <span className="telemetry-value">{data.altitude.toFixed(1)}</span>
-            <span className="telemetry-unit">m</span>
+      <div className="pfd-container">
+        <div className="pfd-gauges">
+          <div className="circular-gauge">
+            <svg viewBox="0 0 120 120" className="gauge-svg">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(0, 212, 255, 0.2)" strokeWidth="2"/>
+              <circle cx="60" cy="60" r="45" fill="none" stroke="rgba(0, 212, 255, 0.1)" strokeWidth="1"/>
+              <text x="60" y="40" textAnchor="middle" className="gauge-label">SPD</text>
+              <text x="60" y="70" textAnchor="middle" className="gauge-value">{data.speed.toFixed(1)}</text>
+              <text x="60" y="85" textAnchor="middle" className="gauge-unit">m/s</text>
+            </svg>
           </div>
-          <div className="telemetry-label">Altitude</div>
+
+          <div className="pfd-altitude">
+            <div className="altitude-value">{data.altitude.toFixed(1)}</div>
+            <div className="altitude-label">ALT (m)</div>
+          </div>
+
+          <div className="circular-gauge">
+            <svg viewBox="0 0 120 120" className="gauge-svg">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(0, 212, 255, 0.2)" strokeWidth="2"/>
+              <circle cx="60" cy="60" r="45" fill="none" stroke="rgba(0, 212, 255, 0.1)" strokeWidth="1"/>
+              <text x="60" y="40" textAnchor="middle" className="gauge-label">HDG</text>
+              <text x="60" y="70" textAnchor="middle" className="gauge-value">{data.heading}</text>
+              <text x="60" y="85" textAnchor="middle" className="gauge-unit">°</text>
+              <line
+                x1="60"
+                y1="60"
+                x2="60"
+                y2="20"
+                stroke="#00d4ff"
+                strokeWidth="2"
+                strokeLinecap="round"
+                transform={`rotate(${data.heading} 60 60)`}
+              />
+            </svg>
+          </div>
         </div>
 
-        <div className="telemetry-item">
-          <div className="telemetry-icon">SPD</div>
-          <div className="telemetry-data">
-            <span className="telemetry-value">{data.speed.toFixed(1)}</span>
-            <span className="telemetry-unit">m/s</span>
-          </div>
-          <div className="telemetry-label">Speed</div>
-        </div>
-
-        <div className="telemetry-item">
-          <div className="telemetry-icon">BAT</div>
-          <div className="telemetry-data">
-            <span className="telemetry-value" style={{ color: getBatteryColor(data.battery) }}>
-              {data.battery}
+        <div className="pfd-secondary">
+          <div className="pfd-info-item">
+            <span className="pfd-info-label">BAT</span>
+            <span className="pfd-info-value" style={{ color: getBatteryColor(data.battery) }}>
+              {data.battery}%
             </span>
-            <span className="telemetry-unit">%</span>
+            <div className="battery-bar-mini">
+              <div
+                className="battery-fill-mini"
+                style={{
+                  width: `${data.battery}%`,
+                  backgroundColor: getBatteryColor(data.battery)
+                }}
+              ></div>
+            </div>
           </div>
-          <div className="telemetry-label">Battery</div>
-          <div className="battery-bar">
-            <div
-              className="battery-fill"
-              style={{
-                width: `${data.battery}%`,
-                backgroundColor: getBatteryColor(data.battery)
-              }}
-            ></div>
-          </div>
-        </div>
 
-        <div className="telemetry-item">
-          <div className="telemetry-icon">HDG</div>
-          <div className="telemetry-data">
-            <span className="telemetry-value">{data.heading}</span>
-            <span className="telemetry-unit">°</span>
+          <div className="pfd-info-item">
+            <span className="pfd-info-label">SAT</span>
+            <span className="pfd-info-value">{data.satellites}</span>
           </div>
-          <div className="telemetry-label">Heading</div>
-        </div>
 
-        <div className="telemetry-item">
-          <div className="telemetry-icon">SAT</div>
-          <div className="telemetry-data">
-            <span className="telemetry-value">{data.satellites}</span>
-            <span className="telemetry-unit"></span>
+          <div className="pfd-info-item">
+            <span className="pfd-info-label">MODE</span>
+            <span className="pfd-mode-badge">{data.flightMode}</span>
           </div>
-          <div className="telemetry-label">Satellites</div>
-        </div>
-
-        <div className="telemetry-item flight-mode-item">
-          <div className="telemetry-icon">MODE</div>
-          <div className="flight-mode-badge">{data.flightMode}</div>
         </div>
       </div>
     </div>

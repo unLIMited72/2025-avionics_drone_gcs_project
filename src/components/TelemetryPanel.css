@@ -23,93 +23,168 @@
   letter-spacing: 0.5px;
 }
 
-.telemetry-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  padding: 20px;
-}
-
-.telemetry-item {
-  background: rgba(22, 33, 62, 0.5);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  border-radius: 8px;
-  padding: 16px;
+.pfd-container {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  align-items: center;
+}
+
+.pfd-gauges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.circular-gauge {
+  flex-shrink: 0;
+  width: 110px;
+  height: 110px;
+  background: rgba(22, 33, 62, 0.5);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 50%;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.3s ease;
 }
 
-.telemetry-item:hover {
+.circular-gauge:hover {
+  border-color: rgba(0, 212, 255, 0.5);
+  background: rgba(22, 33, 62, 0.7);
+  transform: scale(1.05);
+}
+
+.gauge-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.gauge-label {
+  font-size: 10px;
+  font-weight: 700;
+  fill: #00d4ff;
+  letter-spacing: 1px;
+}
+
+.gauge-value {
+  font-size: 24px;
+  font-weight: 700;
+  fill: #e0e0e0;
+  font-family: 'Courier New', monospace;
+}
+
+.gauge-unit {
+  font-size: 10px;
+  font-weight: 500;
+  fill: #888;
+}
+
+.pfd-altitude {
+  flex-shrink: 0;
+  background: rgba(0, 212, 255, 0.1);
+  border: 2px solid rgba(0, 212, 255, 0.4);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 100px;
+  transition: all 0.3s ease;
+}
+
+.pfd-altitude:hover {
+  border-color: rgba(0, 212, 255, 0.7);
+  background: rgba(0, 212, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.altitude-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #00d4ff;
+  font-family: 'Courier New', monospace;
+  line-height: 1;
+}
+
+.altitude-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #00d4ff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
+
+.pfd-secondary {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.pfd-info-item {
+  flex: 1;
+  background: rgba(22, 33, 62, 0.5);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.pfd-info-item:hover {
   border-color: rgba(0, 212, 255, 0.5);
   background: rgba(22, 33, 62, 0.7);
   transform: translateY(-2px);
 }
 
-.telemetry-icon {
-  font-size: 11px;
+.pfd-info-label {
+  font-size: 10px;
   font-weight: 700;
   color: #00d4ff;
   letter-spacing: 1px;
 }
 
-.telemetry-data {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.telemetry-value {
-  font-size: 28px;
+.pfd-info-value {
+  font-size: 20px;
   font-weight: 700;
   color: #e0e0e0;
   font-family: 'Courier New', monospace;
   line-height: 1;
 }
 
-.telemetry-unit {
-  font-size: 14px;
-  font-weight: 500;
-  color: #888;
-}
-
-.telemetry-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.battery-bar {
+.battery-bar-mini {
   width: 100%;
-  height: 4px;
+  height: 3px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
   overflow: hidden;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
-.battery-fill {
+.battery-fill-mini {
   height: 100%;
   transition: width 0.5s ease, background-color 0.3s ease;
   border-radius: 2px;
 }
 
-.flight-mode-item {
-  grid-column: span 2;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.flight-mode-badge {
+.pfd-mode-badge {
   background: linear-gradient(135deg, #00d4ff 0%, #0088ff 100%);
   color: #fff;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
