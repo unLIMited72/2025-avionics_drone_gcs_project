@@ -30,7 +30,7 @@ export default function FlightStateBlock({ onDragStart }: FlightStateBlockProps)
       </div>
       <div className="block-content">
         <div className="block-title">Primary Flight Display</div>
-        <div className="block-description">Displays attitude, heading, position, velocity, status, and mode information.</div>
+        <div className="block-description">Displays attitude indicator, heading compass, altitude, position, and velocity.</div>
       </div>
     </div>
   );
