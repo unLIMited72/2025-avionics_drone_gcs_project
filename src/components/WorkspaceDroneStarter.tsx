@@ -40,6 +40,7 @@ export default function WorkspaceDroneStarter({
   const [homePosition] = useState<'set' | 'not_set'>('not_set');
   const [imuStatus] = useState<'active' | 'no_data'>('no_data');
   const [barometerStatus] = useState<'ok' | 'error'>('error');
+  const [armState, setArmState] = useState<'disarmed' | 'arming' | 'armed' | 'disarming'>('disarmed');
 
   useEffect(() => {
     setPosition({ x: initialX, y: initialY });
@@ -172,10 +173,11 @@ export default function WorkspaceDroneStarter({
         </div>
 
         {isConnected && (
-          <div className="system-health-panel">
-            <div className="panel-header">System Health</div>
+          <div className="health-arm-container">
+            <div className="system-health-panel">
+              <div className="panel-header">System Health</div>
 
-            <div className="health-grid">
+              <div className="health-grid">
               <div className="health-item">
                 <div className="health-icon">
                   <span className={`health-indicator health-${px4Connection}`}></span>
@@ -263,12 +265,48 @@ export default function WorkspaceDroneStarter({
                   </div>
                 </div>
               </div>
+              </div>
+            </div>
+
+            <div className="arm-control-panel">
+              <div className="arm-status-display">
+                <div className="arm-status-label">Status</div>
+                <div className={`arm-status-value arm-status-${armState}`}>
+                  {armState === 'disarmed' && 'DISARMED'}
+                  {armState === 'arming' && 'ARMING...'}
+                  {armState === 'armed' && 'ARMED'}
+                  {armState === 'disarming' && 'DISARMING...'}
+                </div>
+              </div>
+              <button
+                className={`arm-button arm-button-${armState}`}
+                onClick={handleArmToggle}
+                disabled={armState === 'arming' || armState === 'disarming'}
+              >
+                <div className="arm-button-inner">
+                  <div className="arm-button-icon"></div>
+                </div>
+              </button>
             </div>
           </div>
         )}
       </div>
     </div>
   );
+
+  function handleArmToggle() {
+    if (armState === 'disarmed') {
+      setArmState('arming');
+      setTimeout(() => {
+        setArmState('armed');
+      }, 1500);
+    } else if (armState === 'armed') {
+      setArmState('disarming');
+      setTimeout(() => {
+        setArmState('disarmed');
+      }, 1500);
+    }
+  }
 
   function getGpsHealthStatus(): 'ok' | 'warning' | 'error' {
     if (gpsStatus.glitch || gpsStatus.fixType === 0) return 'error';
