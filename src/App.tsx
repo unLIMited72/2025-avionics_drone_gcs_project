@@ -9,7 +9,6 @@ import './App.css';
 
 interface DroppedBlock {
   id: string;
-  type: string;
   x: number;
   y: number;
 }
@@ -85,34 +84,42 @@ function App() {
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging && mainRef.current) {
-      const newX = e.clientX - dragStart.x;
-      const newY = e.clientY - dragStart.y;
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
+      if (isDragging && mainRef.current) {
+        const newX = e.clientX - dragStart.x;
+        const newY = e.clientY - dragStart.y;
 
-      const viewportWidth = mainRef.current.clientWidth;
-      const viewportHeight = mainRef.current.clientHeight;
+        const viewportWidth = mainRef.current.clientWidth;
+        const viewportHeight = mainRef.current.clientHeight;
 
-      const scaledGridWidth = (viewportWidth * 3) * zoom;
-      const scaledGridHeight = (viewportHeight * 3) * zoom;
+        const scaledGridWidth = (viewportWidth * 3) * zoom;
+        const scaledGridHeight = (viewportHeight * 3) * zoom;
 
-      const maxPanX = Math.max(0, (scaledGridWidth - viewportWidth) / (2 * zoom));
-      const maxPanY = Math.max(0, (scaledGridHeight - viewportHeight) / (2 * zoom));
+        const maxPanX = Math.max(0, (scaledGridWidth - viewportWidth) / (2 * zoom));
+        const maxPanY = Math.max(0, (scaledGridHeight - viewportHeight) / (2 * zoom));
 
-      setPan({
-        x: Math.min(Math.max(newX, -maxPanX), maxPanX),
-        y: Math.min(Math.max(newY, -maxPanY), maxPanY)
-      });
+        setPan({
+          x: Math.min(Math.max(newX, -maxPanX), maxPanX),
+          y: Math.min(Math.max(newY, -maxPanY), maxPanY)
+        });
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
     }
-  };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleMouseLeave = () => {
-    setIsDragging(false);
-  };
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging, dragStart, zoom]);
 
   const handleResetView = () => {
     setZoom(1);
@@ -141,7 +148,6 @@ function App() {
 
       const newBlock: DroppedBlock = {
         id: `block-${Date.now()}`,
-        type: blockType,
         x,
         y
       };
@@ -183,9 +189,6 @@ function App() {
         className="gcs-main"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
@@ -207,11 +210,9 @@ function App() {
             <WorkspaceBlock
               key={block.id}
               id={block.id}
-              type={block.type}
               initialX={block.x}
               initialY={block.y}
               zoom={zoom}
-              pan={pan}
               onRemove={handleRemoveBlock}
               onPositionChange={(id, newX, newY) => {
                 setBlocks(prev => prev.map(b =>

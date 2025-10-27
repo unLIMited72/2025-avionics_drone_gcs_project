@@ -3,11 +3,9 @@ import './WorkspaceBlock.css';
 
 interface WorkspaceBlockProps {
   id: string;
-  type: string;
   initialX: number;
   initialY: number;
   zoom: number;
-  pan: { x: number; y: number };
   onRemove: (id: string) => void;
   onPositionChange: (id: string, x: number, y: number) => void;
   velocity: number;
@@ -62,25 +60,37 @@ export default function WorkspaceBlock({
     e.stopPropagation();
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
+      if (isDragging) {
+        const deltaX = (e.clientX - dragStart.x) / zoom;
+        const deltaY = (e.clientY - dragStart.y) / zoom;
+
+        const newX = position.x + deltaX;
+        const newY = position.y + deltaY;
+
+        setPosition({ x: newX, y: newY });
+        setDragStart({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      if (isDragging) {
+        onPositionChange(id, position.x, position.y);
+      }
+      setIsDragging(false);
+    };
+
     if (isDragging) {
-      const deltaX = (e.clientX - dragStart.x) / zoom;
-      const deltaY = (e.clientY - dragStart.y) / zoom;
-
-      const newX = position.x + deltaX;
-      const newY = position.y + deltaY;
-
-      setPosition({ x: newX, y: newY });
-      setDragStart({ x: e.clientX, y: e.clientY });
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
     }
-  };
 
-  const handleMouseUp = () => {
-    if (isDragging) {
-      onPositionChange(id, position.x, position.y);
-    }
-    setIsDragging(false);
-  };
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging, dragStart, position, zoom, id, onPositionChange]);
 
   const handleRemove = (e: MouseEvent) => {
     e.stopPropagation();
@@ -96,9 +106,6 @@ export default function WorkspaceBlock({
         top: `${position.y}px`
       }}
       onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
     >
       <div className="workspace-block-header">
         <div className="workspace-block-title">Primary Flight Display</div>
