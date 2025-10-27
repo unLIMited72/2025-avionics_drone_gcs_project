@@ -585,7 +585,7 @@
 }
 
 .arm-status-value {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-align: center;
@@ -614,9 +614,127 @@
   }
 }
 
+/* Flight Mode Section */
+.flight-mode-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mode-status-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: #00d4ff;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.mode-value {
+  font-size: 11px;
+  font-weight: 700;
+  color: #00ff96;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.mode-dial-button {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(145deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6));
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.1),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.5),
+    0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mode-dial-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.mode-dial-button:not(:disabled):hover {
+  transform: scale(1.05);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.15),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.5),
+    0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.mode-dial-button:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.mode-dial-button.changing .dial-inner {
+  animation: dialRotate 1s ease-in-out;
+}
+
+.dial-outer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 8px;
+}
+
+.dial-inner {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 212, 255, 0.3) 0%, rgba(0, 150, 200, 0.1) 100%);
+  border: 2px solid rgba(0, 212, 255, 0.5);
+  position: relative;
+  transition: transform 0.5s ease-out;
+  box-shadow:
+    0 0 10px rgba(0, 212, 255, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.1),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dial-indicator {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 12px;
+  background: linear-gradient(180deg, #00d4ff 0%, rgba(0, 212, 255, 0.3) 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.8);
+}
+
+@keyframes dialRotate {
+  0% {
+    transform: rotate(var(--start-angle, 0deg));
+  }
+  50% {
+    transform: rotate(calc(var(--start-angle, 0deg) + 22.5deg));
+  }
+  100% {
+    transform: rotate(calc(var(--start-angle, 0deg) + 45deg));
+  }
+}
+
 .arm-button {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   border: none;
   background: linear-gradient(145deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6));
@@ -660,8 +778,8 @@
 }
 
 .arm-button-icon {
-  width: 54px;
-  height: 54px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   transition: all 0.3s ease;
 }

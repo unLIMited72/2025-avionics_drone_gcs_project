@@ -42,6 +42,10 @@ export default function WorkspaceDroneStarter({
   const [barometerStatus] = useState<'ok' | 'error'>('error');
   const [armState, setArmState] = useState<'disarmed' | 'arming' | 'armed' | 'disarming'>('disarmed');
 
+  const flightModes = ['MANUAL', 'STABILIZED', 'ALTITUDE', 'POSITION', 'OFFBOARD', 'MISSION', 'RTL', 'LAND'];
+  const [currentModeIndex, setCurrentModeIndex] = useState(0);
+  const [isChangingMode, setIsChangingMode] = useState(false);
+
   useEffect(() => {
     setPosition({ x: initialX, y: initialY });
   }, [initialX, initialY]);
@@ -290,6 +294,24 @@ export default function WorkspaceDroneStarter({
                 </div>
               </button>
             </div>
+
+            <div className="flight-mode-section">
+              <div className="mode-status-display">
+                <div className="mode-label">Flight Mode</div>
+                <div className="mode-value">{flightModes[currentModeIndex]}</div>
+              </div>
+              <button
+                className={`mode-dial-button ${isChangingMode ? 'changing' : ''}`}
+                onClick={handleModeChange}
+                disabled={isChangingMode}
+              >
+                <div className="dial-outer">
+                  <div className="dial-inner" style={{ transform: `rotate(${currentModeIndex * 45}deg)` }}>
+                    <div className="dial-indicator"></div>
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -308,6 +330,25 @@ export default function WorkspaceDroneStarter({
         setArmState('disarmed');
       }, 1500);
     }
+  }
+
+  function handleModeChange() {
+    if (isChangingMode) return;
+
+    const nextIndex = (currentModeIndex + 1) % flightModes.length;
+    setIsChangingMode(true);
+
+    // Simulate mode change attempt
+    setTimeout(() => {
+      const success = Math.random() > 0.2; // 80% success rate
+
+      if (success) {
+        setCurrentModeIndex(nextIndex);
+      }
+      // If failed, stays at current mode
+
+      setIsChangingMode(false);
+    }, 1000);
   }
 
   function getGpsHealthStatus(): 'ok' | 'warning' | 'error' {
