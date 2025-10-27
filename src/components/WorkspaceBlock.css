@@ -362,7 +362,7 @@
 .altitude-tape {
   position: absolute;
   width: 100%;
-  height: 400px;
+  height: 700px;
   transition: transform 0.05s linear;
 }
 
