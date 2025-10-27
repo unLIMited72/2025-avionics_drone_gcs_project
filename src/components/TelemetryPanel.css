@@ -35,9 +35,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 0px;
   width: 100%;
-  max-width: 360px;
+  max-width: 330px;
 }
 
 .circular-gauge {
@@ -90,13 +90,13 @@
   background: rgba(0, 212, 255, 0.1);
   border: 2px solid rgba(0, 212, 255, 0.4);
   border-radius: 8px;
-  padding: 12px 12px;
+  padding: 12px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-width: 90px;
+  min-width: 85px;
   transition: all 0.3s ease;
 }
 
@@ -127,7 +127,7 @@
   display: flex;
   gap: 8px;
   width: 100%;
-  max-width: 360px;
+  max-width: 330px;
 }
 
 .pfd-info-item {
