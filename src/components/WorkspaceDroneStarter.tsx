@@ -181,7 +181,7 @@ export default function WorkspaceDroneStarter({
                   <span className={`health-indicator health-${px4Connection}`}></span>
                 </div>
                 <div className="health-info">
-                  <div className="health-label">PX4 Connection</div>
+                  <div className="health-label">Heartbeat</div>
                   <div className={`health-value health-${px4Connection}`}>
                     {px4Connection === 'connected' ? 'Connected' : 'Disconnected'}
                   </div>
