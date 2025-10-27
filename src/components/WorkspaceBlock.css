@@ -370,35 +370,33 @@
 
 .altitude-tick {
   position: absolute;
-  left: 0;
-  width: 100%;
-  height: 2px;
+  left: 4px;
+  width: calc(100% - 8px);
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 0 4px;
-  transform: translateY(-50%);
+  gap: 4px;
 }
 
 .tick-line {
-  width: 25px;
+  width: 20px;
   height: 2px;
   background: #fff;
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 3px rgba(255, 255, 255, 0.6);
   flex-shrink: 0;
 }
 
 .tick-line.short {
-  width: 12px;
+  width: 10px;
 }
 
 .tick-number {
-  font-size: 9px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   color: #fff;
   font-family: 'Courier New', monospace;
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
-  margin-left: 3px;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+  line-height: 1;
   flex-shrink: 0;
 }
 
