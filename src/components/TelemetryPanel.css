@@ -41,6 +41,10 @@
   transition: all 0.3s ease;
 }
 
+.altitude-item {
+  grid-column: span 2;
+}
+
 .telemetry-item:hover {
   border-color: rgba(0, 212, 255, 0.5);
   background: rgba(22, 33, 62, 0.7);
@@ -114,4 +118,16 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+}
+
+.altitude-gauge {
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.gauge-svg {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.3));
 }
