@@ -28,6 +28,19 @@ export default function WorkspaceDroneStarter({
   const [droneName, setDroneName] = useState('');
   const [isConnected, setIsConnected] = useState(false);
 
+  const [px4Connection] = useState<'connected' | 'disconnected'>('disconnected');
+  const [failsafe] = useState<'normal' | 'active'>('normal');
+  const [ekfStatus] = useState<'ok' | 'unstable' | 'invalid'>('invalid');
+  const [gpsStatus] = useState<{ fixType: number; satellites: number; hdop: number; glitch: boolean }>({
+    fixType: 0,
+    satellites: 0,
+    hdop: 99.9,
+    glitch: false
+  });
+  const [homePosition] = useState<'set' | 'not_set'>('not_set');
+  const [imuStatus] = useState<'active' | 'no_data'>('no_data');
+  const [barometerStatus] = useState<'ok' | 'error'>('error');
+
   useEffect(() => {
     setPosition({ x: initialX, y: initialY });
   }, [initialX, initialY]);
@@ -157,7 +170,114 @@ export default function WorkspaceDroneStarter({
             </button>
           )}
         </div>
+
+        {isConnected && (
+          <div className="system-health-panel">
+            <div className="panel-header">System Health</div>
+
+            <div className="health-grid">
+              <div className="health-item">
+                <div className="health-icon">
+                  <span className={`health-indicator health-${px4Connection}`}></span>
+                </div>
+                <div className="health-info">
+                  <div className="health-label">PX4 Connection</div>
+                  <div className={`health-value health-${px4Connection}`}>
+                    {px4Connection === 'connected' ? 'Connected' : 'Disconnected'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="health-item">
+                <div className="health-icon">
+                  <span className={`health-indicator health-${failsafe === 'normal' ? 'ok' : 'error'}`}></span>
+                </div>
+                <div className="health-info">
+                  <div className="health-label">Failsafe</div>
+                  <div className={`health-value health-${failsafe === 'normal' ? 'ok' : 'error'}`}>
+                    {failsafe === 'normal' ? 'Normal' : 'Active'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="health-item">
+                <div className="health-icon">
+                  <span className={`health-indicator health-${ekfStatus}`}></span>
+                </div>
+                <div className="health-info">
+                  <div className="health-label">EKF Estimation</div>
+                  <div className={`health-value health-${ekfStatus}`}>
+                    {ekfStatus === 'ok' ? 'OK' : ekfStatus === 'unstable' ? 'Unstable' : 'Invalid'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="health-item">
+                <div className="health-icon">
+                  <span className={`health-indicator health-${getGpsHealthStatus()}`}></span>
+                </div>
+                <div className="health-info">
+                  <div className="health-label">GPS Status</div>
+                  <div className={`health-value health-${getGpsHealthStatus()}`}>
+                    {getGpsStatusText()}
+                    {gpsStatus.glitch && <span className="warning-badge">GLITCH</span>}
+                  </div>
+                  <div className="health-details">
+                    {gpsStatus.satellites} sats · HDOP {gpsStatus.hdop.toFixed(1)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="health-item">
+                <div className="health-icon">
+                  <span className={`health-indicator health-${homePosition === 'set' ? 'ok' : 'error'}`}></span>
+                </div>
+                <div className="health-info">
+                  <div className="health-label">Home Position</div>
+                  <div className={`health-value health-${homePosition === 'set' ? 'ok' : 'error'}`}>
+                    {homePosition === 'set' ? 'Set' : 'Not Set'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="health-item">
+                <div className="health-icon">
+                  <span className={`health-indicator health-${imuStatus === 'active' ? 'ok' : 'error'}`}></span>
+                </div>
+                <div className="health-info">
+                  <div className="health-label">IMU Sensor</div>
+                  <div className={`health-value health-${imuStatus === 'active' ? 'ok' : 'error'}`}>
+                    {imuStatus === 'active' ? 'Active' : 'No Data'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="health-item">
+                <div className="health-icon">
+                  <span className={`health-indicator health-${barometerStatus}`}></span>
+                </div>
+                <div className="health-info">
+                  <div className="health-label">Barometer</div>
+                  <div className={`health-value health-${barometerStatus}`}>
+                    {barometerStatus === 'ok' ? 'OK' : 'Error'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
+
+  function getGpsHealthStatus(): 'ok' | 'warning' | 'error' {
+    if (gpsStatus.glitch || gpsStatus.fixType === 0) return 'error';
+    if (gpsStatus.fixType >= 3 && gpsStatus.satellites >= 8 && gpsStatus.hdop < 1.0) return 'ok';
+    return 'warning';
+  }
+
+  function getGpsStatusText(): string {
+    const fixTypes = ['No Fix', '1D', '2D', '3D', 'RTK Float', 'RTK Fixed'];
+    return fixTypes[gpsStatus.fixType] || 'Unknown';
+  }
 }

@@ -404,3 +404,141 @@
   background: rgba(0, 212, 255, 0.2);
   color: #00d4ff;
 }
+
+.system-health-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.panel-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #00d4ff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+}
+
+.health-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.health-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+}
+
+.health-item:hover {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.health-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.health-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+  transition: all 0.3s ease;
+}
+
+.health-indicator.health-ok,
+.health-indicator.health-connected {
+  background: #00ff96;
+  box-shadow: 0 0 8px rgba(0, 255, 150, 0.6);
+}
+
+.health-indicator.health-warning,
+.health-indicator.health-unstable {
+  background: #ffaa00;
+  box-shadow: 0 0 8px rgba(255, 170, 0, 0.6);
+}
+
+.health-indicator.health-error,
+.health-indicator.health-invalid,
+.health-indicator.health-disconnected {
+  background: #ff6464;
+  box-shadow: 0 0 8px rgba(255, 100, 100, 0.6);
+}
+
+.health-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.health-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.health-value {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.health-value.health-ok,
+.health-value.health-connected {
+  color: #00ff96;
+}
+
+.health-value.health-warning,
+.health-value.health-unstable {
+  color: #ffaa00;
+}
+
+.health-value.health-error,
+.health-value.health-invalid,
+.health-value.health-disconnected {
+  color: #ff6464;
+}
+
+.health-details {
+  font-size: 9px;
+  color: #666;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.2px;
+  margin-top: 2px;
+}
+
+.warning-badge {
+  font-size: 8px;
+  font-weight: 700;
+  color: #ffaa00;
+  background: rgba(255, 170, 0, 0.15);
+  border: 1px solid rgba(255, 170, 0, 0.3);
+  padding: 2px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+}
