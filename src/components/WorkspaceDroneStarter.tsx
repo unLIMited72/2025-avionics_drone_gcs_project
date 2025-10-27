@@ -218,14 +218,16 @@ export default function WorkspaceDroneStarter({
                 <div className="health-icon">
                   <span className={`health-indicator health-${getGpsHealthStatus()}`}></span>
                 </div>
-                <div className="health-info">
+                <div className="health-info health-info-vertical">
                   <div className="health-label">GPS Status</div>
-                  <div className={`health-value health-${getGpsHealthStatus()}`}>
-                    {getGpsStatusText()}
-                    {gpsStatus.glitch && <span className="warning-badge">GLITCH</span>}
-                  </div>
-                  <div className="health-sat-count">
-                    {gpsStatus.satellites} sats
+                  <div className="health-values-vertical">
+                    <div className={`health-value health-${getGpsHealthStatus()}`}>
+                      {getGpsStatusText()}
+                      {gpsStatus.glitch && <span className="warning-badge">GLITCH</span>}
+                    </div>
+                    <div className="health-sat-count">
+                      {gpsStatus.satellites} sats
+                    </div>
                   </div>
                 </div>
               </div>
