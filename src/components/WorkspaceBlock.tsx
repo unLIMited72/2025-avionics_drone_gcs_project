@@ -97,7 +97,7 @@ export default function WorkspaceBlock({
       onMouseLeave={handleMouseUp}
     >
       <div className="workspace-block-header">
-        <div className="workspace-block-title">Flight State Information</div>
+        <div className="workspace-block-title">Primary Flight Display</div>
         <button className="workspace-block-remove" onClick={handleRemove}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18" />
