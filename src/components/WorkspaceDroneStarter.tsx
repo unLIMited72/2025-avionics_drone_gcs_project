@@ -222,8 +222,8 @@ export default function WorkspaceDroneStarter({
                     {getGpsStatusText()}
                     {gpsStatus.glitch && <span className="warning-badge">GLITCH</span>}
                   </div>
-                  <div className="health-details">
-                    {gpsStatus.satellites} sats · HDOP {gpsStatus.hdop.toFixed(1)}
+                  <div className="health-sat-count">
+                    {gpsStatus.satellites} sats
                   </div>
                 </div>
               </div>

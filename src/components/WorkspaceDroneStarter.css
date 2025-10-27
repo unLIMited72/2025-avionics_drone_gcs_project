@@ -516,6 +516,13 @@
   letter-spacing: 0.1px;
 }
 
+.health-sat-count {
+  font-size: 9px;
+  color: #aaa;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
+
 .warning-badge {
   font-size: 7px;
   font-weight: 700;
