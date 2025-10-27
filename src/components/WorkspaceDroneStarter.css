@@ -26,6 +26,27 @@
   z-index: 20;
 }
 
+.workspace-drone-starter .workspace-block-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drone-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #00ff96;
+  letter-spacing: 0.3px;
+}
+
+.drone-serial {
+  font-size: 10px;
+  font-weight: 500;
+  color: #888;
+  letter-spacing: 0.2px;
+  font-family: 'Courier New', monospace;
+}
+
 .drone-starter-body {
   padding: 16px;
   display: flex;
