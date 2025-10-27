@@ -1,21 +1,10 @@
 import './Header.css';
-import UserMenu, { type UserInfo, type PresenceStatus, type Language, type Theme } from './UserMenu';
 
 type ServerStatus = 'connected' | 'disconnected' | 'connecting';
 
 interface HeaderProps {
   serverStatus: ServerStatus;
   onRetry?: () => void;
-  user: UserInfo;
-  presence: PresenceStatus;
-  language: Language;
-  theme: Theme;
-  onPresenceChange: (presence: PresenceStatus) => void;
-  onLanguageChange: (lang: Language) => void;
-  onThemeChange: (theme: Theme) => void;
-  onViewProfile: () => void;
-  onPreferences: () => void;
-  onSignOut: () => void;
   onLogoClick: () => void;
 }
 
@@ -40,16 +29,6 @@ const STATUS_CONFIG = {
 export default function Header({
   serverStatus,
   onRetry,
-  user,
-  presence,
-  language,
-  theme,
-  onPresenceChange,
-  onLanguageChange,
-  onThemeChange,
-  onViewProfile,
-  onPreferences,
-  onSignOut,
   onLogoClick
 }: HeaderProps) {
   const statusInfo = STATUS_CONFIG[serverStatus];
@@ -100,18 +79,6 @@ export default function Header({
             </button>
           )}
         </div>
-        <UserMenu
-          user={user}
-          presence={presence}
-          language={language}
-          theme={theme}
-          onPresenceChange={onPresenceChange}
-          onLanguageChange={onLanguageChange}
-          onThemeChange={onThemeChange}
-          onViewProfile={onViewProfile}
-          onPreferences={onPreferences}
-          onSignOut={onSignOut}
-        />
       </div>
     </header>
   );

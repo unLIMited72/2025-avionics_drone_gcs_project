@@ -4,7 +4,6 @@ import Dashboard from './components/Dashboard';
 import DigitalClock from './components/DigitalClock';
 import DroneStatus from './components/DroneStatus';
 import WorkspaceBlock from './components/WorkspaceBlock';
-import type { UserInfo, PresenceStatus, Language, Theme } from './components/UserMenu';
 import './App.css';
 
 interface DroppedBlock {
@@ -14,21 +13,9 @@ interface DroppedBlock {
 }
 
 function App() {
-  const [serverStatus, setServerStatus] = useState<ServerStatus>('connected');
+  const [serverStatus, setServerStatus] = useState<ServerStatus>('disconnected');
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [blocks, setBlocks] = useState<DroppedBlock[]>([]);
-  const [user] = useState<UserInfo>({
-    name: 'John Smith',
-    email: 'john.smith@dronecontrol.io',
-    role: 'Operator',
-    organization: 'Alpha Team',
-    lastLogin: new Date(Date.now() - 3600000).toISOString(),
-    sessionExpiresIn: 55,
-    twoFactorEnabled: true
-  });
-  const [presence, setPresence] = useState<PresenceStatus>('online');
-  const [language, setLanguage] = useState<Language>('en');
-  const [theme, setTheme] = useState<Theme>('dark');
 
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -43,32 +30,6 @@ function App() {
     }, 2000);
   };
 
-  const handlePresenceChange = (newPresence: PresenceStatus) => {
-    setPresence(newPresence);
-    console.log('Presence changed to:', newPresence);
-  };
-
-  const handleLanguageChange = (newLanguage: Language) => {
-    setLanguage(newLanguage);
-    console.log('Language changed to:', newLanguage);
-  };
-
-  const handleThemeChange = (newTheme: Theme) => {
-    setTheme(newTheme);
-    console.log('Theme changed to:', newTheme);
-  };
-
-  const handleViewProfile = () => {
-    console.log('View Profile clicked');
-  };
-
-  const handlePreferences = () => {
-    console.log('Preferences clicked');
-  };
-
-  const handleSignOut = () => {
-    console.log('Sign out clicked');
-  };
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
@@ -172,16 +133,6 @@ function App() {
       <Header
         serverStatus={serverStatus}
         onRetry={handleRetryConnection}
-        user={user}
-        presence={presence}
-        language={language}
-        theme={theme}
-        onPresenceChange={handlePresenceChange}
-        onLanguageChange={handleLanguageChange}
-        onThemeChange={handleThemeChange}
-        onViewProfile={handleViewProfile}
-        onPreferences={handlePreferences}
-        onSignOut={handleSignOut}
         onLogoClick={() => setIsDashboardOpen(!isDashboardOpen)}
       />
       <main
