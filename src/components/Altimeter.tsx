@@ -36,31 +36,35 @@ export default function Altimeter({}: AltimeterProps) {
   const renderScale = () => {
     const marks = [];
     const displayHeight = 200;
-    const centerPosition = displayHeight / 2;
-    const pixelsPerMeter = 1.5;
+    const altitudeRange = maxAltitude - minAltitude;
 
     for (let alt = minAltitude; alt <= maxAltitude; alt += 10) {
-      const relativePosition = (alt - animatedAltitude) * pixelsPerMeter;
-      const position = centerPosition - relativePosition;
+      const positionRatio = alt / altitudeRange;
+      const position = displayHeight - (positionRatio * displayHeight);
 
-      if (position >= -50 && position <= displayHeight + 50) {
-        const isLargeMark = alt % 20 === 0;
-        const showNumber = alt % 20 === 0;
+      const isLargeMark = alt % 20 === 0;
+      const showNumber = alt % 20 === 0;
 
-        marks.push(
-          <div
-            key={alt}
-            className="scale-mark-container"
-            style={{ top: `${position}px` }}
-          >
-            <div className={`scale-mark ${isLargeMark ? 'large' : 'small'}`} />
-            {showNumber && <span className="scale-number">{alt}</span>}
-          </div>
-        );
-      }
+      marks.push(
+        <div
+          key={alt}
+          className="scale-mark-container"
+          style={{ top: `${position}px` }}
+        >
+          <div className={`scale-mark ${isLargeMark ? 'large' : 'small'}`} />
+          {showNumber && <span className="scale-number">{alt}</span>}
+        </div>
+      );
     }
 
     return marks;
+  };
+
+  const getIndicatorPosition = () => {
+    const displayHeight = 200;
+    const altitudeRange = maxAltitude - minAltitude;
+    const positionRatio = animatedAltitude / altitudeRange;
+    return displayHeight - (positionRatio * displayHeight);
   };
 
   return (
@@ -70,7 +74,7 @@ export default function Altimeter({}: AltimeterProps) {
         <div className="scale-container">
           {renderScale()}
         </div>
-        <div className="indicator-line" />
+        <div className="indicator-line" style={{ top: `${getIndicatorPosition()}px` }} />
       </div>
       <div className="altitude-value">
         {Math.round(animatedAltitude)}
