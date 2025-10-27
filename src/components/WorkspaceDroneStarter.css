@@ -615,6 +615,14 @@
   }
 }
 
+/* Arm Section */
+.arm-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
 /* Flight Mode Section */
 .flight-mode-section {
   display: flex;

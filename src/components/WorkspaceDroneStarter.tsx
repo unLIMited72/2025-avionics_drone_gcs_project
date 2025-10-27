@@ -275,42 +275,44 @@ export default function WorkspaceDroneStarter({
             </div>
 
             <div className="arm-control-panel">
-              <div className="arm-status-display">
-                <div className="arm-status-label">Status</div>
-                <div className={`arm-status-value arm-status-${armState}`}>
-                  {armState === 'disarmed' && 'DISARMED'}
-                  {armState === 'arming' && 'ARMING...'}
-                  {armState === 'armed' && 'ARMED'}
-                  {armState === 'disarming' && 'DISARMING...'}
-                </div>
-              </div>
-              <button
-                className={`arm-button arm-button-${armState}`}
-                onClick={handleArmToggle}
-                disabled={armState === 'arming' || armState === 'disarming'}
-              >
-                <div className="arm-button-inner">
-                  <div className="arm-button-icon"></div>
-                </div>
-              </button>
-            </div>
-
-            <div className="flight-mode-section">
-              <div className="mode-status-display">
-                <div className="mode-label">Flight Mode</div>
-                <div className="mode-value">{flightModes[currentModeIndex]}</div>
-              </div>
-              <button
-                className={`mode-dial-button ${isChangingMode ? 'changing' : ''}`}
-                onClick={handleModeChange}
-                disabled={isChangingMode}
-              >
-                <div className="dial-outer">
-                  <div className="dial-inner" style={{ transform: `rotate(${currentModeIndex * 45}deg)` }}>
-                    <div className="dial-indicator"></div>
+              <div className="arm-section">
+                <div className="arm-status-display">
+                  <div className="arm-status-label">Status</div>
+                  <div className={`arm-status-value arm-status-${armState}`}>
+                    {armState === 'disarmed' && 'DISARMED'}
+                    {armState === 'arming' && 'ARMING...'}
+                    {armState === 'armed' && 'ARMED'}
+                    {armState === 'disarming' && 'DISARMING...'}
                   </div>
                 </div>
-              </button>
+                <button
+                  className={`arm-button arm-button-${armState}`}
+                  onClick={handleArmToggle}
+                  disabled={armState === 'arming' || armState === 'disarming'}
+                >
+                  <div className="arm-button-inner">
+                    <div className="arm-button-icon"></div>
+                  </div>
+                </button>
+              </div>
+
+              <div className="flight-mode-section">
+                <div className="mode-status-display">
+                  <div className="mode-label">Flight Mode</div>
+                  <div className="mode-value">{flightModes[currentModeIndex]}</div>
+                </div>
+                <button
+                  className={`mode-dial-button ${isChangingMode ? 'changing' : ''}`}
+                  onClick={handleModeChange}
+                  disabled={isChangingMode}
+                >
+                  <div className="dial-outer">
+                    <div className="dial-inner" style={{ transform: `rotate(${currentModeIndex * 45}deg)` }}>
+                      <div className="dial-indicator"></div>
+                    </div>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         )}
