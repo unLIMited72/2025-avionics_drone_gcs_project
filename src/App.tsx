@@ -4,10 +4,12 @@ import Dashboard from './components/Dashboard';
 import DigitalClock from './components/DigitalClock';
 import DroneStatus from './components/DroneStatus';
 import WorkspaceBlock from './components/WorkspaceBlock';
+import WorkspaceDroneStarter from './components/WorkspaceDroneStarter';
 import './App.css';
 
 interface DroppedBlock {
   id: string;
+  type: 'flight-state-info' | 'drone-starter';
   x: number;
   y: number;
 }
@@ -109,6 +111,7 @@ function App() {
 
       const newBlock: DroppedBlock = {
         id: `block-${Date.now()}`,
+        type: blockType as 'flight-state-info' | 'drone-starter',
         x,
         y
       };
@@ -157,23 +160,43 @@ function App() {
             transformOrigin: 'center center'
           }}
         >
-          {blocks.map(block => (
-            <WorkspaceBlock
-              key={block.id}
-              id={block.id}
-              initialX={block.x}
-              initialY={block.y}
-              zoom={zoom}
-              onRemove={handleRemoveBlock}
-              onPositionChange={(id, newX, newY) => {
-                setBlocks(prev => prev.map(b =>
-                  b.id === id ? { ...b, x: newX, y: newY } : b
-                ));
-              }}
-              velocity={15.2}
-              acceleration={2.3}
-            />
-          ))}
+          {blocks.map(block => {
+            if (block.type === 'drone-starter') {
+              return (
+                <WorkspaceDroneStarter
+                  key={block.id}
+                  id={block.id}
+                  initialX={block.x}
+                  initialY={block.y}
+                  zoom={zoom}
+                  onRemove={handleRemoveBlock}
+                  onPositionChange={(id, newX, newY) => {
+                    setBlocks(prev => prev.map(b =>
+                      b.id === id ? { ...b, x: newX, y: newY } : b
+                    ));
+                  }}
+                />
+              );
+            } else {
+              return (
+                <WorkspaceBlock
+                  key={block.id}
+                  id={block.id}
+                  initialX={block.x}
+                  initialY={block.y}
+                  zoom={zoom}
+                  onRemove={handleRemoveBlock}
+                  onPositionChange={(id, newX, newY) => {
+                    setBlocks(prev => prev.map(b =>
+                      b.id === id ? { ...b, x: newX, y: newY } : b
+                    ));
+                  }}
+                  velocity={15.2}
+                  acceleration={2.3}
+                />
+              );
+            }
+          })}
         </div>
         <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
         <DigitalClock onReset={handleResetView} />
