@@ -189,18 +189,12 @@ export default function WorkspaceDroneStarter({
         <div className="status-section">
           <div className="status-row">
             <span className="status-label">Heartbeat:</span>
-            <div className={`status-indicator heartbeat-${heartbeat}`}>
-              <span className="indicator-dot"></span>
-              <span className="indicator-text">{heartbeat}</span>
-            </div>
+            <span className={`status-value heartbeat-${heartbeat}`}>{heartbeat}</span>
           </div>
 
           <div className="status-row">
             <span className="status-label">Arm State:</span>
-            <div className={`status-indicator arm-${armState}`}>
-              <span className="indicator-dot"></span>
-              <span className="indicator-text">{armState}</span>
-            </div>
+            <span className={`status-value arm-${armState}`}>{armState}</span>
           </div>
         </div>
 

@@ -150,86 +150,39 @@
   letter-spacing: 0.3px;
 }
 
-.status-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+.status-value {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 12px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 110px;
+  text-align: center;
 }
 
-.indicator-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-.indicator-text {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.heartbeat-connected .indicator-dot {
-  background: #00ff96;
-  box-shadow: 0 0 8px #00ff96;
-  animation: heartbeat-pulse 1.5s ease-in-out infinite;
-}
-
-.heartbeat-connected .indicator-text {
+.status-value.heartbeat-connected {
   color: #00ff96;
+  border-color: rgba(0, 255, 150, 0.3);
+  background: rgba(0, 255, 150, 0.1);
 }
 
-.heartbeat-disconnected .indicator-dot {
-  background: #666;
-}
-
-.heartbeat-disconnected .indicator-text {
+.status-value.heartbeat-disconnected {
   color: #666;
+  border-color: rgba(136, 136, 136, 0.2);
 }
 
-.arm-armed .indicator-dot {
-  background: #ff6464;
-  box-shadow: 0 0 8px #ff6464;
-  animation: arm-pulse 1s ease-in-out infinite;
-}
-
-.arm-armed .indicator-text {
+.status-value.arm-armed {
   color: #ff6464;
+  border-color: rgba(255, 100, 100, 0.3);
+  background: rgba(255, 100, 100, 0.1);
 }
 
-.arm-disarmed .indicator-dot {
-  background: #666;
-}
-
-.arm-disarmed .indicator-text {
+.status-value.arm-disarmed {
   color: #666;
-}
-
-@keyframes heartbeat-pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(0.9);
-  }
-}
-
-@keyframes arm-pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(0.95);
-  }
+  border-color: rgba(136, 136, 136, 0.2);
 }
 
 .control-section {
