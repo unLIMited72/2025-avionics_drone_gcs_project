@@ -35,26 +35,29 @@ export default function Altimeter({}: AltimeterProps) {
 
   const renderScale = () => {
     const marks = [];
-    const scaleHeight = 400;
-    const altitudeRange = maxAltitude - minAltitude;
-
-    const offset = (animatedAltitude / altitudeRange) * scaleHeight;
+    const displayHeight = 200;
+    const centerPosition = displayHeight / 2;
+    const pixelsPerMeter = 1.5;
 
     for (let alt = minAltitude; alt <= maxAltitude; alt += 10) {
-      const position = scaleHeight - (alt / altitudeRange) * scaleHeight + offset;
-      const isLargeMark = alt % 20 === 0;
-      const showNumber = alt % 20 === 0;
+      const relativePosition = (alt - animatedAltitude) * pixelsPerMeter;
+      const position = centerPosition - relativePosition;
 
-      marks.push(
-        <div
-          key={alt}
-          className="scale-mark-container"
-          style={{ bottom: `${position}px` }}
-        >
-          <div className={`scale-mark ${isLargeMark ? 'large' : 'small'}`} />
-          {showNumber && <span className="scale-number">{alt}</span>}
-        </div>
-      );
+      if (position >= -50 && position <= displayHeight + 50) {
+        const isLargeMark = alt % 20 === 0;
+        const showNumber = alt % 20 === 0;
+
+        marks.push(
+          <div
+            key={alt}
+            className="scale-mark-container"
+            style={{ top: `${position}px` }}
+          >
+            <div className={`scale-mark ${isLargeMark ? 'large' : 'small'}`} />
+            {showNumber && <span className="scale-number">{alt}</span>}
+          </div>
+        );
+      }
     }
 
     return marks;

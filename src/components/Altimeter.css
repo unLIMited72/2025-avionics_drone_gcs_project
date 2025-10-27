@@ -41,7 +41,7 @@
   width: 100%;
   display: flex;
   align-items: center;
-  transition: bottom 0.05s linear;
+  transform: translateY(-50%);
 }
 
 .scale-mark {
