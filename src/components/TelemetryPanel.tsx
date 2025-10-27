@@ -1,4 +1,5 @@
 import './TelemetryPanel.css';
+import Altimeter from './Altimeter';
 
 interface TelemetryData {
   altitude: number;
@@ -24,6 +25,9 @@ export default function TelemetryPanel({ data }: TelemetryPanelProps) {
     <div className="telemetry-panel">
       <div className="panel-header">
         <h2>Telemetry</h2>
+      </div>
+      <div className="altimeter-section">
+        <Altimeter altitude={data.altitude} />
       </div>
       <div className="telemetry-grid">
         <div className="telemetry-item">

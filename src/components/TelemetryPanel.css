@@ -23,6 +23,13 @@
   letter-spacing: 0.5px;
 }
 
+.altimeter-section {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  border-bottom: 1px solid #0f3460;
+}
+
 .telemetry-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
