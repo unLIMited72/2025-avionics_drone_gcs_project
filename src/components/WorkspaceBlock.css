@@ -342,7 +342,7 @@
 .pfd-vertical-metrics-workspace {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 4px;
   flex-shrink: 0;
   align-self: flex-start;
   height: 241px;
@@ -354,7 +354,7 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  flex: 1;
+  height: 75px;
   min-width: 75px;
   background: rgba(0, 212, 255, 0.1);
   border: 2px solid rgba(0, 212, 255, 0.4);
