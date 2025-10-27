@@ -41,10 +41,10 @@ export default function WorkspaceDroneStarter({
   const [imuStatus] = useState<'active' | 'no_data'>('no_data');
   const [barometerStatus] = useState<'ok' | 'error'>('error');
   const [armState, setArmState] = useState<'disarmed' | 'arming' | 'armed' | 'disarming'>('disarmed');
-
-  const flightModes = ['MANUAL', 'STABILIZED', 'ALTITUDE', 'POSITION', 'OFFBOARD', 'MISSION', 'RTL', 'LAND'];
   const [currentModeIndex, setCurrentModeIndex] = useState(0);
   const [isChangingMode, setIsChangingMode] = useState(false);
+
+  const flightModes = ['MANUAL', 'STABILIZED', 'ALTITUDE', 'POSITION', 'OFFBOARD', 'MISSION', 'RTL', 'LAND'];
 
   useEffect(() => {
     setPosition({ x: initialX, y: initialY });
@@ -110,6 +110,41 @@ export default function WorkspaceDroneStarter({
 
   const handleDisconnect = () => {
     setIsConnected(false);
+  };
+
+  const getGpsHealthStatus = (): 'ok' | 'warning' | 'error' => {
+    if (gpsStatus.glitch || gpsStatus.fixType === 0) return 'error';
+    if (gpsStatus.fixType >= 3 && gpsStatus.satellites >= 8 && gpsStatus.hdop < 1.0) return 'ok';
+    return 'warning';
+  };
+
+  const getGpsStatusText = (): string => {
+    const fixTypes = ['No Fix', '1D', '2D', '3D', 'RTK Float', 'RTK Fixed'];
+    return fixTypes[gpsStatus.fixType] || 'Unknown';
+  };
+
+  const handleArmToggle = () => {
+    if (armState === 'disarmed') {
+      setArmState('arming');
+      setTimeout(() => setArmState('armed'), 1500);
+    } else if (armState === 'armed') {
+      setArmState('disarming');
+      setTimeout(() => setArmState('disarmed'), 1500);
+    }
+  };
+
+  const handleModeChange = () => {
+    if (isChangingMode) return;
+
+    const nextIndex = (currentModeIndex + 1) % flightModes.length;
+    setIsChangingMode(true);
+
+    setTimeout(() => {
+      if (Math.random() > 0.2) {
+        setCurrentModeIndex(nextIndex);
+      }
+      setIsChangingMode(false);
+    }, 1000);
   };
 
   return (
@@ -319,48 +354,4 @@ export default function WorkspaceDroneStarter({
       </div>
     </div>
   );
-
-  function handleArmToggle() {
-    if (armState === 'disarmed') {
-      setArmState('arming');
-      setTimeout(() => {
-        setArmState('armed');
-      }, 1500);
-    } else if (armState === 'armed') {
-      setArmState('disarming');
-      setTimeout(() => {
-        setArmState('disarmed');
-      }, 1500);
-    }
-  }
-
-  function handleModeChange() {
-    if (isChangingMode) return;
-
-    const nextIndex = (currentModeIndex + 1) % flightModes.length;
-    setIsChangingMode(true);
-
-    // Simulate mode change attempt
-    setTimeout(() => {
-      const success = Math.random() > 0.2; // 80% success rate
-
-      if (success) {
-        setCurrentModeIndex(nextIndex);
-      }
-      // If failed, stays at current mode
-
-      setIsChangingMode(false);
-    }, 1000);
-  }
-
-  function getGpsHealthStatus(): 'ok' | 'warning' | 'error' {
-    if (gpsStatus.glitch || gpsStatus.fixType === 0) return 'error';
-    if (gpsStatus.fixType >= 3 && gpsStatus.satellites >= 8 && gpsStatus.hdop < 1.0) return 'ok';
-    return 'warning';
-  }
-
-  function getGpsStatusText(): string {
-    const fixTypes = ['No Fix', '1D', '2D', '3D', 'RTK Float', 'RTK Fixed'];
-    return fixTypes[gpsStatus.fixType] || 'Unknown';
-  }
 }
