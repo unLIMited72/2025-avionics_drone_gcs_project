@@ -15,7 +15,7 @@ interface DroppedBlock {
 }
 
 function App() {
-  const [serverStatus, setServerStatus] = useState<ServerStatus>('disconnected');
+  const [serverStatus] = useState<ServerStatus>('disconnected');
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [blocks, setBlocks] = useState<DroppedBlock[]>([]);
 
@@ -24,13 +24,6 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mainRef = useRef<HTMLDivElement>(null);
-
-  const handleRetryConnection = () => {
-    setServerStatus('connecting');
-    setTimeout(() => {
-      setServerStatus('connected');
-    }, 2000);
-  };
 
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -135,7 +128,6 @@ function App() {
     <div className="gcs-app">
       <Header
         serverStatus={serverStatus}
-        onRetry={handleRetryConnection}
         onLogoClick={() => setIsDashboardOpen(!isDashboardOpen)}
       />
       <main

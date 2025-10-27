@@ -4,7 +4,6 @@ type ServerStatus = 'connected' | 'disconnected' | 'connecting';
 
 interface HeaderProps {
   serverStatus: ServerStatus;
-  onRetry?: () => void;
   onLogoClick: () => void;
 }
 
@@ -28,7 +27,6 @@ const STATUS_CONFIG = {
 
 export default function Header({
   serverStatus,
-  onRetry,
   onLogoClick
 }: HeaderProps) {
   const statusInfo = STATUS_CONFIG[serverStatus];
@@ -69,15 +67,6 @@ export default function Header({
             )}
           </span>
           <span className="status-text">{statusInfo.label}</span>
-          {serverStatus === 'disconnected' && onRetry && (
-            <button
-              className="retry-btn"
-              onClick={onRetry}
-              aria-label="Retry server connection"
-            >
-              Retry
-            </button>
-          )}
         </div>
       </div>
     </header>
