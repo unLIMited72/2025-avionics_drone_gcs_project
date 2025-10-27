@@ -37,14 +37,14 @@ export default function WorkspaceBlock({
     setPitch(0);
     setRoll(0);
     setHeading(0);
-    setAltitude(150);
+    setAltitude(120);
 
     const animationInterval = setInterval(() => {
       const time = Date.now() / 1000;
       setPitch(Math.sin(time * 0.5) * 15);
       setRoll(Math.sin(time * 0.3) * 30);
       setHeading((prev) => (prev + 1) % 360);
-      setAltitude(150 + Math.sin(time * 0.4) * 100);
+      setAltitude(120 + Math.sin(time * 0.4) * 50);
     }, 50);
 
     return () => clearInterval(animationInterval);
@@ -187,115 +187,66 @@ export default function WorkspaceBlock({
           <div className="altitude-display">
             <div className="altitude-label">Alt m</div>
             <div className="altitude-tape-container">
-              <div className="altitude-tape" style={{ transform: `translateY(${(300 - altitude) * 2}px)` }}>
+              <div className="altitude-tape" style={{ transform: `translateY(${(altitude - 120) * 0.8}px)` }}>
                 <div className="altitude-tick" style={{ top: '0px' }}>
                   <span className="tick-line"></span>
-                  <span className="tick-number">300</span>
+                  <span className="tick-number">200</span>
                 </div>
                 <div className="altitude-tick" style={{ top: '20px' }}>
                   <span className="tick-line short"></span>
                 </div>
                 <div className="altitude-tick" style={{ top: '40px' }}>
                   <span className="tick-line"></span>
-                  <span className="tick-number">280</span>
+                  <span className="tick-number">180</span>
                 </div>
                 <div className="altitude-tick" style={{ top: '60px' }}>
                   <span className="tick-line short"></span>
                 </div>
                 <div className="altitude-tick" style={{ top: '80px' }}>
                   <span className="tick-line"></span>
-                  <span className="tick-number">260</span>
+                  <span className="tick-number">160</span>
                 </div>
                 <div className="altitude-tick" style={{ top: '100px' }}>
                   <span className="tick-line short"></span>
                 </div>
                 <div className="altitude-tick" style={{ top: '120px' }}>
                   <span className="tick-line"></span>
-                  <span className="tick-number">240</span>
+                  <span className="tick-number">140</span>
                 </div>
                 <div className="altitude-tick" style={{ top: '140px' }}>
                   <span className="tick-line short"></span>
                 </div>
                 <div className="altitude-tick" style={{ top: '160px' }}>
                   <span className="tick-line"></span>
-                  <span className="tick-number">220</span>
+                  <span className="tick-number">120</span>
                 </div>
                 <div className="altitude-tick" style={{ top: '180px' }}>
                   <span className="tick-line short"></span>
                 </div>
                 <div className="altitude-tick" style={{ top: '200px' }}>
                   <span className="tick-line"></span>
-                  <span className="tick-number">200</span>
+                  <span className="tick-number">100</span>
                 </div>
                 <div className="altitude-tick" style={{ top: '220px' }}>
                   <span className="tick-line short"></span>
                 </div>
                 <div className="altitude-tick" style={{ top: '240px' }}>
                   <span className="tick-line"></span>
-                  <span className="tick-number">180</span>
+                  <span className="tick-number">80</span>
                 </div>
                 <div className="altitude-tick" style={{ top: '260px' }}>
                   <span className="tick-line short"></span>
                 </div>
                 <div className="altitude-tick" style={{ top: '280px' }}>
                   <span className="tick-line"></span>
-                  <span className="tick-number">160</span>
+                  <span className="tick-number">60</span>
                 </div>
                 <div className="altitude-tick" style={{ top: '300px' }}>
                   <span className="tick-line short"></span>
                 </div>
                 <div className="altitude-tick" style={{ top: '320px' }}>
                   <span className="tick-line"></span>
-                  <span className="tick-number">140</span>
-                </div>
-                <div className="altitude-tick" style={{ top: '340px' }}>
-                  <span className="tick-line short"></span>
-                </div>
-                <div className="altitude-tick" style={{ top: '360px' }}>
-                  <span className="tick-line"></span>
-                  <span className="tick-number">120</span>
-                </div>
-                <div className="altitude-tick" style={{ top: '380px' }}>
-                  <span className="tick-line short"></span>
-                </div>
-                <div className="altitude-tick" style={{ top: '400px' }}>
-                  <span className="tick-line"></span>
-                  <span className="tick-number">100</span>
-                </div>
-                <div className="altitude-tick" style={{ top: '420px' }}>
-                  <span className="tick-line short"></span>
-                </div>
-                <div className="altitude-tick" style={{ top: '440px' }}>
-                  <span className="tick-line"></span>
-                  <span className="tick-number">80</span>
-                </div>
-                <div className="altitude-tick" style={{ top: '460px' }}>
-                  <span className="tick-line short"></span>
-                </div>
-                <div className="altitude-tick" style={{ top: '480px' }}>
-                  <span className="tick-line"></span>
-                  <span className="tick-number">60</span>
-                </div>
-                <div className="altitude-tick" style={{ top: '500px' }}>
-                  <span className="tick-line short"></span>
-                </div>
-                <div className="altitude-tick" style={{ top: '520px' }}>
-                  <span className="tick-line"></span>
                   <span className="tick-number">40</span>
-                </div>
-                <div className="altitude-tick" style={{ top: '540px' }}>
-                  <span className="tick-line short"></span>
-                </div>
-                <div className="altitude-tick" style={{ top: '560px' }}>
-                  <span className="tick-line"></span>
-                  <span className="tick-number">20</span>
-                </div>
-                <div className="altitude-tick" style={{ top: '580px' }}>
-                  <span className="tick-line short"></span>
-                </div>
-                <div className="altitude-tick" style={{ top: '600px' }}>
-                  <span className="tick-line"></span>
-                  <span className="tick-number">0</span>
                 </div>
               </div>
               <div className="altitude-indicator-line"></div>
