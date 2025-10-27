@@ -82,7 +82,7 @@
 .left-instruments {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 1px;
   flex-shrink: 0;
 }
 
@@ -342,9 +342,10 @@
 .pfd-vertical-metrics-workspace {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  justify-content: space-between;
   flex-shrink: 0;
   align-self: flex-start;
+  height: 241px;
 }
 
 .altitude-display {
@@ -353,12 +354,12 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  flex-shrink: 0;
-  min-width: 80px;
+  flex: 1;
+  min-width: 75px;
   background: rgba(0, 212, 255, 0.1);
   border: 2px solid rgba(0, 212, 255, 0.4);
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   transition: all 0.3s ease;
 }
 
@@ -409,7 +410,7 @@
 }
 
 .altitude-label {
-  font-size: 9px;
+  font-size: 8px;
   color: #00d4ff;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -419,14 +420,14 @@
 }
 
 .altitude-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #00d4ff;
   font-family: 'Courier New', monospace;
   border: 1px solid rgba(0, 212, 255, 0.4);
   border-radius: 4px;
-  padding: 2px 8px;
-  min-width: 60px;
+  padding: 2px 6px;
+  min-width: 55px;
   text-align: center;
   background: rgba(0, 0, 0, 0.3);
 }
