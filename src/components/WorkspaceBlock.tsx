@@ -219,16 +219,16 @@ export default function WorkspaceBlock({
 
           <div className="pfd-vertical-metrics-workspace">
             <div className="altitude-display">
-              <div className="altitude-label">Alt m</div>
-              <div className="altitude-value">120</div>
+              <div className="altitude-label">Altitude</div>
+              <div className="altitude-value">120 m</div>
             </div>
             <div className="altitude-display velocity-display">
-              <div className="altitude-label">Vel m/s</div>
-              <div className="altitude-value">{velocity.toFixed(1)}</div>
+              <div className="altitude-label">Velocity</div>
+              <div className="altitude-value">{velocity.toFixed(1)} m/s</div>
             </div>
             <div className="altitude-display acceleration-display">
-              <div className="altitude-label">Acc m/s²</div>
-              <div className="altitude-value">{acceleration.toFixed(1)}</div>
+              <div className="altitude-label">Acceleration</div>
+              <div className="altitude-value">{acceleration.toFixed(1)} m/s²</div>
             </div>
             <div className="altitude-display position-display">
               <div className="altitude-label">Position</div>
