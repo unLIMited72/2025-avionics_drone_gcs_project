@@ -10,6 +10,8 @@ interface WorkspaceBlockProps {
   pan: { x: number; y: number };
   onRemove: (id: string) => void;
   onPositionChange: (id: string, x: number, y: number) => void;
+  velocity: number;
+  acceleration: number;
 }
 
 export default function WorkspaceBlock({
@@ -18,7 +20,9 @@ export default function WorkspaceBlock({
   initialY,
   zoom,
   onRemove,
-  onPositionChange
+  onPositionChange,
+  velocity,
+  acceleration
 }: WorkspaceBlockProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -181,9 +185,19 @@ export default function WorkspaceBlock({
             </div>
           </div>
 
-          <div className="altitude-display">
-            <div className="altitude-label">Alt m</div>
-            <div className="altitude-value">120</div>
+          <div className="pfd-vertical-metrics-workspace">
+            <div className="altitude-display">
+              <div className="altitude-label">Alt m</div>
+              <div className="altitude-value">120</div>
+            </div>
+            <div className="altitude-display velocity-display">
+              <div className="altitude-label">Vel m/s</div>
+              <div className="altitude-value">{velocity.toFixed(1)}</div>
+            </div>
+            <div className="altitude-display acceleration-display">
+              <div className="altitude-label">Acc m/s²</div>
+              <div className="altitude-value">{acceleration.toFixed(1)}</div>
+            </div>
           </div>
 
           <div className="heading-indicator">
@@ -221,19 +235,6 @@ export default function WorkspaceBlock({
               <div className="row-item">
                 <span className="item-label">Lon:</span>
                 <span className="item-value">-122.4194°</span>
-              </div>
-            </div>
-          </div>
-          <div className="data-row">
-            <div className="row-label">Motion</div>
-            <div className="row-items">
-              <div className="row-item">
-                <span className="item-label">Vel:</span>
-                <span className="item-value">15.2 m/s</span>
-              </div>
-              <div className="row-item">
-                <span className="item-label">Acc:</span>
-                <span className="item-value">2.3 m/s²</span>
               </div>
             </div>
           </div>

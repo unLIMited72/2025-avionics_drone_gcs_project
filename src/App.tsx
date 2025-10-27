@@ -218,6 +218,8 @@ function App() {
                   b.id === id ? { ...b, x: newX, y: newY } : b
                 ));
               }}
+              velocity={15.2}
+              acceleration={2.3}
             />
           ))}
         </div>

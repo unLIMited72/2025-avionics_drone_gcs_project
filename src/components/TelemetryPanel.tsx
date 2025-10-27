@@ -7,6 +7,8 @@ interface TelemetryData {
   heading: number;
   satellites: number;
   flightMode: string;
+  velocity: number;
+  acceleration: number;
 }
 
 interface TelemetryPanelProps {
@@ -37,9 +39,19 @@ export default function TelemetryPanel({ data }: TelemetryPanelProps) {
             </svg>
           </div>
 
-          <div className="pfd-altitude">
-            <div className="altitude-value">{data.altitude.toFixed(1)}</div>
-            <div className="altitude-label">ALT (m)</div>
+          <div className="pfd-vertical-metrics">
+            <div className="pfd-altitude">
+              <div className="altitude-value">{data.altitude.toFixed(1)}</div>
+              <div className="altitude-label">Alt m</div>
+            </div>
+            <div className="pfd-altitude pfd-velocity">
+              <div className="altitude-value">{data.velocity.toFixed(1)}</div>
+              <div className="altitude-label">Vel m/s</div>
+            </div>
+            <div className="pfd-altitude pfd-acceleration">
+              <div className="altitude-value">{data.acceleration.toFixed(1)}</div>
+              <div className="altitude-label">Acc m/s²</div>
+            </div>
           </div>
 
           <div className="circular-gauge">
