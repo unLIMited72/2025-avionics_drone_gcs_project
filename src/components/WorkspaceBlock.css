@@ -371,27 +371,30 @@
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 0 4px;
+  gap: 4px;
 }
 
 .tick-line {
-  width: 12px;
+  width: 20px;
   height: 2px;
   background: #fff;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
 .tick-line.short {
-  width: 6px;
+  width: 10px;
 }
 
 .tick-number {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   color: #fff;
   font-family: 'Courier New', monospace;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+  position: absolute;
+  right: 2px;
 }
 
 .altitude-indicator-line {
