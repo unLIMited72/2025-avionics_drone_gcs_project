@@ -10,11 +10,6 @@ interface WorkspaceDroneStarterProps {
   onPositionChange: (id: string, x: number, y: number) => void;
 }
 
-type ArmState = 'armed' | 'disarmed';
-type FlightMode = 'stabilize' | 'guided' | 'loiter' | 'rtl' | 'auto';
-type HeartbeatState = 'connected' | 'disconnected';
-
-const FLIGHT_MODES: FlightMode[] = ['stabilize', 'guided', 'loiter', 'rtl', 'auto'];
 
 export default function WorkspaceDroneStarter({
   id,
@@ -32,17 +27,13 @@ export default function WorkspaceDroneStarter({
   const [serialNumber, setSerialNumber] = useState('');
   const [droneName, setDroneName] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const [heartbeat, setHeartbeat] = useState<HeartbeatState>('disconnected');
-  const [armState, setArmState] = useState<ArmState>('disarmed');
-  const [flightMode, setFlightMode] = useState<FlightMode>('stabilize');
-  const [showModeMenu, setShowModeMenu] = useState(false);
 
   useEffect(() => {
     setPosition({ x: initialX, y: initialY });
   }, [initialX, initialY]);
 
   const handleMouseDown = (e: MouseEvent) => {
-    if ((e.target as HTMLElement).closest('input, button, .mode-selector')) {
+    if ((e.target as HTMLElement).closest('input, button')) {
       return;
     }
 
@@ -96,33 +87,11 @@ export default function WorkspaceDroneStarter({
   const handleConnect = () => {
     if (serialNumber.trim() && droneName.trim()) {
       setIsConnected(true);
-      setHeartbeat('connected');
     }
   };
 
   const handleDisconnect = () => {
     setIsConnected(false);
-    setHeartbeat('disconnected');
-    setArmState('disarmed');
-  };
-
-  const handleArm = () => {
-    if (isConnected && armState === 'disarmed') {
-      setArmState('armed');
-    }
-  };
-
-  const handleDisarm = () => {
-    if (isConnected && armState === 'armed') {
-      setArmState('disarmed');
-    }
-  };
-
-  const handleModeChange = (mode: FlightMode) => {
-    if (isConnected) {
-      setFlightMode(mode);
-      setShowModeMenu(false);
-    }
   };
 
   return (
@@ -187,68 +156,6 @@ export default function WorkspaceDroneStarter({
               Disconnect
             </button>
           )}
-        </div>
-
-        <div className="status-section">
-          <div className="status-row">
-            <span className="status-label">Heartbeat:</span>
-            <span className={`status-value heartbeat-${heartbeat}`}>{heartbeat}</span>
-          </div>
-
-          <div className="status-row">
-            <span className="status-label">Arm State:</span>
-            <span className={`status-value arm-${armState}`}>{armState}</span>
-          </div>
-        </div>
-
-        <div className="control-section">
-          <div className="arm-controls">
-            <button
-              className={`arm-btn ${armState === 'armed' ? 'active' : ''}`}
-              onClick={handleArm}
-              disabled={!isConnected || armState === 'armed'}
-            >
-              ARM
-            </button>
-            <button
-              className={`disarm-btn ${armState === 'disarmed' ? 'active' : ''}`}
-              onClick={handleDisarm}
-              disabled={!isConnected || armState === 'disarmed'}
-            >
-              DISARM
-            </button>
-          </div>
-
-          <div className="mode-section">
-            <span className="mode-label">Flight Mode:</span>
-            <div className="mode-selector">
-              <button
-                className="mode-display"
-                onClick={() => setShowModeMenu(!showModeMenu)}
-                disabled={!isConnected}
-              >
-                <span className={`mode-indicator mode-${flightMode}`}></span>
-                <span className="mode-text">{flightMode.toUpperCase()}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </button>
-              {showModeMenu && isConnected && (
-                <div className="mode-menu">
-                  {FLIGHT_MODES.map((mode) => (
-                    <button
-                      key={mode}
-                      className={`mode-option ${flightMode === mode ? 'selected' : ''}`}
-                      onClick={() => handleModeChange(mode)}
-                    >
-                      <span className={`mode-indicator mode-${mode}`}></span>
-                      {mode.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>
