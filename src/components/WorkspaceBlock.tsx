@@ -111,7 +111,8 @@ export default function WorkspaceBlock({
       </div>
       <div className="workspace-block-body">
         <div className="instruments-row">
-          <div className="attitude-indicator">
+          <div className="left-instruments">
+            <div className="attitude-indicator">
             <div className="attitude-frame-outer"></div>
             <div className="attitude-frame-inner"></div>
             <div className="roll-marker"></div>
@@ -185,22 +186,7 @@ export default function WorkspaceBlock({
             </div>
           </div>
 
-          <div className="pfd-vertical-metrics-workspace">
-            <div className="altitude-display">
-              <div className="altitude-label">Alt m</div>
-              <div className="altitude-value">120</div>
-            </div>
-            <div className="altitude-display velocity-display">
-              <div className="altitude-label">Vel m/s</div>
-              <div className="altitude-value">{velocity.toFixed(1)}</div>
-            </div>
-            <div className="altitude-display acceleration-display">
-              <div className="altitude-label">Acc m/s²</div>
-              <div className="altitude-value">{acceleration.toFixed(1)}</div>
-            </div>
-          </div>
-
-          <div className="heading-indicator">
+            <div className="heading-indicator">
             <div className="heading-frame-outer"></div>
             <div className="heading-frame-inner"></div>
             <div className="compass">
@@ -220,6 +206,22 @@ export default function WorkspaceBlock({
               </div>
               <div className="heading-arrow" style={{ transform: `translate(-50%, -50%) rotate(${heading}deg)` }}></div>
               <div className="heading-value">{String(heading).padStart(3, '0')}°</div>
+            </div>
+          </div>
+          </div>
+
+          <div className="pfd-vertical-metrics-workspace">
+            <div className="altitude-display">
+              <div className="altitude-label">Alt m</div>
+              <div className="altitude-value">120</div>
+            </div>
+            <div className="altitude-display velocity-display">
+              <div className="altitude-label">Vel m/s</div>
+              <div className="altitude-value">{velocity.toFixed(1)}</div>
+            </div>
+            <div className="altitude-display acceleration-display">
+              <div className="altitude-label">Acc m/s²</div>
+              <div className="altitude-value">{acceleration.toFixed(1)}</div>
             </div>
           </div>
         </div>
