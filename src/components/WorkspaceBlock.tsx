@@ -223,20 +223,17 @@ export default function WorkspaceBlock({
               <div className="altitude-label">Acc m/s²</div>
               <div className="altitude-value">{acceleration.toFixed(1)}</div>
             </div>
-          </div>
-        </div>
-
-        <div className="flight-data-grid">
-          <div className="data-row">
-            <div className="row-label">Position</div>
-            <div className="row-items">
-              <div className="row-item">
-                <span className="item-label">Lat:</span>
-                <span className="item-value">37.7749°</span>
-              </div>
-              <div className="row-item">
-                <span className="item-label">Lon:</span>
-                <span className="item-value">-122.4194°</span>
+            <div className="altitude-display position-display">
+              <div className="altitude-label">Position</div>
+              <div className="position-values">
+                <div className="position-item">
+                  <span className="position-label">Lat:</span>
+                  <span className="position-value">37.7749°</span>
+                </div>
+                <div className="position-item">
+                  <span className="position-label">Lon:</span>
+                  <span className="position-value">-122.4194°</span>
+                </div>
               </div>
             </div>
           </div>
