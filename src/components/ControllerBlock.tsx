@@ -147,32 +147,25 @@ export default function ControllerBlock({
 
         <div className="flight-mode-section">
           <div className="section-title">Flight Control Mode</div>
-          <div className="mode-selector">
-            <button
-              className={`mode-option ${flightMode === 'mission' ? 'active' : ''}`}
-              onClick={() => setFlightMode('mission')}
-            >
-              <div className="mode-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-              </div>
-              <span className="mode-label">Mission Flight</span>
-            </button>
-            <button
-              className={`mode-option ${flightMode === 'controller' ? 'active' : ''}`}
-              onClick={() => setFlightMode('controller')}
-            >
-              <div className="mode-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                  <circle cx="8" cy="14" r="2" />
-                  <circle cx="16" cy="14" r="2" />
-                </svg>
-              </div>
-              <span className="mode-label">Controller Flight</span>
-            </button>
+          <div className="mode-checkboxes">
+            <label className="mode-checkbox-item">
+              <input
+                type="checkbox"
+                checked={flightMode === 'mission'}
+                onChange={() => setFlightMode('mission')}
+                className="mode-checkbox"
+              />
+              <span className="mode-checkbox-label">Mission Flight</span>
+            </label>
+            <label className="mode-checkbox-item">
+              <input
+                type="checkbox"
+                checked={flightMode === 'controller'}
+                onChange={() => setFlightMode('controller')}
+                className="mode-checkbox"
+              />
+              <span className="mode-checkbox-label">Controller Flight</span>
+            </label>
           </div>
         </div>
       </div>
