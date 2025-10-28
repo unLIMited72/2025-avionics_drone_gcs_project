@@ -166,24 +166,24 @@ export default function WorkspaceDroneStarter({
 
       <div className="drone-starter-body">
         <div className="connection-section">
-          <div className="input-wrapper">
-            <input
-              type="text"
-              className="drone-input"
-              placeholder="Serial Number"
-              value={serialNumber}
-              onChange={(e) => setSerialNumber(e.target.value)}
-              disabled={isConnected}
-            />
-            <input
-              type="text"
-              className="drone-input"
-              placeholder="Drone Name"
-              value={droneName}
-              onChange={(e) => setDroneName(e.target.value)}
-              disabled={isConnected}
-            />
-          </div>
+          {!isConnected && (
+            <div className="input-wrapper">
+              <input
+                type="text"
+                className="drone-input"
+                placeholder="Serial Number"
+                value={serialNumber}
+                onChange={(e) => setSerialNumber(e.target.value)}
+              />
+              <input
+                type="text"
+                className="drone-input"
+                placeholder="Drone Name"
+                value={droneName}
+                onChange={(e) => setDroneName(e.target.value)}
+              />
+            </div>
+          )}
           {!isConnected ? (
             <button
               className="connect-btn"
