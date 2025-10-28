@@ -1,6 +1,6 @@
 .workspace-drone-starter {
   position: absolute;
-  width: 370px;
+  width: auto;
   background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
   border: 2px solid rgba(0, 255, 150, 0.4);
   border-radius: 8px;
@@ -403,6 +403,7 @@
   align-items: center;
   justify-content: space-between;
   min-height: auto;
+  flex: 1;
 }
 
 .arm-status-display {
