@@ -46,10 +46,7 @@ export default function WorkspaceDroneStarter({
     amperage: 12.3
   });
   const [armState, setArmState] = useState<'disarmed' | 'arming' | 'armed' | 'disarming'>('disarmed');
-  const [currentModeIndex, setCurrentModeIndex] = useState(0);
-  const [isChangingMode, setIsChangingMode] = useState(false);
-
-  const flightModes = ['MANUAL', 'STABILIZED', 'ALTITUDE', 'POSITION', 'OFFBOARD', 'MISSION', 'RTL', 'LAND'];
+  const [flightMode] = useState<'Pre-flight' | 'Offboard' | 'RTL - Land'>('Pre-flight');
 
   useEffect(() => {
     setPosition({ x: initialX, y: initialY });
@@ -136,20 +133,6 @@ export default function WorkspaceDroneStarter({
       setArmState('disarming');
       setTimeout(() => setArmState('disarmed'), 1500);
     }
-  };
-
-  const handleModeChange = () => {
-    if (isChangingMode) return;
-
-    const nextIndex = (currentModeIndex + 1) % flightModes.length;
-    setIsChangingMode(true);
-
-    setTimeout(() => {
-      if (Math.random() > 0.2) {
-        setCurrentModeIndex(nextIndex);
-      }
-      setIsChangingMode(false);
-    }, 1000);
   };
 
   return (
@@ -361,19 +344,8 @@ export default function WorkspaceDroneStarter({
               <div className="flight-mode-section">
                 <div className="mode-status-display">
                   <div className="mode-label">Flight Mode</div>
-                  <div className="mode-value">{flightModes[currentModeIndex]}</div>
+                  <div className="mode-value">{flightMode}</div>
                 </div>
-                <button
-                  className={`mode-dial-button ${isChangingMode ? 'changing' : ''}`}
-                  onClick={handleModeChange}
-                  disabled={isChangingMode}
-                >
-                  <div className="dial-outer">
-                    <div className="dial-inner" style={{ transform: `rotate(${currentModeIndex * 45}deg)` }}>
-                      <div className="dial-indicator"></div>
-                    </div>
-                  </div>
-                </button>
               </div>
             </div>
           </div>
