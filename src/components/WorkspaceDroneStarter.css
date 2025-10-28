@@ -296,6 +296,97 @@
   letter-spacing: 0.2px;
 }
 
+.battery-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(0, 212, 255, 0.2);
+  margin-top: 4px;
+}
+
+.battery-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+.battery-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.battery-icon {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.battery-body {
+  display: flex;
+  gap: 1px;
+  padding: 2px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  height: 14px;
+}
+
+.battery-cell {
+  width: 4px;
+  height: 100%;
+  background: rgba(100, 100, 100, 0.3);
+  border-radius: 1px;
+  transition: background 0.3s ease;
+}
+
+.battery-cell.filled {
+  background: linear-gradient(180deg, #00ff96 0%, #00cc77 100%);
+  box-shadow: 0 0 3px rgba(0, 255, 150, 0.4);
+}
+
+.battery-body:has(.battery-cell.filled:nth-child(-n+3):last-child) .battery-cell.filled {
+  background: linear-gradient(180deg, #ff6464 0%, #cc3333 100%);
+  box-shadow: 0 0 3px rgba(255, 100, 100, 0.4);
+}
+
+.battery-body:has(.battery-cell.filled:nth-child(-n+5):last-child):not(:has(.battery-cell.filled:nth-child(-n+3):last-child)) .battery-cell.filled {
+  background: linear-gradient(180deg, #ffaa00 0%, #cc8800 100%);
+  box-shadow: 0 0 3px rgba(255, 170, 0, 0.4);
+}
+
+.battery-tip {
+  width: 3px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 0 2px 2px 0;
+}
+
+.battery-percentage {
+  font-size: 9px;
+  font-weight: 700;
+  color: #00ff96;
+  letter-spacing: 0.2px;
+  min-width: 30px;
+}
+
+.battery-stats {
+  display: flex;
+  gap: 8px;
+  padding-left: 2px;
+}
+
+.battery-stat {
+  font-size: 8px;
+  font-weight: 600;
+  color: #aaa;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.1px;
+}
+
 .arm-control-panel {
   display: flex;
   flex-direction: column;

@@ -40,6 +40,11 @@ export default function WorkspaceDroneStarter({
   const [homePosition] = useState<'set' | 'not_set'>('not_set');
   const [imuStatus] = useState<'active' | 'no_data'>('no_data');
   const [barometerStatus] = useState<'ok' | 'error'>('error');
+  const [batteryInfo] = useState<{ percentage: number; voltage: number; amperage: number }>({
+    percentage: 85,
+    voltage: 22.4,
+    amperage: 12.3
+  });
   const [armState, setArmState] = useState<'disarmed' | 'arming' | 'armed' | 'disarming'>('disarmed');
   const [currentModeIndex, setCurrentModeIndex] = useState(0);
   const [isChangingMode, setIsChangingMode] = useState(false);
@@ -304,6 +309,28 @@ export default function WorkspaceDroneStarter({
                   <div className={`health-value health-${barometerStatus}`}>
                     {barometerStatus === 'ok' ? 'OK' : 'Error'}
                   </div>
+                </div>
+              </div>
+
+              <div className="battery-item">
+                <div className="battery-label">Battery</div>
+                <div className="battery-display">
+                  <div className="battery-icon">
+                    <div className="battery-body">
+                      {Array.from({ length: 10 }, (_, i) => (
+                        <div
+                          key={i}
+                          className={`battery-cell ${i < Math.floor(batteryInfo.percentage / 10) ? 'filled' : ''}`}
+                        />
+                      ))}
+                    </div>
+                    <div className="battery-tip"></div>
+                  </div>
+                  <div className="battery-percentage">{batteryInfo.percentage}%</div>
+                </div>
+                <div className="battery-stats">
+                  <span className="battery-stat">{batteryInfo.voltage.toFixed(1)}V</span>
+                  <span className="battery-stat">{batteryInfo.amperage.toFixed(1)}A</span>
                 </div>
               </div>
               </div>
