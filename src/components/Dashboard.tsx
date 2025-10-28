@@ -1,6 +1,7 @@
 import './Dashboard.css';
 import FlightStateBlock from './FlightStateBlock';
 import DroneStarterBlock from './DroneStarterBlock';
+import ControllerBlockButton from './ControllerBlockButton';
 
 interface DashboardProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export default function Dashboard({ isOpen }: DashboardProps) {
           <div className="blocks-list">
             <DroneStarterBlock />
             <FlightStateBlock />
+            <ControllerBlockButton />
           </div>
         </div>
       </div>
