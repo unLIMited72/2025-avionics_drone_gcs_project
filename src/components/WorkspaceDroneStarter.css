@@ -62,12 +62,13 @@
 
 .input-wrapper {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  align-items: center;
+  width: 100%;
 }
 
 .drone-input {
-  flex: 1;
+  width: 100%;
   padding: 8px 12px;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(0, 255, 150, 0.3);
@@ -77,6 +78,7 @@
   font-family: 'Courier New', monospace;
   transition: all 0.2s ease;
   outline: none;
+  box-sizing: border-box;
 }
 
 .drone-input:focus {
@@ -159,7 +161,7 @@
   border: 1px solid rgba(0, 212, 255, 0.3);
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.2);
-  width: 180px;
+  width: 170px;
   flex-shrink: 0;
 }
 
