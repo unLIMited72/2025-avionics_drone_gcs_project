@@ -31,7 +31,7 @@ export default function WorkspaceDroneStarter({
   const [px4Connection] = useState<'connected' | 'disconnected'>('disconnected');
   const [failsafe] = useState<'normal' | 'active'>('normal');
   const [ekfStatus] = useState<'ok' | 'unstable' | 'invalid'>('invalid');
-  const [gpsStatus] = useState<{ fixType: number; satellites: number; hdop: number; glitch: boolean }>({
+  const [gpsStatus] = useState({
     fixType: 0,
     satellites: 0,
     hdop: 99.9,
@@ -40,7 +40,7 @@ export default function WorkspaceDroneStarter({
   const [homePosition] = useState<'set' | 'not_set'>('not_set');
   const [imuStatus] = useState<'active' | 'no_data'>('no_data');
   const [barometerStatus] = useState<'ok' | 'error'>('error');
-  const [batteryInfo] = useState<{ percentage: number; voltage: number; amperage: number }>({
+  const [batteryInfo] = useState({
     percentage: 85,
     voltage: 22.4,
     amperage: 12.3
@@ -53,17 +53,13 @@ export default function WorkspaceDroneStarter({
   }, [initialX, initialY]);
 
   const handleMouseDown = (e: MouseEvent) => {
-    if ((e.target as HTMLElement).closest('input, button')) {
+    const target = e.target as HTMLElement;
+    if (target.closest('input, button')) {
       return;
     }
 
-    if (blockRef.current) {
-      setDragStart({
-        x: e.clientX,
-        y: e.clientY
-      });
-      setIsDragging(true);
-    }
+    setDragStart({ x: e.clientX, y: e.clientY });
+    setIsDragging(true);
     e.stopPropagation();
   };
 
