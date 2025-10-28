@@ -1,6 +1,6 @@
 .workspace-drone-starter {
   position: absolute;
-  width: 180px;
+  width: 370px;
   background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
   border: 2px solid rgba(0, 255, 150, 0.4);
   border-radius: 8px;
@@ -56,18 +56,18 @@
 
 .connection-section {
   display: flex;
-  align-items: stretch;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .input-wrapper {
-  flex: 1;
   display: flex;
-  flex-direction: column;
   gap: 8px;
+  align-items: center;
 }
 
 .drone-input {
+  flex: 1;
   padding: 8px 12px;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(0, 255, 150, 0.3);
@@ -97,13 +97,13 @@
 
 .connect-btn,
 .disconnect-btn {
-  min-width: 80px;
-  padding: 0 12px;
+  width: 100%;
+  padding: 10px 16px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
