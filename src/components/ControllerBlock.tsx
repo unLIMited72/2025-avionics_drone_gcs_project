@@ -114,37 +114,35 @@ export default function ControllerBlock({
       <div className="controller-body">
         <div className="limits-section">
           <div className="section-title">Flight Limits</div>
-          <div className="limit-group">
-            <label className="limit-label">Max Speed (m/s)</label>
-            <input
-              type="number"
-              className="limit-input"
-              placeholder="0"
-              value={maxSpeed}
-              onChange={(e) => setMaxSpeed(e.target.value)}
-              min="0"
-              step="0.1"
-            />
+          <div className="limits-content">
+            <div className="limits-inputs">
+              <input
+                type="number"
+                className="limit-input"
+                placeholder="Max Speed (m/s)"
+                value={maxSpeed}
+                onChange={(e) => setMaxSpeed(e.target.value)}
+                min="0"
+                step="0.1"
+              />
+              <input
+                type="number"
+                className="limit-input"
+                placeholder="Max Altitude (m)"
+                value={maxAltitude}
+                onChange={(e) => setMaxAltitude(e.target.value)}
+                min="0"
+                step="1"
+              />
+            </div>
+            <button
+              className={`set-btn ${isSaved ? 'saved' : ''}`}
+              onClick={handleSet}
+              disabled={isSetDisabled}
+            >
+              {isSaved ? 'Saved!' : 'Set'}
+            </button>
           </div>
-          <div className="limit-group">
-            <label className="limit-label">Max Altitude (m)</label>
-            <input
-              type="number"
-              className="limit-input"
-              placeholder="0"
-              value={maxAltitude}
-              onChange={(e) => setMaxAltitude(e.target.value)}
-              min="0"
-              step="1"
-            />
-          </div>
-          <button
-            className={`set-btn ${isSaved ? 'saved' : ''}`}
-            onClick={handleSet}
-            disabled={isSetDisabled}
-          >
-            {isSaved ? 'Saved!' : 'Set'}
-          </button>
         </div>
 
         <div className="flight-mode-section">
