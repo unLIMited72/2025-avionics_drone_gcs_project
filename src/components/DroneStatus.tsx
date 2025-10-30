@@ -10,6 +10,7 @@ interface Drone {
 
 export default function DroneStatus() {
   const [droneCount, setDroneCount] = useState<number>(0);
+  const [, setDroneIds] = useState<string[]>([]);
   const [serverConnected, setServerConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const pollIntervalRef = useRef<number | null>(null);
@@ -44,31 +45,34 @@ export default function DroneStatus() {
 
       console.log('[DroneStatus] Parsed list:', list);
       console.log('[DroneStatus] Extracted IDs:', ids);
-      console.log('[DroneStatus] Unique IDs:', uniqueIds);
-      console.log('[DroneStatus] Computed count:', count);
-      console.log('[DroneStatus] state.droneCount before set:', count);
+      console.log('[DroneStatus] Unique IDs (REPLACE):', uniqueIds);
+      console.log('[DroneStatus] Computed count (REPLACE):', count);
 
       setDroneCount(count);
-      console.log('[DroneStatus] state.droneCount after set:', count);
+      setDroneIds(uniqueIds);
+      console.log('[DroneStatus] state.droneCount:', count);
+      console.log('[DroneStatus] state.droneIds:', uniqueIds);
       setServerConnected(true);
       setIsLoading(false);
     } catch (error) {
       console.error('[DroneStatus] Error fetching drones:', error);
       setDroneCount(0);
+      setDroneIds([]);
       setServerConnected(false);
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    console.log('[DroneStatus] Component mounted, initializing count to 0');
+    console.log('[DroneStatus] Component mounted - initializing to 0');
     setDroneCount(0);
+    setDroneIds([]);
 
     updateDroneCount();
 
     pollIntervalRef.current = window.setInterval(() => {
       updateDroneCount();
-    }, 2000);
+    }, 3000);
 
     return () => {
       if (pollIntervalRef.current) {
