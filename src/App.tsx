@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, type DragEvent, type MouseEvent as ReactMouseEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type DragEvent } from 'react';
 import Header, { type ServerStatus } from './components/Header';
 import Dashboard from './components/Dashboard';
 import DigitalClock from './components/DigitalClock';
@@ -9,8 +9,6 @@ import ControllerBlock from './components/ControllerBlock';
 import WorkspaceLog from './components/WorkspaceLog';
 import Minimap from './components/Minimap';
 import MapView from './components/MapView';
-import PlanTools from './components/PlanTools';
-import { doRectanglesIntersect, calculateAnchorPoint } from './utils/selectionUtils';
 import './App.css';
 
 interface DroppedBlock {
@@ -19,25 +17,6 @@ interface DroppedBlock {
   x: number;
   y: number;
   isMinimized?: boolean;
-  nodeId?: string;
-  droneName?: string;
-}
-
-interface NodeGroup {
-  id: string;
-  droneName: string;
-  blockIds: string[];
-  x: number;
-  y: number;
-}
-
-interface Edge {
-  id: string;
-  fromId: string;
-  toId: string;
-  anchorA: { x: number; y: number };
-  anchorB: { x: number; y: number };
-  mode: 'horizontal' | 'vertical';
 }
 
 function getBlockDimensions(type: string): { width: number; height: number } {
@@ -69,14 +48,6 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mainRef = useRef<HTMLDivElement>(null);
-
-  const [isDragSelecting, setIsDragSelecting] = useState(false);
-  const [marqueeStart, setMarqueeStart] = useState({ x: 0, y: 0 });
-  const [marqueeEnd, setMarqueeEnd] = useState({ x: 0, y: 0 });
-  const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([]);
-  const [nodes, setNodes] = useState<NodeGroup[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
-  const [nodeCounter, setNodeCounter] = useState(1);
 
   const CANVAS_WIDTH = 4000;
   const CANVAS_HEIGHT = 3000;
@@ -120,284 +91,32 @@ function App() {
     setPan(clampPan(newPanX, newPanY, newZoom));
   }, [zoom, pan, clampPan]);
 
-  const handleMouseDown = (e: ReactMouseEvent) => {
-    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log, .plan-tools')) {
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log')) {
       return;
     }
-
-    if (isDragSelecting && mainRef.current) {
-      const rect = mainRef.current.getBoundingClientRect();
-      const startX = e.clientX - rect.left;
-      const startY = e.clientY - rect.top;
-      setMarqueeStart({ x: startX, y: startY });
-      setMarqueeEnd({ x: startX, y: startY });
-      console.log('MARQUEE_START', { client: [e.clientX, e.clientY], local: [startX, startY] });
-      return;
-    }
-
     setIsDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
 
   useEffect(() => {
-    if (!isDragging && !isDragSelecting) return;
+    if (!isDragging) return;
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
       if (!mainRef.current) return;
-
-      if (isDragSelecting) {
-        e.preventDefault();
-        e.stopPropagation();
-        const rect = mainRef.current.getBoundingClientRect();
-        const currentX = e.clientX - rect.left;
-        const currentY = e.clientY - rect.top;
-        setMarqueeEnd({ x: currentX, y: currentY });
-      } else if (isDragging) {
-        setPan(clampPan(e.clientX - dragStart.x, e.clientY - dragStart.y, zoom));
-      }
+      setPan(clampPan(e.clientX - dragStart.x, e.clientY - dragStart.y, zoom));
     };
 
-    const handleGlobalMouseUp = () => {
-      if (isDragSelecting) {
-        finishMarqueeSelection();
-      }
-      setIsDragging(false);
-    };
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (isDragSelecting) {
-          console.log('MARQUEE_CANCEL');
-          setIsDragSelecting(false);
-          setMarqueeStart({ x: 0, y: 0 });
-          setMarqueeEnd({ x: 0, y: 0 });
-        }
-        setSelectedBlockIds([]);
-      }
-    };
+    const handleGlobalMouseUp = () => setIsDragging(false);
 
     document.addEventListener('mousemove', handleGlobalMouseMove);
     document.addEventListener('mouseup', handleGlobalMouseUp);
-    document.addEventListener('keydown', handleEscape);
 
     return () => {
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
-      document.removeEventListener('keydown', handleEscape);
     };
-  }, [isDragging, isDragSelecting, dragStart, zoom, clampPan, marqueeStart, marqueeEnd]);
-
-  const finishMarqueeSelection = () => {
-    if (!mainRef.current) return;
-
-    const rect = mainRef.current.getBoundingClientRect();
-    const marqueeRect = {
-      left: Math.min(marqueeStart.x, marqueeEnd.x),
-      top: Math.min(marqueeStart.y, marqueeEnd.y),
-      right: Math.max(marqueeStart.x, marqueeEnd.x),
-      bottom: Math.max(marqueeStart.y, marqueeEnd.y)
-    };
-
-    const selected: string[] = [];
-    const viewportCenterX = rect.width / 2;
-    const viewportCenterY = rect.height / 2;
-
-    blocks.forEach(block => {
-      const dims = getBlockDimensions(block.type);
-      const screenX = (block.x * zoom) + viewportCenterX + pan.x;
-      const screenY = (block.y * zoom) + viewportCenterY + pan.y;
-      const blockRect = {
-        left: screenX,
-        top: screenY,
-        right: screenX + dims.width * zoom,
-        bottom: screenY + dims.height * zoom
-      };
-
-      if (doRectanglesIntersect(marqueeRect, blockRect)) {
-        selected.push(block.id);
-      }
-    });
-
-    console.log('MARQUEE_END', { selectedIds: selected, count: selected.length });
-    setSelectedBlockIds(selected);
-    setIsDragSelecting(false);
-    setMarqueeStart({ x: 0, y: 0 });
-    setMarqueeEnd({ x: 0, y: 0 });
-  };
-
-  const recomputeEdges = useCallback((reason: 'drag' | 'zoom' | 'pan' | 'node' | 'resize') => {
-    console.log('EDGE_RECOMPUTE', { reason });
-    setEdges(prevEdges => {
-      return prevEdges.map(edge => {
-        const fromBlock = blocks.find(b => b.id === edge.fromId);
-        const toBlock = blocks.find(b => b.id === edge.toId);
-        if (!fromBlock || !toBlock) return edge;
-
-        const fromDims = getBlockDimensions(fromBlock.type);
-        const toDims = getBlockDimensions(toBlock.type);
-        const fromRect = { x: fromBlock.x, y: fromBlock.y, width: fromDims.width, height: fromDims.height };
-        const toRect = { x: toBlock.x, y: toBlock.y, width: toDims.width, height: toDims.height };
-
-        const anchorAResult = calculateAnchorPoint(fromRect, toRect, true);
-        const anchorBResult = calculateAnchorPoint(fromRect, toRect, false);
-
-        return {
-          ...edge,
-          anchorA: { x: anchorAResult.x, y: anchorAResult.y },
-          anchorB: { x: anchorBResult.x, y: anchorBResult.y },
-          mode: anchorAResult.mode
-        };
-      });
-    });
-  }, [blocks]);
-
-  useEffect(() => {
-    if (edges.length > 0) {
-      recomputeEdges('zoom');
-    }
-  }, [zoom]);
-
-  useEffect(() => {
-    if (edges.length > 0) {
-      recomputeEdges('pan');
-    }
-  }, [pan]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (edges.length > 0) {
-        recomputeEdges('resize');
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [edges.length, recomputeEdges]);
-
-  const handleDragSelectStart = () => {
-    setIsDragSelecting(true);
-    setSelectedBlockIds([]);
-  };
-
-  const handleMakeNode = () => {
-    if (selectedBlockIds.length === 0) return;
-
-    const selectedBlocks = blocks.filter(b => selectedBlockIds.includes(b.id));
-    const starterBlock = selectedBlocks.find(b => b.type === 'drone-starter');
-    const droneName = starterBlock?.droneName || 'Unnamed';
-
-    const nodeId = `node-${nodeCounter}`;
-    setNodeCounter(prev => prev + 1);
-
-    const starterBlockObj = selectedBlocks.find(b => b.type === 'drone-starter');
-    const flightDisplayBlock = selectedBlocks.find(b => b.type === 'flight-state-info');
-    const controllerBlock = selectedBlocks.find(b => b.type === 'controller');
-
-    const newEdges: Edge[] = [];
-    const edgePairs: string[] = [];
-
-    if (starterBlockObj && flightDisplayBlock) {
-      const fromDims = getBlockDimensions(starterBlockObj.type);
-      const toDims = getBlockDimensions(flightDisplayBlock.type);
-
-      const fromRect = { x: starterBlockObj.x, y: starterBlockObj.y, width: fromDims.width, height: fromDims.height };
-      const toRect = { x: flightDisplayBlock.x, y: flightDisplayBlock.y, width: toDims.width, height: toDims.height };
-
-      const anchorAResult = calculateAnchorPoint(fromRect, toRect, true);
-      const anchorBResult = calculateAnchorPoint(fromRect, toRect, false);
-
-      const edge: Edge = {
-        id: `edge-${starterBlockObj.id}-${flightDisplayBlock.id}`,
-        fromId: starterBlockObj.id,
-        toId: flightDisplayBlock.id,
-        anchorA: { x: anchorAResult.x, y: anchorAResult.y },
-        anchorB: { x: anchorBResult.x, y: anchorBResult.y },
-        mode: anchorAResult.mode
-      };
-      newEdges.push(edge);
-      edgePairs.push('Starter→FlightDisplay');
-      console.log('EDGE_ANCHOR', {
-        from: starterBlockObj.id,
-        to: flightDisplayBlock.id,
-        anchorA: [anchorAResult.x, anchorAResult.y],
-        anchorB: [anchorBResult.x, anchorBResult.y],
-        mode: anchorAResult.mode
-      });
-    }
-
-    if (flightDisplayBlock && controllerBlock) {
-      const fromDims = getBlockDimensions(flightDisplayBlock.type);
-      const toDims = getBlockDimensions(controllerBlock.type);
-
-      const fromRect = { x: flightDisplayBlock.x, y: flightDisplayBlock.y, width: fromDims.width, height: fromDims.height };
-      const toRect = { x: controllerBlock.x, y: controllerBlock.y, width: toDims.width, height: toDims.height };
-
-      const anchorAResult = calculateAnchorPoint(fromRect, toRect, true);
-      const anchorBResult = calculateAnchorPoint(fromRect, toRect, false);
-
-      const edge: Edge = {
-        id: `edge-${flightDisplayBlock.id}-${controllerBlock.id}`,
-        fromId: flightDisplayBlock.id,
-        toId: controllerBlock.id,
-        anchorA: { x: anchorAResult.x, y: anchorAResult.y },
-        anchorB: { x: anchorBResult.x, y: anchorBResult.y },
-        mode: anchorAResult.mode
-      };
-      newEdges.push(edge);
-      edgePairs.push('FlightDisplay→Controller');
-      console.log('EDGE_ANCHOR', {
-        from: flightDisplayBlock.id,
-        to: controllerBlock.id,
-        anchorA: [anchorAResult.x, anchorAResult.y],
-        anchorB: [anchorBResult.x, anchorBResult.y],
-        mode: anchorAResult.mode
-      });
-    }
-
-    console.log('EDGE_ORDER', { pairs: edgePairs });
-
-    setEdges(prev => [...prev, ...newEdges]);
-
-    setBlocks(prev => prev.map(b =>
-      selectedBlockIds.includes(b.id) ? { ...b, nodeId, droneName } : b
-    ));
-
-    const minX = Math.min(...selectedBlocks.map(b => b.x));
-    const minY = Math.min(...selectedBlocks.map(b => b.y));
-
-    const newNode: NodeGroup = {
-      id: nodeId,
-      droneName,
-      blockIds: selectedBlockIds,
-      x: minX,
-      y: minY
-    };
-    setNodes(prev => [...prev, newNode]);
-
-    console.log('MAKE_NODE', { nodeId, members: selectedBlockIds, droneName });
-    setSelectedBlockIds([]);
-  };
-
-  const handleUngroupNode = () => {
-    const selectedNodes = nodes.filter(node =>
-      node.blockIds.some(id => selectedBlockIds.includes(id))
-    );
-
-    if (selectedNodes.length === 0) return;
-
-    selectedNodes.forEach(node => {
-      setBlocks(prev => prev.map(b =>
-        node.blockIds.includes(b.id) ? { ...b, nodeId: undefined, droneName: undefined } : b
-      ));
-
-      setEdges(prev => prev.filter(e =>
-        !node.blockIds.includes(e.fromId) && !node.blockIds.includes(e.toId)
-      ));
-    });
-
-    setNodes(prev => prev.filter(n => !selectedNodes.includes(n)));
-    setSelectedBlockIds([]);
-  };
+  }, [isDragging, dragStart, zoom, clampPan]);
 
   const handleResetView = () => {
     setZoom(1);
@@ -456,19 +175,6 @@ function App() {
       block.id === id ? { ...block, isMinimized: !block.isMinimized } : block
     ));
   };
-
-  const handleDroneNameUpdate = (id: string, droneName: string) => {
-    setBlocks(prev => prev.map(block =>
-      block.id === id && block.type === 'drone-starter' ? { ...block, droneName } : block
-    ));
-  };
-
-  const handlePositionChange = useCallback((id: string, newX: number, newY: number) => {
-    setBlocks(prev => prev.map(b =>
-      b.id === id ? { ...b, x: newX, y: newY } : b
-    ));
-    setTimeout(() => recomputeEdges('drag'), 0);
-  }, [recomputeEdges]);
 
   const handleMinimapPan = useCallback((x: number, y: number) => {
     setPan(clampPan(x, y, zoom));
@@ -533,78 +239,13 @@ function App() {
               transformOrigin: 'center center'
             }}
           />
-          {isDragSelecting && marqueeStart.x !== 0 && (
-            <div
-              className="marquee-selection"
-              style={{
-                position: 'absolute',
-                left: `${Math.min(marqueeStart.x, marqueeEnd.x)}px`,
-                top: `${Math.min(marqueeStart.y, marqueeEnd.y)}px`,
-                width: `${Math.abs(marqueeEnd.x - marqueeStart.x)}px`,
-                height: `${Math.abs(marqueeEnd.y - marqueeStart.y)}px`,
-                border: '2px dashed #00d4ff',
-                background: 'rgba(0, 212, 255, 0.1)',
-                pointerEvents: 'none',
-                zIndex: 9999
-              }}
-            />
-          )}
           <div
-            id="world"
-            className="workspace-world-container"
+            className="workspace-blocks-container"
             style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              width: 0,
-              height: 0,
-              transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
-              transformOrigin: '0 0'
+              transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`
             }}
           >
-            <svg
-              id="edge-layer"
-              style={{
-                position: 'absolute',
-                left: '-10000px',
-                top: '-10000px',
-                width: '20000px',
-                height: '20000px',
-                pointerEvents: 'none',
-                overflow: 'visible',
-                zIndex: 1
-              }}
-            >
-              {edges.map(edge => {
-                const fromBlock = blocks.find(b => b.id === edge.fromId);
-                const toBlock = blocks.find(b => b.id === edge.toId);
-                if (!fromBlock || !toBlock) return null;
-
-                return (
-                  <line
-                    key={edge.id}
-                    x1={edge.anchorA.x + 10000}
-                    y1={edge.anchorA.y + 10000}
-                    x2={edge.anchorB.x + 10000}
-                    y2={edge.anchorB.y + 10000}
-                    stroke="#00d4ff"
-                    strokeWidth="2"
-                    strokeDasharray="5,5"
-                    strokeLinecap="round"
-                    opacity="0.6"
-                  />
-                );
-              })}
-            </svg>
-            <div
-              className="workspace-blocks-container"
-              style={{
-                position: 'relative',
-                zIndex: 2
-              }}
-            >
           {blocks.map(block => {
-            const isSelected = selectedBlockIds.includes(block.id);
             if (block.type === 'drone-starter') {
               return (
                 <WorkspaceDroneStarter
@@ -614,12 +255,13 @@ function App() {
                   initialY={block.y}
                   zoom={zoom}
                   onRemove={handleRemoveBlock}
-                  onPositionChange={handlePositionChange}
+                  onPositionChange={(id, newX, newY) => {
+                    setBlocks(prev => prev.map(b =>
+                      b.id === id ? { ...b, x: newX, y: newY } : b
+                    ));
+                  }}
                   onToggleMinimize={handleToggleMinimize}
                   isMinimized={block.isMinimized || false}
-                  droneName={block.droneName}
-                  onDroneNameUpdate={handleDroneNameUpdate}
-                  isSelected={isSelected}
                 />
               );
             } else if (block.type === 'controller') {
@@ -631,11 +273,13 @@ function App() {
                   initialY={block.y}
                   zoom={zoom}
                   onRemove={handleRemoveBlock}
-                  onPositionChange={handlePositionChange}
+                  onPositionChange={(id, newX, newY) => {
+                    setBlocks(prev => prev.map(b =>
+                      b.id === id ? { ...b, x: newX, y: newY } : b
+                    ));
+                  }}
                   onToggleMinimize={handleToggleMinimize}
                   isMinimized={block.isMinimized || false}
-                  droneName={block.droneName}
-                  isSelected={isSelected}
                 />
               );
             } else if (block.type === 'log') {
@@ -647,11 +291,13 @@ function App() {
                   initialY={block.y}
                   zoom={zoom}
                   onRemove={handleRemoveBlock}
-                  onPositionChange={handlePositionChange}
+                  onPositionChange={(id, newX, newY) => {
+                    setBlocks(prev => prev.map(b =>
+                      b.id === id ? { ...b, x: newX, y: newY } : b
+                    ));
+                  }}
                   onToggleMinimize={handleToggleMinimize}
                   isMinimized={block.isMinimized || false}
-                  droneName={block.droneName}
-                  isSelected={isSelected}
                 />
               );
             } else {
@@ -663,18 +309,19 @@ function App() {
                   initialY={block.y}
                   zoom={zoom}
                   onRemove={handleRemoveBlock}
-                  onPositionChange={handlePositionChange}
+                  onPositionChange={(id, newX, newY) => {
+                    setBlocks(prev => prev.map(b =>
+                      b.id === id ? { ...b, x: newX, y: newY } : b
+                    ));
+                  }}
                   onToggleMinimize={handleToggleMinimize}
                   isMinimized={block.isMinimized || false}
                   velocity={15.2}
                   acceleration={2.3}
-                  droneName={block.droneName}
-                  isSelected={isSelected}
                 />
               );
             }
           })}
-            </div>
           </div>
           <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
           <Minimap
@@ -688,18 +335,7 @@ function App() {
             onPanChange={handleMinimapPan}
             blocks={blocks}
           />
-          <DigitalClock
-            onReset={handleResetView}
-            planToolsButton={
-              <PlanTools
-                onDragSelectStart={handleDragSelectStart}
-                onMakeNode={handleMakeNode}
-                onUngroupNode={handleUngroupNode}
-                canMakeNode={selectedBlockIds.length >= 1}
-                canUngroup={nodes.some(n => n.blockIds.some(id => selectedBlockIds.includes(id)))}
-              />
-            }
-          />
+          <DigitalClock onReset={handleResetView} />
           <DroneStatus />
         </div>
         {activeTab === 'map' && <MapView />}

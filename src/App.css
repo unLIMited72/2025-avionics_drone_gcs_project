@@ -130,33 +130,6 @@
   }
 }
 
-.marquee-selection {
-  position: absolute;
-  border: 2px dashed #00d4ff;
-  background: rgba(0, 212, 255, 0.1);
-  pointer-events: none;
-  z-index: 9999;
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
-}
-
-.workspace-drone-starter.is-selected,
-.controller-block.is-selected,
-.workspace-log.is-selected,
-.workspace-block.is-selected {
-  box-shadow: 0 0 0 3px #00d4ff, 0 0 20px rgba(0, 212, 255, 0.6) !important;
-  border: 2px solid #00d4ff !important;
-}
-
-.edges-layer {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
 @media (max-width: 768px) {
   .gcs-main {
     padding: 8px;
