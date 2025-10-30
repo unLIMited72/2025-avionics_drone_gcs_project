@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, type MouseEvent } from 'react';
+import './WorkspaceLog.css';
 
 interface WorkspaceLogProps {
   id: string;
@@ -9,6 +10,12 @@ interface WorkspaceLogProps {
   onPositionChange: (id: string, x: number, y: number) => void;
   onToggleMinimize: (id: string) => void;
   isMinimized: boolean;
+}
+
+interface LogEntry {
+  timestamp: string;
+  level: 'info' | 'warning' | 'error' | 'success';
+  message: string;
 }
 
 export default function WorkspaceLog({
@@ -25,13 +32,34 @@ export default function WorkspaceLog({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const blockRef = useRef<HTMLDivElement>(null);
+  const logEndRef = useRef<HTMLDivElement>(null);
+
+  const [logs, setLogs] = useState<LogEntry[]>([
+    { timestamp: '00:00:01', level: 'info', message: 'System initialized' },
+    { timestamp: '00:00:02', level: 'info', message: 'Waiting for drone connection...' },
+    { timestamp: '00:00:03', level: 'success', message: 'Drone connected successfully' },
+    { timestamp: '00:00:04', level: 'info', message: 'Starting telemetry stream' },
+    { timestamp: '00:00:05', level: 'warning', message: 'GPS signal weak - 4 satellites' },
+    { timestamp: '00:00:06', level: 'info', message: 'Calibrating sensors...' },
+    { timestamp: '00:00:07', level: 'success', message: 'IMU calibration complete' },
+    { timestamp: '00:00:08', level: 'error', message: 'EKF estimation invalid' }
+  ]);
+  const [autoScroll, setAutoScroll] = useState(true);
 
   useEffect(() => {
     setPosition({ x: initialX, y: initialY });
   }, [initialX, initialY]);
 
+  useEffect(() => {
+    if (autoScroll && logs.length > 0 && logEndRef.current) {
+      logEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+  }, [logs, autoScroll]);
+
   const handleMouseDown = useCallback((e: MouseEvent) => {
-    if (!blockRef.current) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('.log-content, button')) return;
+
     e.preventDefault();
     e.stopPropagation();
     setDragStart({ x: e.clientX, y: e.clientY });
@@ -45,6 +73,7 @@ export default function WorkspaceLog({
       e.preventDefault();
       const deltaX = (e.clientX - dragStart.x) / zoom;
       const deltaY = (e.clientY - dragStart.y) / zoom;
+
       setPosition(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
       setDragStart({ x: e.clientX, y: e.clientY });
     };
@@ -62,79 +91,134 @@ export default function WorkspaceLog({
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [isDragging, dragStart, position, zoom, id, onPositionChange]);
+  }, [isDragging, dragStart, zoom, id, position, onPositionChange]);
+
+  const handleRemove = useCallback((e: MouseEvent) => {
+    e.stopPropagation();
+    onRemove(id);
+  }, [id, onRemove]);
+
+  const handleMinimize = (e: MouseEvent) => {
+    e.stopPropagation();
+    onToggleMinimize(id);
+  };
+
+  const handleHeaderKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onToggleMinimize(id);
+    } else if (e.key === 'Delete') {
+      e.preventDefault();
+      onRemove(id);
+    }
+  };
+
+  const handleClearLogs = useCallback((e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAutoScroll(false);
+    setLogs([]);
+    setTimeout(() => setAutoScroll(true), 100);
+  }, []);
+
+  const getLevelColor = (level: LogEntry['level']): string => {
+    switch (level) {
+      case 'info':
+        return '#6496ff';
+      case 'success':
+        return '#00ff96';
+      case 'warning':
+        return '#ffaa00';
+      case 'error':
+        return '#ff6464';
+      default:
+        return '#e0e0e0';
+    }
+  };
+
+  const getLevelPrefix = (level: LogEntry['level']): string => {
+    switch (level) {
+      case 'info':
+        return '[INFO]';
+      case 'success':
+        return '[OK]';
+      case 'warning':
+        return '[WARN]';
+      case 'error':
+        return '[ERR]';
+      default:
+        return '[LOG]';
+    }
+  };
 
   return (
     <div
       ref={blockRef}
-      className="workspace-log"
+      className={`workspace-log ${isDragging ? 'dragging' : ''}`}
       style={{
-        position: 'absolute',
         left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: '520px',
-        background: 'linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%)',
-        border: '2px solid rgba(0, 212, 255, 0.4)',
-        borderRadius: '8px',
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
-        backdropFilter: 'blur(10px)',
-        cursor: 'move',
-        userSelect: 'none',
-        zIndex: 10,
-        pointerEvents: 'auto'
+        top: `${position.y}px`
       }}
       onMouseDown={handleMouseDown}
     >
-      <div style={{
-        padding: '6px 12px',
-        background: 'rgba(0, 212, 255, 0.1)',
-        borderBottom: '1px solid rgba(0, 212, 255, 0.3)',
-        borderRadius: '6px 6px 0 0',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{ fontSize: '13px', fontWeight: 600, color: '#e0e0e0' }}>
-          Log Terminal
-        </div>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleMinimize(id); }}
-            style={{
-              width: '24px',
-              height: '24px',
-              background: 'rgba(100, 150, 255, 0.1)',
-              border: '1px solid rgba(100, 150, 255, 0.3)',
-              borderRadius: '4px',
-              color: '#6496ff',
-              cursor: 'pointer'
-            }}
-          >
-            −
+      <div
+        className="workspace-block-header"
+        tabIndex={0}
+        onKeyDown={handleHeaderKeyDown}
+        role="button"
+        aria-label="Window header"
+      >
+        <div className="workspace-block-title">Log Terminal</div>
+        <div className="header-actions">
+          <button className="log-clear-btn" onClick={handleClearLogs} title="Clear logs">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" />
+            </svg>
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); onRemove(id); }}
-            style={{
-              width: '24px',
-              height: '24px',
-              background: 'rgba(255, 50, 50, 0.1)',
-              border: '1px solid rgba(255, 50, 50, 0.3)',
-              borderRadius: '4px',
-              color: '#ff5050',
-              cursor: 'pointer'
-            }}
+            className="workspace-block-minimize"
+            onClick={handleMinimize}
+            aria-label={isMinimized ? "Restore" : "Minimize"}
+            title={isMinimized ? "Restore" : "Minimize"}
           >
-            ×
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <button
+            className="workspace-block-remove"
+            onClick={handleRemove}
+            aria-label="Close"
+            title="Close"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
       </div>
-      {!isMinimized && (
-        <div style={{ padding: '16px', height: '400px', overflowY: 'auto' }}>
-          <div style={{ color: '#e0e0e0', fontSize: '13px', fontFamily: 'monospace' }}>
-            System logs...
-          </div>
-        </div>
-      )}
+
+      {!isMinimized && <><div className="log-content" onMouseDown={(e) => e.stopPropagation()}>
+        {logs.length === 0 ? (
+          <div className="log-empty">Terminal cleared. Waiting for new logs...</div>
+        ) : (
+          logs.map((log, index) => (
+            <div key={index} className="log-entry">
+              <span className="log-timestamp">{log.timestamp}</span>
+              <span className="log-level" style={{ color: getLevelColor(log.level) }}>
+                {getLevelPrefix(log.level)}
+              </span>
+              <span className="log-message">{log.message}</span>
+            </div>
+          ))
+        )}
+        <div ref={logEndRef} />
+      </div>
+
+      <div className="log-status">
+        <span className="status-text">Ready</span>
+      </div></>}
     </div>
   );
 }

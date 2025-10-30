@@ -1,41 +1,26 @@
+import './DroneStatus.css';
+
 export default function DroneStatus() {
+  const activeDrones = 12;
+
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '16px',
-      right: '16px',
-      background: 'linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%)',
-      border: '1px solid rgba(0, 212, 255, 0.4)',
-      borderRadius: '8px',
-      padding: '12px 16px',
-      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
-      backdropFilter: 'blur(10px)',
-      zIndex: 150
-    }}>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '6px'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <div style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: '#ff5050'
-          }} />
-          <span style={{
-            color: '#e0e0e0',
-            fontSize: '13px',
-            fontWeight: 500
-          }}>
-            No Drone Connected
-          </span>
-        </div>
+    <div className="drone-status">
+      <div className="drone-status-icon">
+        <svg width="24" height="24" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <circle cx="32" cy="32" r="6" fill="currentColor" />
+          <circle cx="16" cy="16" r="5" />
+          <circle cx="48" cy="16" r="5" />
+          <circle cx="16" cy="48" r="5" />
+          <circle cx="48" cy="48" r="5" />
+          <line x1="26" y1="26" x2="18" y2="18" />
+          <line x1="38" y1="26" x2="46" y2="18" />
+          <line x1="26" y1="38" x2="18" y2="46" />
+          <line x1="38" y1="38" x2="46" y2="46" />
+        </svg>
+      </div>
+      <div className="drone-status-display">
+        <div className="drone-status-label">Drone Count</div>
+        <div className="drone-status-count">{activeDrones}</div>
       </div>
     </div>
   );

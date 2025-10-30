@@ -49,11 +49,6 @@ function App() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mainRef = useRef<HTMLDivElement>(null);
 
-  const [dragSelectMode, setDragSelectMode] = useState(false);
-  const [marqueeStart, setMarqueeStart] = useState<{ x: number; y: number } | null>(null);
-  const [marqueeCurrent, setMarqueeCurrent] = useState<{ x: number; y: number } | null>(null);
-  const [highlightedPanelIds, setHighlightedPanelIds] = useState<string[]>([]);
-
   const CANVAS_WIDTH = 4000;
   const CANVAS_HEIGHT = 3000;
   const MIN_ZOOM = 0.5;
@@ -74,7 +69,6 @@ function App() {
   }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (dragSelectMode || marqueeStart) return;
     e.preventDefault();
     if (!mainRef.current) return;
 
@@ -95,92 +89,14 @@ function App() {
 
     setZoom(newZoom);
     setPan(clampPan(newPanX, newPanY, newZoom));
-  }, [zoom, pan, clampPan, dragSelectMode, marqueeStart]);
+  }, [zoom, pan, clampPan]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log, .gear-menu-container')) {
+    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log')) {
       return;
     }
-
-    if (dragSelectMode) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const startX = e.clientX;
-      const startY = e.clientY;
-
-      setMarqueeStart({ x: startX, y: startY });
-      setMarqueeCurrent({ x: startX, y: startY });
-
-      console.log('MARQUEE_START', { client: [startX, startY] });
-      return;
-    }
-
     setIsDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (marqueeStart && dragSelectMode) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const currentX = e.clientX;
-      const currentY = e.clientY;
-
-      setMarqueeCurrent({ x: currentX, y: currentY });
-
-      const width = Math.abs(currentX - marqueeStart.x);
-      const height = Math.abs(currentY - marqueeStart.y);
-
-      console.log('MARQUEE_MOVE', {
-        client: [currentX, currentY],
-        size: [width, height]
-      });
-
-      const marqueeRect = {
-        left: Math.min(marqueeStart.x, currentX),
-        top: Math.min(marqueeStart.y, currentY),
-        right: Math.max(marqueeStart.x, currentX),
-        bottom: Math.max(marqueeStart.y, currentY)
-      };
-
-      const selected: string[] = [];
-
-      blocks.forEach(block => {
-        const blockElement = document.querySelector(`[data-block-id="${block.id}"]`);
-        if (blockElement) {
-          const blockRect = blockElement.getBoundingClientRect();
-
-          const intersects = !(
-            blockRect.right < marqueeRect.left ||
-            blockRect.left > marqueeRect.right ||
-            blockRect.bottom < marqueeRect.top ||
-            blockRect.top > marqueeRect.bottom
-          );
-
-          if (intersects) {
-            selected.push(block.id);
-          }
-        }
-      });
-
-      setHighlightedPanelIds(selected);
-    }
-  };
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (marqueeStart && dragSelectMode) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      console.log('MARQUEE_END', { selection: `${highlightedPanelIds.length} panels` });
-
-      setMarqueeStart(null);
-      setMarqueeCurrent(null);
-      setDragSelectMode(false);
-      return;
-    }
   };
 
   useEffect(() => {
@@ -201,20 +117,6 @@ function App() {
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
   }, [isDragging, dragStart, zoom, clampPan]);
-
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setMarqueeStart(null);
-        setMarqueeCurrent(null);
-        setDragSelectMode(false);
-        setHighlightedPanelIds([]);
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, []);
 
   const handleResetView = () => {
     setZoom(1);
@@ -266,26 +168,12 @@ function App() {
 
   const handleRemoveBlock = (id: string) => {
     setBlocks(prev => prev.filter(block => block.id !== id));
-    setHighlightedPanelIds(prev => prev.filter(pid => pid !== id));
   };
 
   const handleToggleMinimize = (id: string) => {
     setBlocks(prev => prev.map(block =>
       block.id === id ? { ...block, isMinimized: !block.isMinimized } : block
     ));
-  };
-
-  const handleDragSelectClick = () => {
-    setDragSelectMode(true);
-    setHighlightedPanelIds([]);
-  };
-
-  const handleMakeNodeClick = () => {
-    console.log('Make Node clicked', { selected: highlightedPanelIds });
-  };
-
-  const handleUngroupClick = () => {
-    console.log('Ungroup clicked');
   };
 
   const handleMinimapPan = useCallback((x: number, y: number) => {
@@ -299,15 +187,9 @@ function App() {
   useEffect(() => {
     const mainElement = mainRef.current;
     if (mainElement) {
-      if (dragSelectMode) {
-        mainElement.style.cursor = 'crosshair';
-      } else if (isDragging) {
-        mainElement.style.cursor = 'grabbing';
-      } else {
-        mainElement.style.cursor = 'grab';
-      }
+      mainElement.style.cursor = isDragging ? 'grabbing' : 'grab';
     }
-  }, [isDragging, dragSelectMode]);
+  }, [isDragging]);
 
   useEffect(() => {
     if (activeTab === 'plan') {
@@ -320,13 +202,6 @@ function App() {
       setIsDashboardOpen(false);
     }
   }, [activeTab]);
-
-  const marqueeRect = marqueeStart && marqueeCurrent ? {
-    left: Math.min(marqueeStart.x, marqueeCurrent.x),
-    top: Math.min(marqueeStart.y, marqueeCurrent.y),
-    width: Math.abs(marqueeCurrent.x - marqueeStart.x),
-    height: Math.abs(marqueeCurrent.y - marqueeStart.y)
-  } : null;
 
   return (
     <div className="gcs-app">
@@ -353,8 +228,6 @@ function App() {
         className="gcs-main"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
@@ -372,103 +245,83 @@ function App() {
               transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`
             }}
           >
-            {blocks.map(block => {
-              const isHighlighted = highlightedPanelIds.includes(block.id);
-
-              const WrapperComponent = ({ children }: { children: React.ReactNode }) => (
-                <div
-                  data-block-id={block.id}
-                  style={{
-                    position: 'relative',
-                    outline: isHighlighted ? '2px solid #00ffcc' : 'none',
-                    filter: isHighlighted ? 'brightness(1.3)' : 'none',
-                    borderRadius: '8px'
+          {blocks.map(block => {
+            if (block.type === 'drone-starter') {
+              return (
+                <WorkspaceDroneStarter
+                  key={block.id}
+                  id={block.id}
+                  initialX={block.x}
+                  initialY={block.y}
+                  zoom={zoom}
+                  onRemove={handleRemoveBlock}
+                  onPositionChange={(id, newX, newY) => {
+                    setBlocks(prev => prev.map(b =>
+                      b.id === id ? { ...b, x: newX, y: newY } : b
+                    ));
                   }}
-                >
-                  {children}
-                </div>
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
+                />
               );
-
-              if (block.type === 'drone-starter') {
-                return (
-                  <WrapperComponent key={block.id}>
-                    <WorkspaceDroneStarter
-                      id={block.id}
-                      initialX={block.x}
-                      initialY={block.y}
-                      zoom={zoom}
-                      onRemove={handleRemoveBlock}
-                      onPositionChange={(id, newX, newY) => {
-                        setBlocks(prev => prev.map(b =>
-                          b.id === id ? { ...b, x: newX, y: newY } : b
-                        ));
-                      }}
-                      onToggleMinimize={handleToggleMinimize}
-                      isMinimized={block.isMinimized || false}
-                    />
-                  </WrapperComponent>
-                );
-              } else if (block.type === 'controller') {
-                return (
-                  <WrapperComponent key={block.id}>
-                    <ControllerBlock
-                      id={block.id}
-                      initialX={block.x}
-                      initialY={block.y}
-                      zoom={zoom}
-                      onRemove={handleRemoveBlock}
-                      onPositionChange={(id, newX, newY) => {
-                        setBlocks(prev => prev.map(b =>
-                          b.id === id ? { ...b, x: newX, y: newY } : b
-                        ));
-                      }}
-                      onToggleMinimize={handleToggleMinimize}
-                      isMinimized={block.isMinimized || false}
-                    />
-                  </WrapperComponent>
-                );
-              } else if (block.type === 'log') {
-                return (
-                  <WrapperComponent key={block.id}>
-                    <WorkspaceLog
-                      id={block.id}
-                      initialX={block.x}
-                      initialY={block.y}
-                      zoom={zoom}
-                      onRemove={handleRemoveBlock}
-                      onPositionChange={(id, newX, newY) => {
-                        setBlocks(prev => prev.map(b =>
-                          b.id === id ? { ...b, x: newX, y: newY } : b
-                        ));
-                      }}
-                      onToggleMinimize={handleToggleMinimize}
-                      isMinimized={block.isMinimized || false}
-                    />
-                  </WrapperComponent>
-                );
-              } else {
-                return (
-                  <WrapperComponent key={block.id}>
-                    <WorkspaceBlock
-                      id={block.id}
-                      initialX={block.x}
-                      initialY={block.y}
-                      zoom={zoom}
-                      onRemove={handleRemoveBlock}
-                      onPositionChange={(id, newX, newY) => {
-                        setBlocks(prev => prev.map(b =>
-                          b.id === id ? { ...b, x: newX, y: newY } : b
-                        ));
-                      }}
-                      onToggleMinimize={handleToggleMinimize}
-                      isMinimized={block.isMinimized || false}
-                      velocity={15.2}
-                      acceleration={2.3}
-                    />
-                  </WrapperComponent>
-                );
-              }
-            })}
+            } else if (block.type === 'controller') {
+              return (
+                <ControllerBlock
+                  key={block.id}
+                  id={block.id}
+                  initialX={block.x}
+                  initialY={block.y}
+                  zoom={zoom}
+                  onRemove={handleRemoveBlock}
+                  onPositionChange={(id, newX, newY) => {
+                    setBlocks(prev => prev.map(b =>
+                      b.id === id ? { ...b, x: newX, y: newY } : b
+                    ));
+                  }}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
+                />
+              );
+            } else if (block.type === 'log') {
+              return (
+                <WorkspaceLog
+                  key={block.id}
+                  id={block.id}
+                  initialX={block.x}
+                  initialY={block.y}
+                  zoom={zoom}
+                  onRemove={handleRemoveBlock}
+                  onPositionChange={(id, newX, newY) => {
+                    setBlocks(prev => prev.map(b =>
+                      b.id === id ? { ...b, x: newX, y: newY } : b
+                    ));
+                  }}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
+                />
+              );
+            } else {
+              return (
+                <WorkspaceBlock
+                  key={block.id}
+                  id={block.id}
+                  initialX={block.x}
+                  initialY={block.y}
+                  zoom={zoom}
+                  onRemove={handleRemoveBlock}
+                  onPositionChange={(id, newX, newY) => {
+                    setBlocks(prev => prev.map(b =>
+                      b.id === id ? { ...b, x: newX, y: newY } : b
+                    ));
+                  }}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
+                  velocity={15.2}
+                  acceleration={2.3}
+                />
+              );
+            }
+          })}
           </div>
           <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
           <Minimap
@@ -482,32 +335,8 @@ function App() {
             onPanChange={handleMinimapPan}
             blocks={blocks}
           />
-          <DigitalClock
-            onReset={handleResetView}
-            gearMenuProps={{
-              canMakeNode: highlightedPanelIds.length >= 1,
-              canUngroup: false,
-              onDragSelectClick: handleDragSelectClick,
-              onMakeNodeClick: handleMakeNodeClick,
-              onUngroupClick: handleUngroupClick
-            }}
-          />
+          <DigitalClock onReset={handleResetView} />
           <DroneStatus />
-          {marqueeRect && (
-            <div
-              style={{
-                position: 'fixed',
-                left: `${marqueeRect.left}px`,
-                top: `${marqueeRect.top}px`,
-                width: `${marqueeRect.width}px`,
-                height: `${marqueeRect.height}px`,
-                border: '2px dashed #00ffcc',
-                background: 'rgba(0, 255, 204, 0.1)',
-                pointerEvents: 'none',
-                zIndex: 10000
-              }}
-            />
-          )}
         </div>
         {activeTab === 'map' && <MapView />}
       </main>

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, type MouseEvent } from 'react';
+import './ControllerBlock.css';
 
 interface ControllerBlockProps {
   id: string;
@@ -10,6 +11,8 @@ interface ControllerBlockProps {
   onToggleMinimize: (id: string) => void;
   isMinimized: boolean;
 }
+
+type FlightControlMode = 'mission' | 'controller';
 
 export default function ControllerBlock({
   id,
@@ -26,6 +29,11 @@ export default function ControllerBlock({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const blockRef = useRef<HTMLDivElement>(null);
 
+  const [maxSpeed, setMaxSpeed] = useState('');
+  const [maxAltitude, setMaxAltitude] = useState('');
+  const [flightMode, setFlightMode] = useState<FlightControlMode>('mission');
+  const [isSaved, setIsSaved] = useState(false);
+
   useEffect(() => {
     setPosition({ x: initialX, y: initialY });
   }, [initialX, initialY]);
@@ -33,6 +41,7 @@ export default function ControllerBlock({
   const handleMouseDown = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('input, button')) return;
+
     e.preventDefault();
     e.stopPropagation();
     setDragStart({ x: e.clientX, y: e.clientY });
@@ -46,6 +55,7 @@ export default function ControllerBlock({
       e.preventDefault();
       const deltaX = (e.clientX - dragStart.x) / zoom;
       const deltaY = (e.clientY - dragStart.y) / zoom;
+
       setPosition(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
       setDragStart({ x: e.clientX, y: e.clientY });
     };
@@ -56,8 +66,10 @@ export default function ControllerBlock({
       onPositionChange(id, position.x, position.y);
     };
 
-    document.addEventListener('mousemove', handleGlobalMouseMove);
-    document.addEventListener('mouseup', handleGlobalMouseUp);
+    if (isDragging) {
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+    }
 
     return () => {
       document.removeEventListener('mousemove', handleGlobalMouseMove);
@@ -65,77 +77,136 @@ export default function ControllerBlock({
     };
   }, [isDragging, dragStart, position, zoom, id, onPositionChange]);
 
+  const handleRemove = (e: MouseEvent) => {
+    e.stopPropagation();
+    onRemove(id);
+  };
+
+  const handleMinimize = (e: MouseEvent) => {
+    e.stopPropagation();
+    onToggleMinimize(id);
+  };
+
+  const handleHeaderKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onToggleMinimize(id);
+    } else if (e.key === 'Delete') {
+      e.preventDefault();
+      onRemove(id);
+    }
+  };
+
+  const handleSet = () => {
+    if (maxSpeed.trim() && maxAltitude.trim()) {
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+    }
+  };
+
+  const isSetDisabled = !maxSpeed.trim() || !maxAltitude.trim();
+
   return (
     <div
       ref={blockRef}
-      className="controller-block"
+      className={`controller-block ${isDragging ? 'dragging' : ''}`}
       style={{
-        position: 'absolute',
         left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: '320px',
-        background: 'linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%)',
-        border: '2px solid rgba(0, 212, 255, 0.4)',
-        borderRadius: '8px',
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
-        backdropFilter: 'blur(10px)',
-        cursor: 'move',
-        userSelect: 'none',
-        zIndex: 10,
-        pointerEvents: 'auto'
+        top: `${position.y}px`
       }}
       onMouseDown={handleMouseDown}
     >
-      <div style={{
-        padding: '6px 12px',
-        background: 'rgba(0, 212, 255, 0.1)',
-        borderBottom: '1px solid rgba(0, 212, 255, 0.3)',
-        borderRadius: '6px 6px 0 0',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{ fontSize: '13px', fontWeight: 600, color: '#e0e0e0' }}>
-          Controller
-        </div>
-        <div style={{ display: 'flex', gap: '6px' }}>
+      <div
+        className="workspace-block-header"
+        tabIndex={0}
+        onKeyDown={handleHeaderKeyDown}
+        role="button"
+        aria-label="Window header"
+      >
+        <div className="workspace-block-title">Controller</div>
+        <div className="header-actions">
           <button
-            onClick={(e) => { e.stopPropagation(); onToggleMinimize(id); }}
-            style={{
-              width: '24px',
-              height: '24px',
-              background: 'rgba(100, 150, 255, 0.1)',
-              border: '1px solid rgba(100, 150, 255, 0.3)',
-              borderRadius: '4px',
-              color: '#6496ff',
-              cursor: 'pointer'
-            }}
+            className="workspace-block-minimize"
+            onClick={handleMinimize}
+            aria-label={isMinimized ? "Restore" : "Minimize"}
+            title={isMinimized ? "Restore" : "Minimize"}
           >
-            −
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); onRemove(id); }}
-            style={{
-              width: '24px',
-              height: '24px',
-              background: 'rgba(255, 50, 50, 0.1)',
-              border: '1px solid rgba(255, 50, 50, 0.3)',
-              borderRadius: '4px',
-              color: '#ff5050',
-              cursor: 'pointer'
-            }}
+            className="workspace-block-remove"
+            onClick={handleRemove}
+            aria-label="Close"
+            title="Close"
           >
-            ×
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
       </div>
-      {!isMinimized && (
-        <div style={{ padding: '16px' }}>
-          <div style={{ color: '#e0e0e0', fontSize: '14px' }}>
-            Flight Controller
+
+      {!isMinimized && <div className="controller-body">
+        <div className="limits-section">
+          <div className="section-title">Flight Limits</div>
+          <div className="limits-content">
+            <div className="limits-inputs">
+              <input
+                type="number"
+                className="limit-input"
+                placeholder="Max Speed (m/s)"
+                value={maxSpeed}
+                onChange={(e) => setMaxSpeed(e.target.value)}
+                min="0"
+                step="0.1"
+              />
+              <input
+                type="number"
+                className="limit-input"
+                placeholder="Max Altitude (m)"
+                value={maxAltitude}
+                onChange={(e) => setMaxAltitude(e.target.value)}
+                min="0"
+                step="1"
+              />
+            </div>
+            <button
+              className={`set-btn ${isSaved ? 'saved' : ''}`}
+              onClick={handleSet}
+              disabled={isSetDisabled}
+            >
+              {isSaved ? 'Saved!' : 'Set'}
+            </button>
           </div>
         </div>
-      )}
+
+        <div className="flight-mode-section">
+          <div className="section-title">Flight Control Mode</div>
+          <div className="mode-checkboxes">
+            <label className="mode-checkbox-item">
+              <input
+                type="checkbox"
+                checked={flightMode === 'mission'}
+                onChange={() => setFlightMode('mission')}
+                className="mode-checkbox"
+              />
+              <span className="mode-checkbox-label">Mission Flight</span>
+            </label>
+            <label className="mode-checkbox-item">
+              <input
+                type="checkbox"
+                checked={flightMode === 'controller'}
+                onChange={() => setFlightMode('controller')}
+                className="mode-checkbox"
+              />
+              <span className="mode-checkbox-label">Controller Flight</span>
+            </label>
+          </div>
+        </div>
+      </div>}
     </div>
   );
 }
