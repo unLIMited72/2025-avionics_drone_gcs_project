@@ -99,9 +99,8 @@ export default function DroneStatus() {
 
   const getStatusClass = () => {
     if (!serverConnected) return 'status-disconnected';
-    if (droneCount === null || droneCount === 0) return 'status-muted';
-    if (droneCount >= 1 && droneCount <= 5) return 'status-default';
-    if (droneCount >= 6) return 'status-success';
+    if (droneCount === null || droneCount === 0) return 'status-default';
+    if (droneCount >= 1) return 'status-success';
     return 'status-default';
   };
 
