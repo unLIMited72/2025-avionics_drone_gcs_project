@@ -35,18 +35,21 @@ export default function DroneStatus() {
       }
 
       const data = await response.json();
-      console.log('[DroneStatus] Received data:', data);
+      console.log('[DroneStatus] count_payload:', data);
 
       const list: Drone[] = Array.isArray(data) ? data : [];
       const ids = list.map(d => d.id || d.drone_id).filter(Boolean);
       const uniqueIds = [...new Set(ids)];
       const count = uniqueIds.length;
 
-      console.log('[DroneStatus] Drone list:', list);
+      console.log('[DroneStatus] Parsed list:', list);
+      console.log('[DroneStatus] Extracted IDs:', ids);
       console.log('[DroneStatus] Unique IDs:', uniqueIds);
-      console.log('[DroneStatus] Setting drone count to:', count);
+      console.log('[DroneStatus] Computed count:', count);
+      console.log('[DroneStatus] state.droneCount before set:', count);
 
       setDroneCount(count);
+      console.log('[DroneStatus] state.droneCount after set:', count);
       setServerConnected(true);
       setIsLoading(false);
     } catch (error) {

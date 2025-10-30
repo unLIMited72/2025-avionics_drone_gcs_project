@@ -16,51 +16,45 @@ function R(el: HTMLElement | null) {
   return el?.getBoundingClientRect?.();
 }
 
-function anchorsLocal(aEl: HTMLElement | null, bEl: HTMLElement | null, root: HTMLElement | null) {
-  const ar = R(aEl);
-  const br = R(bEl);
-  const rr = R(root);
-
-  if (!ar || !br || !rr) return null;
-
-  const acx = ar.left + ar.width / 2 - rr.left;
-  const acy = ar.top + ar.height / 2 - rr.top;
-  const bcx = br.left + br.width / 2 - rr.left;
-  const bcy = br.top + br.height / 2 - rr.top;
-  const dx = bcx - acx;
-  const dy = bcy - acy;
-
-  if (Math.abs(dx) >= Math.abs(dy)) {
-    const ax = dx >= 0 ? (ar.right - rr.left) : (ar.left - rr.left);
-    const bx = dx >= 0 ? (br.left - rr.left) : (br.right - rr.left);
-    return { ax, ay: acy, bx, by: bcy };
-  } else {
-    const ay = dy >= 0 ? (ar.bottom - rr.top) : (ar.top - rr.top);
-    const by = dy >= 0 ? (br.top - rr.top) : (br.bottom - rr.top);
-    return { ax: acx, ay, bx: bcx, by };
-  }
+function toLocal(svg: SVGSVGElement, x: number, y: number) {
+  const pt = svg.createSVGPoint();
+  pt.x = x;
+  pt.y = y;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return pt;
+  return pt.matrixTransform(ctm.inverse());
 }
 
-function avoidRectPathLocal(
-  aEl: HTMLElement | null,
-  bEl: HTMLElement | null,
-  obsEl: HTMLElement | null,
-  root: HTMLElement | null,
-  margin = 24
-) {
-  const anchors = anchorsLocal(aEl, bEl, root);
-  if (!anchors) return null;
+function centerInSvg(svg: SVGSVGElement, el: HTMLElement | null) {
+  if (!el) return null;
+  const r = R(el);
+  if (!r) return null;
+  return toLocal(svg, r.left + r.width / 2, r.top + r.height / 2);
+}
 
-  const { ax, ay, bx, by } = anchors;
-  const o = R(obsEl);
-  const rr = R(root);
+function edgeAnchorsInSvg(svg: SVGSVGElement, aEl: HTMLElement | null, bEl: HTMLElement | null) {
+  if (!aEl || !bEl) return null;
 
-  if (!o || !rr) return null;
+  const ar = R(aEl);
+  const br = R(bEl);
+  if (!ar || !br) return null;
 
-  const toRight = bx > ax;
-  const laneX = toRight ? o.right - rr.left + margin : o.left - rr.left - margin;
+  const ac = centerInSvg(svg, aEl);
+  const bc = centerInSvg(svg, bEl);
+  if (!ac || !bc) return null;
 
-  return `${ax},${ay} ${laneX},${ay} ${laneX},${by} ${bx},${by}`;
+  const dx = bc.x - ac.x;
+  const dy = bc.y - ac.y;
+
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    const aEdge = toLocal(svg, dx >= 0 ? ar.right : ar.left, ar.top + ar.height / 2);
+    const bEdge = toLocal(svg, dx >= 0 ? br.left : br.right, br.top + br.height / 2);
+    return { a: aEdge, b: bEdge };
+  } else {
+    const aEdge = toLocal(svg, ar.left + ar.width / 2, dy >= 0 ? ar.bottom : ar.top);
+    const bEdge = toLocal(svg, br.left + br.width / 2, dy >= 0 ? br.top : br.bottom);
+    return { a: aEdge, b: bEdge };
+  }
 }
 
 export default function ConnectorLine({ currentDrone, controllerLinked }: ConnectorLineProps) {
@@ -102,32 +96,33 @@ export default function ConnectorLine({ currentDrone, controllerLinked }: Connec
   const renderStarterToPFD = () => {
     if (!currentDrone.connected) return null;
 
-    const root = document.getElementById('connector-layer');
+    const svgEl = document.getElementById('connector-layer');
+    if (!svgEl || !(svgEl instanceof SVGSVGElement)) return null;
+    const svg = svgEl as SVGSVGElement;
+
     const aEl = document.getElementById('drone-starter');
     const bEl = document.getElementById('primary-flight');
 
-    const anchors = anchorsLocal(aEl, bEl, root);
+    const anchors = edgeAnchorsInSvg(svg, aEl, bEl);
 
-    console.log('[ConnectorLine] Starter→PFD elements:', {
-      root: R(root),
-      starter: R(aEl),
-      pfd: R(bEl),
-      anchors,
+    if (!anchors) {
+      console.log('[ConnectorLine] Starter→PFD: anchors not available');
+      return null;
+    }
+
+    const { a, b } = anchors;
+
+    console.log('[ConnectorLine] Starter→PFD SVG coords:', {
+      ax: a.x, ay: a.y, bx: b.x, by: b.y
     });
-
-    if (!anchors) return null;
-
-    const { ax, ay, bx, by } = anchors;
-
-    console.log('[ConnectorLine] Starter→PFD local coords:', { ax, ay, bx, by });
 
     return (
       <line
         key="starter-pfd"
-        x1={ax}
-        y1={ay}
-        x2={bx}
-        y2={by}
+        x1={a.x}
+        y1={a.y}
+        x2={b.x}
+        y2={b.y}
         stroke="#00ff96"
         strokeWidth="3"
         strokeDasharray="8 6"
@@ -139,29 +134,33 @@ export default function ConnectorLine({ currentDrone, controllerLinked }: Connec
   const renderStarterToController = () => {
     if (!controllerLinked) return null;
 
-    const root = document.getElementById('connector-layer');
+    const svgEl = document.getElementById('connector-layer');
+    if (!svgEl || !(svgEl instanceof SVGSVGElement)) return null;
+    const svg = svgEl as SVGSVGElement;
+
     const aEl = document.getElementById('drone-starter');
     const cEl = document.getElementById('controller-panel');
-    const oEl = document.getElementById('primary-flight');
 
-    const pts = avoidRectPathLocal(aEl, cEl, oEl, root, 24);
+    const anchors = edgeAnchorsInSvg(svg, aEl, cEl);
 
-    console.log('[ConnectorLine] Starter→Controller elements:', {
-      root: R(root),
-      starter: R(aEl),
-      controller: R(cEl),
-      obstacle: R(oEl),
-      points: pts,
+    if (!anchors) {
+      console.log('[ConnectorLine] Starter→Controller: anchors not available');
+      return null;
+    }
+
+    const { a, b } = anchors;
+
+    console.log('[ConnectorLine] Starter→Controller SVG coords:', {
+      ax: a.x, ay: a.y, bx: b.x, by: b.y
     });
 
-    if (!pts) return null;
-
-    console.log('[ConnectorLine] Starter→Controller local polyline:', pts);
-
     return (
-      <polyline
+      <line
         key="starter-controller"
-        points={pts}
+        x1={a.x}
+        y1={a.y}
+        x2={b.x}
+        y2={b.y}
         stroke="#00ff96"
         strokeWidth="3"
         strokeDasharray="8 6"
