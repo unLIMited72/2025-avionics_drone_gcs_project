@@ -8,6 +8,8 @@ interface WorkspaceLogProps {
   zoom: number;
   onRemove: (id: string) => void;
   onPositionChange: (id: string, x: number, y: number) => void;
+  onToggleMinimize: (id: string) => void;
+  isMinimized: boolean;
 }
 
 interface LogEntry {
@@ -22,7 +24,9 @@ export default function WorkspaceLog({
   initialY,
   zoom,
   onRemove,
-  onPositionChange
+  onPositionChange,
+  onToggleMinimize,
+  isMinimized
 }: WorkspaceLogProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -100,6 +104,21 @@ export default function WorkspaceLog({
     onRemove(id);
   };
 
+  const handleMinimize = (e: MouseEvent) => {
+    e.stopPropagation();
+    onToggleMinimize(id);
+  };
+
+  const handleHeaderKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onToggleMinimize(id);
+    } else if (e.key === 'Delete') {
+      e.preventDefault();
+      onRemove(id);
+    }
+  };
+
   const handleClearLogs = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -148,7 +167,13 @@ export default function WorkspaceLog({
       }}
       onMouseDown={handleMouseDown}
     >
-      <div className="workspace-block-header">
+      <div
+        className="workspace-block-header"
+        tabIndex={0}
+        onKeyDown={handleHeaderKeyDown}
+        role="button"
+        aria-label="Window header"
+      >
         <div className="workspace-block-title">Log Terminal</div>
         <div className="header-actions">
           <button className="log-clear-btn" onClick={handleClearLogs} title="Clear logs">
@@ -156,7 +181,22 @@ export default function WorkspaceLog({
               <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" />
             </svg>
           </button>
-          <button className="workspace-block-remove" onClick={handleRemove}>
+          <button
+            className="workspace-block-minimize"
+            onClick={handleMinimize}
+            aria-label={isMinimized ? "Restore" : "Minimize"}
+            title={isMinimized ? "Restore" : "Minimize"}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <button
+            className="workspace-block-remove"
+            onClick={handleRemove}
+            aria-label="Close"
+            title="Close"
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -165,7 +205,7 @@ export default function WorkspaceLog({
         </div>
       </div>
 
-      <div className="log-content" onMouseDown={(e) => e.stopPropagation()}>
+      {!isMinimized && <><div className="log-content" onMouseDown={(e) => e.stopPropagation()}>
         {logs.length === 0 ? (
           <div className="log-empty">Terminal cleared. Waiting for new logs...</div>
         ) : (
@@ -184,7 +224,7 @@ export default function WorkspaceLog({
 
       <div className="log-status">
         <span className="status-text">Ready</span>
-      </div>
+      </div></>}
     </div>
   );
 }

@@ -8,6 +8,8 @@ interface WorkspaceDroneStarterProps {
   zoom: number;
   onRemove: (id: string) => void;
   onPositionChange: (id: string, x: number, y: number) => void;
+  onToggleMinimize: (id: string) => void;
+  isMinimized: boolean;
 }
 
 
@@ -17,7 +19,9 @@ export default function WorkspaceDroneStarter({
   initialY,
   zoom,
   onRemove,
-  onPositionChange
+  onPositionChange,
+  onToggleMinimize,
+  isMinimized
 }: WorkspaceDroneStarterProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -100,6 +104,21 @@ export default function WorkspaceDroneStarter({
     onRemove(id);
   };
 
+  const handleMinimize = (e: MouseEvent) => {
+    e.stopPropagation();
+    onToggleMinimize(id);
+  };
+
+  const handleHeaderKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onToggleMinimize(id);
+    } else if (e.key === 'Delete') {
+      e.preventDefault();
+      onRemove(id);
+    }
+  };
+
   const handleConnect = () => {
     if (serialNumber.trim() && droneName.trim()) {
       setIsConnected(true);
@@ -141,7 +160,13 @@ export default function WorkspaceDroneStarter({
       }}
       onMouseDown={handleMouseDown}
     >
-      <div className="workspace-block-header">
+      <div
+        className="workspace-block-header"
+        tabIndex={0}
+        onKeyDown={handleHeaderKeyDown}
+        role="button"
+        aria-label="Window header"
+      >
         <div className="workspace-block-title">
           {isConnected ? (
             <>
@@ -152,15 +177,32 @@ export default function WorkspaceDroneStarter({
             'Drone Starter'
           )}
         </div>
-        <button className="workspace-block-remove" onClick={handleRemove}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+        <div className="header-actions">
+          <button
+            className="workspace-block-minimize"
+            onClick={handleMinimize}
+            aria-label={isMinimized ? "Restore" : "Minimize"}
+            title={isMinimized ? "Restore" : "Minimize"}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <button
+            className="workspace-block-remove"
+            onClick={handleRemove}
+            aria-label="Close"
+            title="Close"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <div className="drone-starter-body">
+      {!isMinimized && <div className="drone-starter-body">
         <div className="connection-section">
           {!isConnected && (
             <div className="input-wrapper">
@@ -346,7 +388,7 @@ export default function WorkspaceDroneStarter({
             </div>
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

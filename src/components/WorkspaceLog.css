@@ -51,6 +51,7 @@
 }
 
 .log-clear-btn,
+.workspace-log .workspace-block-minimize,
 .workspace-log .workspace-block-remove {
   width: 24px;
   height: 24px;
@@ -68,6 +69,12 @@
 }
 
 .log-clear-btn:hover {
+  background: rgba(100, 150, 255, 0.2);
+  border-color: rgba(100, 150, 255, 0.5);
+  color: #6496ff;
+}
+
+.workspace-log .workspace-block-minimize:hover {
   background: rgba(100, 150, 255, 0.2);
   border-color: rgba(100, 150, 255, 0.5);
   color: #6496ff;

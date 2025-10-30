@@ -14,6 +14,7 @@ interface DroppedBlock {
   type: 'flight-state-info' | 'drone-starter' | 'controller' | 'log';
   x: number;
   y: number;
+  isMinimized?: boolean;
 }
 
 function getBlockDimensions(type: string): { width: number; height: number } {
@@ -34,19 +35,19 @@ function getBlockDimensions(type: string): { width: number; height: number } {
 function App() {
   const [serverStatus] = useState<ServerStatus>('disconnected');
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
-  const [blocks, setBlocks] = useState<DroppedBlock[]>([]);
+  const [blocks, setBlocks] = useState<DroppedBlock[]>(() => {
+    const saved = localStorage.getItem('workspace-blocks');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const [zoom, setZoom] = useState(1);
+  const zoom = 1;
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mainRef = useRef<HTMLDivElement>(null);
 
-
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom(prevZoom => Math.min(Math.max(0.5, prevZoom * delta), 2));
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -95,7 +96,6 @@ function App() {
   }, [isDragging, dragStart, zoom]);
 
   const handleResetView = () => {
-    setZoom(1);
     setPan({ x: 0, y: 0 });
   };
 
@@ -146,6 +146,16 @@ function App() {
     setBlocks(prev => prev.filter(block => block.id !== id));
   };
 
+  const handleToggleMinimize = (id: string) => {
+    setBlocks(prev => prev.map(block =>
+      block.id === id ? { ...block, isMinimized: !block.isMinimized } : block
+    ));
+  };
+
+  useEffect(() => {
+    localStorage.setItem('workspace-blocks', JSON.stringify(blocks));
+  }, [blocks]);
+
   useEffect(() => {
     const mainElement = mainRef.current;
     if (mainElement) {
@@ -195,6 +205,8 @@ function App() {
                       b.id === id ? { ...b, x: newX, y: newY } : b
                     ));
                   }}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
                 />
               );
             } else if (block.type === 'controller') {
@@ -211,6 +223,8 @@ function App() {
                       b.id === id ? { ...b, x: newX, y: newY } : b
                     ));
                   }}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
                 />
               );
             } else if (block.type === 'log') {
@@ -227,6 +241,8 @@ function App() {
                       b.id === id ? { ...b, x: newX, y: newY } : b
                     ));
                   }}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
                 />
               );
             } else {
@@ -243,6 +259,8 @@ function App() {
                       b.id === id ? { ...b, x: newX, y: newY } : b
                     ));
                   }}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
                   velocity={15.2}
                   acceleration={2.3}
                 />
