@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type MouseEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type MouseEvent } from 'react';
 import './WorkspaceLog.css';
 
 interface WorkspaceLogProps {
@@ -8,6 +8,8 @@ interface WorkspaceLogProps {
   zoom: number;
   onRemove: (id: string) => void;
   onPositionChange: (id: string, x: number, y: number) => void;
+  onToggleMinimize: (id: string) => void;
+  isMinimized: boolean;
 }
 
 interface LogEntry {
@@ -22,7 +24,9 @@ export default function WorkspaceLog({
   initialY,
   zoom,
   onRemove,
-  onPositionChange
+  onPositionChange,
+  onToggleMinimize,
+  isMinimized
 }: WorkspaceLogProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -47,66 +51,75 @@ export default function WorkspaceLog({
   }, [initialX, initialY]);
 
   useEffect(() => {
-    if (autoScroll && logs.length > 0) {
-      logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (autoScroll && logs.length > 0 && logEndRef.current) {
+      logEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
     }
   }, [logs, autoScroll]);
 
-  const handleMouseDown = (e: MouseEvent) => {
+  const handleMouseDown = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (target.closest('.terminal-body, .terminal-header, .terminal-footer, button')) {
-      return;
-    }
+    if (target.closest('.log-content, button')) return;
 
+    e.preventDefault();
+    e.stopPropagation();
     setDragStart({ x: e.clientX, y: e.clientY });
     setIsDragging(true);
-    e.stopPropagation();
-  };
+  }, []);
 
   useEffect(() => {
+    if (!isDragging) return;
+
     const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
-      if (isDragging) {
-        const deltaX = (e.clientX - dragStart.x) / zoom;
-        const deltaY = (e.clientY - dragStart.y) / zoom;
+      e.preventDefault();
+      const deltaX = (e.clientX - dragStart.x) / zoom;
+      const deltaY = (e.clientY - dragStart.y) / zoom;
 
-        const newX = position.x + deltaX;
-        const newY = position.y + deltaY;
-
-        setPosition({ x: newX, y: newY });
-        setDragStart({ x: e.clientX, y: e.clientY });
-      }
+      setPosition(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
+      setDragStart({ x: e.clientX, y: e.clientY });
     };
 
-    const handleGlobalMouseUp = () => {
-      if (isDragging) {
-        onPositionChange(id, position.x, position.y);
-      }
+    const handleGlobalMouseUp = (e: globalThis.MouseEvent) => {
+      e.preventDefault();
       setIsDragging(false);
+      onPositionChange(id, position.x, position.y);
     };
 
-    if (isDragging) {
-      document.addEventListener('mousemove', handleGlobalMouseMove);
-      document.addEventListener('mouseup', handleGlobalMouseUp);
-    }
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    document.addEventListener('mouseup', handleGlobalMouseUp);
 
     return () => {
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [isDragging, dragStart, position, zoom, id, onPositionChange]);
+  }, [isDragging, dragStart, zoom, id, position, onPositionChange]);
 
-  const handleRemove = (e: MouseEvent) => {
+  const handleRemove = useCallback((e: MouseEvent) => {
     e.stopPropagation();
     onRemove(id);
+  }, [id, onRemove]);
+
+  const handleMinimize = (e: MouseEvent) => {
+    e.stopPropagation();
+    onToggleMinimize(id);
   };
 
-  const handleClearLogs = (e: MouseEvent) => {
+  const handleHeaderKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onToggleMinimize(id);
+    } else if (e.key === 'Delete') {
+      e.preventDefault();
+      onRemove(id);
+    }
+  };
+
+  const handleClearLogs = useCallback((e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setAutoScroll(false);
     setLogs([]);
     setTimeout(() => setAutoScroll(true), 100);
-  };
+  }, []);
 
   const getLevelColor = (level: LogEntry['level']): string => {
     switch (level) {
@@ -148,7 +161,13 @@ export default function WorkspaceLog({
       }}
       onMouseDown={handleMouseDown}
     >
-      <div className="workspace-block-header">
+      <div
+        className="workspace-block-header"
+        tabIndex={0}
+        onKeyDown={handleHeaderKeyDown}
+        role="button"
+        aria-label="Window header"
+      >
         <div className="workspace-block-title">Log Terminal</div>
         <div className="header-actions">
           <button className="log-clear-btn" onClick={handleClearLogs} title="Clear logs">
@@ -156,7 +175,22 @@ export default function WorkspaceLog({
               <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" />
             </svg>
           </button>
-          <button className="workspace-block-remove" onClick={handleRemove}>
+          <button
+            className="workspace-block-minimize"
+            onClick={handleMinimize}
+            aria-label={isMinimized ? "Restore" : "Minimize"}
+            title={isMinimized ? "Restore" : "Minimize"}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <button
+            className="workspace-block-remove"
+            onClick={handleRemove}
+            aria-label="Close"
+            title="Close"
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -165,40 +199,26 @@ export default function WorkspaceLog({
         </div>
       </div>
 
-      <div className="log-terminal" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="terminal-header">
-          <div className="terminal-buttons">
-            <span className="terminal-button terminal-close"></span>
-            <span className="terminal-button terminal-minimize"></span>
-            <span className="terminal-button terminal-maximize"></span>
-          </div>
-          <div className="terminal-title">drone_log_terminal</div>
-        </div>
-
-        <div className="terminal-body">
-          {logs.length === 0 ? (
-            <div className="terminal-empty">
-              <div className="empty-text">Terminal cleared. Waiting for new logs...</div>
+      {!isMinimized && <><div className="log-content" onMouseDown={(e) => e.stopPropagation()}>
+        {logs.length === 0 ? (
+          <div className="log-empty">Terminal cleared. Waiting for new logs...</div>
+        ) : (
+          logs.map((log, index) => (
+            <div key={index} className="log-entry">
+              <span className="log-timestamp">{log.timestamp}</span>
+              <span className="log-level" style={{ color: getLevelColor(log.level) }}>
+                {getLevelPrefix(log.level)}
+              </span>
+              <span className="log-message">{log.message}</span>
             </div>
-          ) : (
-            logs.map((log, index) => (
-              <div key={index} className="log-entry">
-                <span className="log-timestamp">{log.timestamp}</span>
-                <span className="log-level" style={{ color: getLevelColor(log.level) }}>
-                  {getLevelPrefix(log.level)}
-                </span>
-                <span className="log-message">{log.message}</span>
-              </div>
-            ))
-          )}
-          <div ref={logEndRef} />
-        </div>
-
-        <div className="terminal-footer">
-          <span className="terminal-cursor">▊</span>
-          <span className="terminal-prompt">Ready</span>
-        </div>
+          ))
+        )}
+        <div ref={logEndRef} />
       </div>
+
+      <div className="log-status">
+        <span className="status-text">Ready</span>
+      </div></>}
     </div>
   );
 }
