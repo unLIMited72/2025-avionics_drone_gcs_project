@@ -153,6 +153,13 @@ export default function WorkspaceDroneStarter({
         name: droneName,
         connected: true
       });
+
+      setTimeout(() => {
+        const svg = document.getElementById('connector-layer');
+        if (svg) {
+          svg.dispatchEvent(new Event('force-redraw'));
+        }
+      }, 100);
     } catch (error) {
       console.error('[WorkspaceDroneStarter] Connection error:', error);
       setConnectionError(error instanceof Error ? error.message : 'Failed to connect drone');
@@ -198,6 +205,13 @@ export default function WorkspaceDroneStarter({
         connected: false
       });
       onControllerLink(false);
+
+      setTimeout(() => {
+        const svg = document.getElementById('connector-layer');
+        if (svg) {
+          svg.dispatchEvent(new Event('force-redraw'));
+        }
+      }, 100);
     } catch (error) {
       console.error('[WorkspaceDroneStarter] Disconnection error:', error);
       setConnectionError(error instanceof Error ? error.message : 'Failed to disconnect drone');

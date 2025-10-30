@@ -37,9 +37,12 @@ export default function DroneStatus() {
 
       const data: DroneSummary = await response.json();
       console.log('[DroneStatus] Received data:', data);
-      console.log('[DroneStatus] Setting drone count to:', data.connectedCount);
+      console.log('[DroneStatus] Raw connectedCount:', data.connectedCount, 'Type:', typeof data.connectedCount);
 
-      setDroneCount(data.connectedCount);
+      const count = Number(data?.connectedCount ?? 0);
+      console.log('[DroneStatus] Setting drone count to:', count);
+
+      setDroneCount(count);
       setServerConnected(true);
       setIsLoading(false);
     } catch (error) {
@@ -64,7 +67,9 @@ export default function DroneStatus() {
         try {
           const data = JSON.parse(event.data);
           if (data.connectedCount !== undefined) {
-            setDroneCount(data.connectedCount);
+            const count = Number(data?.connectedCount ?? 0);
+            console.log('[DroneStatus] WebSocket update - setting count to:', count);
+            setDroneCount(count);
             setServerConnected(true);
           }
         } catch (error) {
@@ -113,7 +118,7 @@ export default function DroneStatus() {
     return 'status-default';
   };
 
-  const displayCount = serverConnected ? (droneCount ?? 0) : '--';
+  const displayCount = serverConnected ? String(Number(droneCount ?? 0)) : '--';
 
   return (
     <div className={`drone-status ${getStatusClass()}`}>

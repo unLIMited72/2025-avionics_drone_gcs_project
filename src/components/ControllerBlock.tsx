@@ -97,6 +97,13 @@ export default function ControllerBlock({
       setIsSaved(true);
       onControllerLink(true);
       setTimeout(() => setIsSaved(false), 2000);
+
+      setTimeout(() => {
+        const svg = document.getElementById('connector-layer');
+        if (svg) {
+          svg.dispatchEvent(new Event('force-redraw'));
+        }
+      }, 100);
     }
   };
 

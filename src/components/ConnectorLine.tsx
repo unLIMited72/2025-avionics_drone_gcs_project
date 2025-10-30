@@ -12,11 +12,11 @@ interface ConnectorLineProps {
   controllerLinked: boolean;
 }
 
-function rect(el: HTMLElement | null) {
+function R(el: HTMLElement | null) {
   return el?.getBoundingClientRect?.();
 }
 
-function edgeAnchors(ra: DOMRect, rb: DOMRect) {
+function anchors(ra: DOMRect, rb: DOMRect) {
   const acx = ra.left + ra.width / 2;
   const acy = ra.top + ra.height / 2;
   const bcx = rb.left + rb.width / 2;
@@ -27,16 +27,19 @@ function edgeAnchors(ra: DOMRect, rb: DOMRect) {
   if (Math.abs(dx) >= Math.abs(dy)) {
     const ax = dx >= 0 ? ra.right : ra.left;
     const bx = dx >= 0 ? rb.left : rb.right;
-    const ay = acy;
-    const by = bcy;
-    return { ax, ay, bx, by };
+    return { ax, ay: acy, bx, by: bcy };
   } else {
     const ay = dy >= 0 ? ra.bottom : ra.top;
     const by = dy >= 0 ? rb.top : rb.bottom;
-    const ax = acx;
-    const bx = bcx;
-    return { ax, ay, bx, by };
+    return { ax: acx, ay, bx: bcx, by };
   }
+}
+
+function avoidRectPath(ra: DOMRect, rb: DOMRect, ro: DOMRect, m = 24) {
+  const { ax, ay, bx, by } = anchors(ra, rb);
+  const toRight = bx > ax;
+  const laneX = toRight ? ro.right + m : ro.left - m;
+  return `${ax},${ay} ${laneX},${ay} ${laneX},${by} ${bx},${by}`;
 }
 
 export default function ConnectorLine({ currentDrone, controllerLinked }: ConnectorLineProps) {
@@ -44,9 +47,18 @@ export default function ConnectorLine({ currentDrone, controllerLinked }: Connec
 
   const redraw = () => {
     setRedrawTrigger(prev => prev + 1);
+    const svg = document.getElementById('connector-layer');
+    if (svg) {
+      svg.style.transform = 'translateZ(0)';
+      requestAnimationFrame(() => {
+        svg.style.transform = '';
+      });
+    }
   };
 
   useEffect(() => {
+    console.log('[ConnectorLine] Mounted, currentDrone:', currentDrone, 'controllerLinked:', controllerLinked);
+
     window.addEventListener('resize', redraw);
     const interval = setInterval(redraw, 100);
 
@@ -55,6 +67,8 @@ export default function ConnectorLine({ currentDrone, controllerLinked }: Connec
       layer.addEventListener('force-redraw', redraw);
     }
 
+    setTimeout(redraw, 100);
+
     return () => {
       window.removeEventListener('resize', redraw);
       clearInterval(interval);
@@ -62,16 +76,22 @@ export default function ConnectorLine({ currentDrone, controllerLinked }: Connec
         layer.removeEventListener('force-redraw', redraw);
       }
     };
-  }, []);
+  }, [currentDrone.connected, controllerLinked]);
 
   const renderStarterToPFD = () => {
     if (!currentDrone.connected) return null;
 
-    const a = rect(document.getElementById('drone-starter'));
-    const b = rect(document.getElementById('primary-flight'));
+    const a = R(document.getElementById('drone-starter'));
+    const b = R(document.getElementById('primary-flight'));
+
+    console.log('[ConnectorLine] Starter→PFD rects:', { a, b });
+
     if (!a || !b) return null;
 
-    const { ax, ay, bx, by } = edgeAnchors(a, b);
+    const { ax, ay, bx, by } = anchors(a, b);
+
+    console.log('[ConnectorLine] Starter→PFD line coords:', { ax, ay, bx, by });
+
     return (
       <line
         key="starter-pfd"
@@ -79,7 +99,10 @@ export default function ConnectorLine({ currentDrone, controllerLinked }: Connec
         y1={ay}
         x2={bx}
         y2={by}
-        className="connector-line"
+        stroke="#00ff96"
+        strokeWidth="3"
+        strokeDasharray="8 6"
+        fill="none"
       />
     );
   };
@@ -87,25 +110,32 @@ export default function ConnectorLine({ currentDrone, controllerLinked }: Connec
   const renderStarterToController = () => {
     if (!controllerLinked) return null;
 
-    const a = rect(document.getElementById('drone-starter'));
-    const c = rect(document.getElementById('controller-panel'));
-    if (!a || !c) return null;
+    const a = R(document.getElementById('drone-starter'));
+    const c = R(document.getElementById('controller-panel'));
+    const o = R(document.getElementById('primary-flight'));
 
-    const { ax, ay, bx, by } = edgeAnchors(a, c);
+    console.log('[ConnectorLine] Starter→Controller rects:', { a, c, o });
+
+    if (!a || !c || !o) return null;
+
+    const pts = avoidRectPath(a, c, o, 24);
+
+    console.log('[ConnectorLine] Starter→Controller polyline points:', pts);
+
     return (
-      <line
+      <polyline
         key="starter-controller"
-        x1={ax}
-        y1={ay}
-        x2={bx}
-        y2={by}
-        className="connector-line"
+        points={pts}
+        stroke="#00ff96"
+        strokeWidth="3"
+        strokeDasharray="8 6"
+        fill="none"
       />
     );
   };
 
   return (
-    <svg className="connector-layer" id="connector-layer">
+    <svg id="connector-layer" className="connector-layer">
       {renderStarterToPFD()}
       {renderStarterToController()}
     </svg>
