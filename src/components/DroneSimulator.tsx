@@ -38,6 +38,8 @@ export default function DroneSimulator() {
     setLoading(true);
     try {
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/drones/${droneId}`;
+      console.log('[DroneSimulator] Updating drone:', droneId, 'to status:', newStatus);
+
       const response = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
@@ -47,10 +49,19 @@ export default function DroneSimulator() {
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (!response.ok) throw new Error('Failed to update drone');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[DroneSimulator] Update failed:', response.status, errorText);
+        throw new Error('Failed to update drone');
+      }
+
+      const data = await response.json();
+      console.log('[DroneSimulator] Drone updated successfully:', data);
+
       await fetchDrones();
+      console.log('[DroneSimulator] Drone list refreshed');
     } catch (error) {
-      console.error('Error updating drone:', error);
+      console.error('[DroneSimulator] Error updating drone:', error);
     } finally {
       setLoading(false);
     }

@@ -20,10 +20,10 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const url = new URL(req.url);
-    const pathname = url.pathname;
+    const pathname = url.pathname.replace(/^\/drones/, '') || '/';
 
     // GET /drones - List drones with optional status filter
-    if (req.method === 'GET' && pathname === '/drones') {
+    if (req.method === 'GET' && pathname === '/') {
       const status = url.searchParams.get('status');
       
       let query = supabase
@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // GET /summary - Get drone statistics summary
-    if (req.method === 'GET' && pathname === '/drones/summary') {
+    if (req.method === 'GET' && pathname === '/summary') {
       const { data, error } = await supabase
         .from('drones')
         .select('status');
@@ -83,9 +83,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // GET /drones/:id - Get single drone
-    if (req.method === 'GET' && pathname.startsWith('/drones/') && pathname.split('/').length === 3) {
-      const droneId = pathname.split('/')[2];
+    // GET /:id - Get single drone
+    if (req.method === 'GET' && pathname.startsWith('/') && pathname.split('/').length === 2 && pathname !== '/') {
+      const droneId = pathname.split('/')[1];
       
       const { data, error } = await supabase
         .from('drones')
@@ -121,8 +121,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // POST /drones - Create new drone
-    if (req.method === 'POST' && pathname === '/drones') {
+    // POST / - Create new drone
+    if (req.method === 'POST' && pathname === '/') {
       const body = await req.json();
       
       const { data, error } = await supabase
@@ -147,9 +147,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // PUT /drones/:id - Update drone
-    if (req.method === 'PUT' && pathname.startsWith('/drones/') && pathname.split('/').length === 3) {
-      const droneId = pathname.split('/')[2];
+    // PUT /:id - Update drone
+    if (req.method === 'PUT' && pathname.startsWith('/') && pathname.split('/').length === 2) {
+      const droneId = pathname.split('/')[1];
       const body = await req.json();
       
       const { data, error } = await supabase
@@ -174,9 +174,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // DELETE /drones/:id - Delete drone
-    if (req.method === 'DELETE' && pathname.startsWith('/drones/') && pathname.split('/').length === 3) {
-      const droneId = pathname.split('/')[2];
+    // DELETE /:id - Delete drone
+    if (req.method === 'DELETE' && pathname.startsWith('/') && pathname.split('/').length === 2) {
+      const droneId = pathname.split('/')[1];
       
       const { error } = await supabase
         .from('drones')

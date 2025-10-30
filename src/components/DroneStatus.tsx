@@ -18,6 +18,8 @@ export default function DroneStatus() {
   const fetchDroneSummary = async () => {
     try {
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/drones/summary`;
+      console.log('[DroneStatus] Fetching from:', apiUrl);
+
       const response = await fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
@@ -25,16 +27,23 @@ export default function DroneStatus() {
         },
       });
 
+      console.log('[DroneStatus] Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch drone summary');
+        const errorText = await response.text();
+        console.error('[DroneStatus] API Error:', response.status, errorText);
+        throw new Error(`Failed to fetch drone summary: ${response.status}`);
       }
 
       const data: DroneSummary = await response.json();
+      console.log('[DroneStatus] Received data:', data);
+      console.log('[DroneStatus] Setting drone count to:', data.connectedCount);
+
       setDroneCount(data.connectedCount);
       setServerConnected(true);
       setIsLoading(false);
     } catch (error) {
-      console.error('Error fetching drone summary:', error);
+      console.error('[DroneStatus] Error fetching drone summary:', error);
       setServerConnected(false);
       setIsLoading(false);
     }
