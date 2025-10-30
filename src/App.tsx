@@ -37,6 +37,7 @@ interface Edge {
   toId: string;
   anchorA: { x: number; y: number };
   anchorB: { x: number; y: number };
+  mode: 'horizontal' | 'vertical';
 }
 
 function getBlockDimensions(type: string): { width: number; height: number } {
@@ -224,7 +225,7 @@ function App() {
     setMarqueeEnd({ x: 0, y: 0 });
   };
 
-  const recomputeEdges = useCallback((reason: 'drag' | 'zoom' | 'pan' | 'node') => {
+  const recomputeEdges = useCallback((reason: 'drag' | 'zoom' | 'pan' | 'node' | 'resize') => {
     console.log('EDGE_RECOMPUTE', { reason });
     setEdges(prevEdges => {
       return prevEdges.map(edge => {
@@ -237,10 +238,15 @@ function App() {
         const fromRect = { x: fromBlock.x, y: fromBlock.y, width: fromDims.width, height: fromDims.height };
         const toRect = { x: toBlock.x, y: toBlock.y, width: toDims.width, height: toDims.height };
 
-        const anchorA = calculateAnchorPoint(fromRect, toRect, true);
-        const anchorB = calculateAnchorPoint(fromRect, toRect, false);
+        const anchorAResult = calculateAnchorPoint(fromRect, toRect, true);
+        const anchorBResult = calculateAnchorPoint(fromRect, toRect, false);
 
-        return { ...edge, anchorA, anchorB };
+        return {
+          ...edge,
+          anchorA: { x: anchorAResult.x, y: anchorAResult.y },
+          anchorB: { x: anchorBResult.x, y: anchorBResult.y },
+          mode: anchorAResult.mode
+        };
       });
     });
   }, [blocks]);
@@ -260,8 +266,7 @@ function App() {
   useEffect(() => {
     const handleResize = () => {
       if (edges.length > 0) {
-        console.log('EDGE_RECOMPUTE', { reason: 'resize' });
-        recomputeEdges('pan');
+        recomputeEdges('resize');
       }
     };
 
@@ -298,23 +303,25 @@ function App() {
       const fromRect = { x: starterBlockObj.x, y: starterBlockObj.y, width: fromDims.width, height: fromDims.height };
       const toRect = { x: flightDisplayBlock.x, y: flightDisplayBlock.y, width: toDims.width, height: toDims.height };
 
-      const anchorA = calculateAnchorPoint(fromRect, toRect, true);
-      const anchorB = calculateAnchorPoint(fromRect, toRect, false);
+      const anchorAResult = calculateAnchorPoint(fromRect, toRect, true);
+      const anchorBResult = calculateAnchorPoint(fromRect, toRect, false);
 
       const edge: Edge = {
         id: `edge-${starterBlockObj.id}-${flightDisplayBlock.id}`,
         fromId: starterBlockObj.id,
         toId: flightDisplayBlock.id,
-        anchorA,
-        anchorB
+        anchorA: { x: anchorAResult.x, y: anchorAResult.y },
+        anchorB: { x: anchorBResult.x, y: anchorBResult.y },
+        mode: anchorAResult.mode
       };
       newEdges.push(edge);
       edgePairs.push('Starter→FlightDisplay');
-      console.log('EDGE_ANCHORS', {
+      console.log('EDGE_ANCHOR', {
         from: starterBlockObj.id,
         to: flightDisplayBlock.id,
-        anchorA: [anchorA.x, anchorA.y],
-        anchorB: [anchorB.x, anchorB.y]
+        anchorA: [anchorAResult.x, anchorAResult.y],
+        anchorB: [anchorBResult.x, anchorBResult.y],
+        mode: anchorAResult.mode
       });
     }
 
@@ -325,23 +332,25 @@ function App() {
       const fromRect = { x: flightDisplayBlock.x, y: flightDisplayBlock.y, width: fromDims.width, height: fromDims.height };
       const toRect = { x: controllerBlock.x, y: controllerBlock.y, width: toDims.width, height: toDims.height };
 
-      const anchorA = calculateAnchorPoint(fromRect, toRect, true);
-      const anchorB = calculateAnchorPoint(fromRect, toRect, false);
+      const anchorAResult = calculateAnchorPoint(fromRect, toRect, true);
+      const anchorBResult = calculateAnchorPoint(fromRect, toRect, false);
 
       const edge: Edge = {
         id: `edge-${flightDisplayBlock.id}-${controllerBlock.id}`,
         fromId: flightDisplayBlock.id,
         toId: controllerBlock.id,
-        anchorA,
-        anchorB
+        anchorA: { x: anchorAResult.x, y: anchorAResult.y },
+        anchorB: { x: anchorBResult.x, y: anchorBResult.y },
+        mode: anchorAResult.mode
       };
       newEdges.push(edge);
       edgePairs.push('FlightDisplay→Controller');
-      console.log('EDGE_ANCHORS', {
+      console.log('EDGE_ANCHOR', {
         from: flightDisplayBlock.id,
         to: controllerBlock.id,
-        anchorA: [anchorA.x, anchorA.y],
-        anchorB: [anchorB.x, anchorB.y]
+        anchorA: [anchorAResult.x, anchorAResult.y],
+        anchorB: [anchorBResult.x, anchorBResult.y],
+        mode: anchorAResult.mode
       });
     }
 
@@ -541,6 +550,7 @@ function App() {
             />
           )}
           <div
+            id="world"
             className="workspace-world-container"
             style={{
               position: 'absolute',
@@ -549,12 +559,11 @@ function App() {
               width: 0,
               height: 0,
               transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
-              transformOrigin: '0 0',
-              pointerEvents: 'none'
+              transformOrigin: '0 0'
             }}
           >
             <svg
-              className="edges-layer"
+              id="edge-layer"
               style={{
                 position: 'absolute',
                 left: '-10000px',
@@ -562,7 +571,8 @@ function App() {
                 width: '20000px',
                 height: '20000px',
                 pointerEvents: 'none',
-                overflow: 'visible'
+                overflow: 'visible',
+                zIndex: 1
               }}
             >
               {edges.map(edge => {
@@ -586,14 +596,13 @@ function App() {
                 );
               })}
             </svg>
-          </div>
-          <div
-            className="workspace-blocks-container"
-            style={{
-              transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
-              zIndex: 2
-            }}
-          >
+            <div
+              className="workspace-blocks-container"
+              style={{
+                position: 'relative',
+                zIndex: 2
+              }}
+            >
           {blocks.map(block => {
             const isSelected = selectedBlockIds.includes(block.id);
             if (block.type === 'drone-starter') {
@@ -665,6 +674,7 @@ function App() {
               );
             }
           })}
+            </div>
           </div>
           <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
           <Minimap
