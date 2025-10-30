@@ -7,6 +7,7 @@ import WorkspaceBlock from './components/WorkspaceBlock';
 import WorkspaceDroneStarter from './components/WorkspaceDroneStarter';
 import ControllerBlock from './components/ControllerBlock';
 import WorkspaceLog from './components/WorkspaceLog';
+import Minimap from './components/Minimap';
 import './App.css';
 
 interface DroppedBlock {
@@ -152,6 +153,10 @@ function App() {
     ));
   };
 
+  const handleMinimapPan = (x: number, y: number) => {
+    setPan({ x, y });
+  };
+
   useEffect(() => {
     localStorage.setItem('workspace-blocks', JSON.stringify(blocks));
   }, [blocks]);
@@ -269,6 +274,16 @@ function App() {
           })}
         </div>
         <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
+        <Minimap
+          isVisible={!isDashboardOpen}
+          canvasWidth={mainRef.current?.clientWidth || 1920}
+          canvasHeight={mainRef.current?.clientHeight || 1080}
+          viewportWidth={mainRef.current?.clientWidth || 1920}
+          viewportHeight={mainRef.current?.clientHeight || 1080}
+          pan={pan}
+          onPanChange={handleMinimapPan}
+          blocks={blocks}
+        />
         <DigitalClock onReset={handleResetView} />
         <DroneStatus />
       </main>
