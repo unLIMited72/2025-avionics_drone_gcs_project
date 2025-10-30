@@ -120,7 +120,7 @@ function Minimap({
       <div className="minimap-canvas">
         <div className="minimap-grid" />
 
-        {blocks.map(block => (
+        {blocks.length > 0 && blocks.map(block => (
           <div
             key={block.id}
             className="minimap-block"
