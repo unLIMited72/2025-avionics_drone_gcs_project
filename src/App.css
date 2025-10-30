@@ -7,6 +7,44 @@
   overflow: hidden;
 }
 
+.gcs-main {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background-color: #0a0e14;
+  cursor: grab;
+  user-select: none;
+}
+
+.gcs-main:active {
+  cursor: grabbing;
+}
+
+.main-background {
+  position: absolute;
+  top: -200%;
+  left: -200%;
+  width: 500%;
+  height: 500%;
+  background-image:
+    linear-gradient(rgba(0, 212, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center center;
+  transition: transform 0.1s ease-out;
+  pointer-events: none;
+}
+
+.workspace-blocks-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  transform-origin: center center;
+}
+
 .left-panel {
   display: flex;
   flex-direction: column;
