@@ -32,6 +32,7 @@ function App() {
     name: '',
     connected: false
   });
+  const [controllerLinked, setControllerLinked] = useState(false);
 
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -182,6 +183,7 @@ function App() {
                     ));
                   }}
                   onDroneConnect={setCurrentDrone}
+                  onControllerLink={setControllerLinked}
                 />
               );
             } else if (block.type === 'controller') {
@@ -198,6 +200,8 @@ function App() {
                       b.id === id ? { ...b, x: newX, y: newY } : b
                     ));
                   }}
+                  currentDrone={currentDrone}
+                  onControllerLink={setControllerLinked}
                 />
               );
             } else if (block.type === 'log') {
@@ -241,7 +245,7 @@ function App() {
         <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
         <DigitalClock onReset={handleResetView} />
         <DroneStatus />
-        <ConnectorLine currentDrone={currentDrone} />
+        <ConnectorLine currentDrone={currentDrone} controllerLinked={controllerLinked} />
       </main>
     </div>
   );

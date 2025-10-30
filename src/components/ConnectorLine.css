@@ -1,22 +1,21 @@
-.connector-line-overlay {
+.connector-layer {
   position: fixed;
-  left: 0;
-  top: 0;
+  inset: 0;
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 5;
+  z-index: 0;
 }
 
 .connector-line {
   stroke: #00ff96;
-  stroke-width: 2;
-  stroke-dasharray: 5, 5;
+  stroke-width: 3;
+  stroke-dasharray: 8 6;
   animation: dash-flow 1s linear infinite;
 }
 
 @keyframes dash-flow {
   to {
-    stroke-dashoffset: -10;
+    stroke-dashoffset: -14;
   }
 }

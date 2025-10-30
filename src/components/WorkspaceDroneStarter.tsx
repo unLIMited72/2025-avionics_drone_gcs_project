@@ -15,6 +15,7 @@ interface WorkspaceDroneStarterProps {
   onRemove: (id: string) => void;
   onPositionChange: (id: string, x: number, y: number) => void;
   onDroneConnect: (drone: CurrentDrone) => void;
+  onControllerLink: (linked: boolean) => void;
 }
 
 
@@ -25,7 +26,8 @@ export default function WorkspaceDroneStarter({
   zoom,
   onRemove,
   onPositionChange,
-  onDroneConnect
+  onDroneConnect,
+  onControllerLink
 }: WorkspaceDroneStarterProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -195,6 +197,7 @@ export default function WorkspaceDroneStarter({
         name: '',
         connected: false
       });
+      onControllerLink(false);
     } catch (error) {
       console.error('[WorkspaceDroneStarter] Disconnection error:', error);
       setConnectionError(error instanceof Error ? error.message : 'Failed to disconnect drone');

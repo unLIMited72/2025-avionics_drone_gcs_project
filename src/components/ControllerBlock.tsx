@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect, type MouseEvent } from 'react';
 import './ControllerBlock.css';
 
+interface CurrentDrone {
+  serial: string;
+  name: string;
+  connected: boolean;
+}
+
 interface ControllerBlockProps {
   id: string;
   initialX: number;
@@ -8,6 +14,8 @@ interface ControllerBlockProps {
   zoom: number;
   onRemove: (id: string) => void;
   onPositionChange: (id: string, x: number, y: number) => void;
+  currentDrone: CurrentDrone;
+  onControllerLink: (linked: boolean) => void;
 }
 
 type FlightControlMode = 'mission' | 'controller';
@@ -18,7 +26,9 @@ export default function ControllerBlock({
   initialY,
   zoom,
   onRemove,
-  onPositionChange
+  onPositionChange,
+  currentDrone,
+  onControllerLink
 }: ControllerBlockProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -85,6 +95,7 @@ export default function ControllerBlock({
   const handleSet = () => {
     if (maxSpeed.trim() && maxAltitude.trim()) {
       setIsSaved(true);
+      onControllerLink(true);
       setTimeout(() => setIsSaved(false), 2000);
     }
   };
@@ -94,6 +105,7 @@ export default function ControllerBlock({
   return (
     <div
       ref={blockRef}
+      id="controller-panel"
       className={`controller-block ${isDragging ? 'dragging' : ''}`}
       style={{
         left: `${position.x}px`,
@@ -102,7 +114,12 @@ export default function ControllerBlock({
       onMouseDown={handleMouseDown}
     >
       <div className="workspace-block-header">
-        <div className="workspace-block-title">Controller</div>
+        <div className="workspace-block-title">
+          Controller
+          {currentDrone.name && (
+            <span className="drone-name-label"> — {currentDrone.name}</span>
+          )}
+        </div>
         <button className="workspace-block-remove" onClick={handleRemove}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18" />
