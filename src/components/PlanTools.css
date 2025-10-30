@@ -1,8 +1,5 @@
 .plan-tools {
-  position: fixed;
-  right: 128px;
-  top: 72px;
-  z-index: 150;
+  position: relative;
 }
 
 .plan-tools-button {

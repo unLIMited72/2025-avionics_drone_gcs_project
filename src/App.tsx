@@ -627,14 +627,18 @@ function App() {
             onPanChange={handleMinimapPan}
             blocks={blocks}
           />
-          <PlanTools
-            onDragSelectStart={handleDragSelectStart}
-            onMakeNode={handleMakeNode}
-            onUngroupNode={handleUngroupNode}
-            canMakeNode={selectedBlockIds.length >= 1}
-            canUngroup={nodes.some(n => n.blockIds.some(id => selectedBlockIds.includes(id)))}
+          <DigitalClock
+            onReset={handleResetView}
+            planToolsButton={
+              <PlanTools
+                onDragSelectStart={handleDragSelectStart}
+                onMakeNode={handleMakeNode}
+                onUngroupNode={handleUngroupNode}
+                canMakeNode={selectedBlockIds.length >= 1}
+                canUngroup={nodes.some(n => n.blockIds.some(id => selectedBlockIds.includes(id)))}
+              />
+            }
           />
-          <DigitalClock onReset={handleResetView} />
           <DroneStatus />
         </div>
         {activeTab === 'map' && <MapView />}

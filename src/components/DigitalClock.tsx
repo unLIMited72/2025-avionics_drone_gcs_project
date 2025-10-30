@@ -3,9 +3,10 @@ import './DigitalClock.css';
 
 interface DigitalClockProps {
   onReset?: () => void;
+  planToolsButton?: React.ReactNode;
 }
 
-export default function DigitalClock({ onReset }: DigitalClockProps) {
+export default function DigitalClock({ onReset, planToolsButton }: DigitalClockProps) {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export default function DigitalClock({ onReset }: DigitalClockProps) {
 
   return (
     <div className="clock-controls">
+      {planToolsButton}
       <button
         className="reset-view-btn"
         onClick={onReset}
