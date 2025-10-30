@@ -18,6 +18,8 @@ interface Block {
   isMinimized: boolean;
 }
 
+let renderCount = 0;
+
 export default function PlanView() {
   const [blocks, setBlocks] = useState<Block[]>(() => {
     const saved = localStorage.getItem('workspace-blocks');
@@ -30,13 +32,23 @@ export default function PlanView() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mainRef = useRef<HTMLDivElement>(null);
 
+  renderCount++;
+
+  useEffect(() => {
+    console.log('[PLAN DEBUG] Render count:', renderCount);
+    console.log('[PLAN DEBUG] Theme tokens: dark black (#0a0a1a, #1a1a2e)');
+    console.log('[PLAN DEBUG] HUD sizes: Clock(20px), Reset(44px), Minimap(220x140), DroneCount(24px)');
+    console.log('[PLAN DEBUG] Grid scale:', 1);
+    console.log('[PLAN DEBUG] Zoom:', zoom, 'Pan offset:', pan);
+  });
+
   const CANVAS_WIDTH = 4000;
   const CANVAS_HEIGHT = 3000;
   const MIN_ZOOM = 0.5;
   const MAX_ZOOM = 2;
   const ZOOM_SPEED = 0.1;
 
-  const clampPan = useCallback((x: number, y: number, currentZoom: number) => {
+  const clampPan = (x: number, y: number, currentZoom: number) => {
     if (!mainRef.current) return { x, y };
 
     const { clientWidth, clientHeight } = mainRef.current;
@@ -47,9 +59,9 @@ export default function PlanView() {
       x: Math.max(-maxPanX, Math.min(maxPanX, x)),
       y: Math.max(-maxPanY, Math.min(maxPanY, y))
     };
-  }, []);
+  };
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
+  const handleWheel = (e: React.WheelEvent) => {
     if ((e.target as HTMLElement).closest('.dashboard-panel, .minimap')) return;
     e.preventDefault();
     e.stopPropagation();
@@ -72,7 +84,7 @@ export default function PlanView() {
 
     setZoom(newZoom);
     setPan(clampPan(newPanX, newPanY, newZoom));
-  }, [zoom, pan, clampPan]);
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
