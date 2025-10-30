@@ -7,6 +7,7 @@ import WorkspaceBlock from './components/WorkspaceBlock';
 import WorkspaceDroneStarter from './components/WorkspaceDroneStarter';
 import ControllerBlock from './components/ControllerBlock';
 import WorkspaceLog from './components/WorkspaceLog';
+import ConnectorLine from './components/ConnectorLine';
 import './App.css';
 
 interface DroppedBlock {
@@ -16,10 +17,21 @@ interface DroppedBlock {
   y: number;
 }
 
+interface CurrentDrone {
+  serial: string;
+  name: string;
+  connected: boolean;
+}
+
 function App() {
   const [serverStatus] = useState<ServerStatus>('disconnected');
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [blocks, setBlocks] = useState<DroppedBlock[]>([]);
+  const [currentDrone, setCurrentDrone] = useState<CurrentDrone>({
+    serial: '',
+    name: '',
+    connected: false
+  });
 
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -169,6 +181,7 @@ function App() {
                       b.id === id ? { ...b, x: newX, y: newY } : b
                     ));
                   }}
+                  onDroneConnect={setCurrentDrone}
                 />
               );
             } else if (block.type === 'controller') {
@@ -219,6 +232,7 @@ function App() {
                   }}
                   velocity={15.2}
                   acceleration={2.3}
+                  currentDrone={currentDrone}
                 />
               );
             }
@@ -227,6 +241,7 @@ function App() {
         <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
         <DigitalClock onReset={handleResetView} />
         <DroneStatus />
+        <ConnectorLine currentDrone={currentDrone} />
       </main>
     </div>
   );

@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect, type MouseEvent } from 'react';
 import './WorkspaceDroneStarter.css';
 
+interface CurrentDrone {
+  serial: string;
+  name: string;
+  connected: boolean;
+}
+
 interface WorkspaceDroneStarterProps {
   id: string;
   initialX: number;
@@ -8,6 +14,7 @@ interface WorkspaceDroneStarterProps {
   zoom: number;
   onRemove: (id: string) => void;
   onPositionChange: (id: string, x: number, y: number) => void;
+  onDroneConnect: (drone: CurrentDrone) => void;
 }
 
 
@@ -17,7 +24,8 @@ export default function WorkspaceDroneStarter({
   initialY,
   zoom,
   onRemove,
-  onPositionChange
+  onPositionChange,
+  onDroneConnect
 }: WorkspaceDroneStarterProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -137,6 +145,12 @@ export default function WorkspaceDroneStarter({
 
       setIsConnected(true);
       setConnectionError('');
+
+      onDroneConnect({
+        serial: serialNumber,
+        name: droneName,
+        connected: true
+      });
     } catch (error) {
       console.error('[WorkspaceDroneStarter] Connection error:', error);
       setConnectionError(error instanceof Error ? error.message : 'Failed to connect drone');
@@ -175,6 +189,12 @@ export default function WorkspaceDroneStarter({
 
       setIsConnected(false);
       setConnectionError('');
+
+      onDroneConnect({
+        serial: '',
+        name: '',
+        connected: false
+      });
     } catch (error) {
       console.error('[WorkspaceDroneStarter] Disconnection error:', error);
       setConnectionError(error instanceof Error ? error.message : 'Failed to disconnect drone');
@@ -207,6 +227,7 @@ export default function WorkspaceDroneStarter({
   return (
     <div
       ref={blockRef}
+      id="drone-starter"
       className={`workspace-drone-starter ${isDragging ? 'dragging' : ''}`}
       style={{
         left: `${position.x}px`,
