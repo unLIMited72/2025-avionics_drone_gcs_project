@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, type MouseEvent } from 'react';
+import { useState, useRef, useEffect, type MouseEvent } from 'react';
 import './WorkspaceDroneStarter.css';
 
 interface WorkspaceDroneStarterProps {
@@ -8,8 +8,6 @@ interface WorkspaceDroneStarterProps {
   zoom: number;
   onRemove: (id: string) => void;
   onPositionChange: (id: string, x: number, y: number) => void;
-  onToggleMinimize: (id: string) => void;
-  isMinimized: boolean;
 }
 
 
@@ -19,9 +17,7 @@ export default function WorkspaceDroneStarter({
   initialY,
   zoom,
   onRemove,
-  onPositionChange,
-  onToggleMinimize,
-  isMinimized
+  onPositionChange
 }: WorkspaceDroneStarterProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -56,32 +52,36 @@ export default function WorkspaceDroneStarter({
     setPosition({ x: initialX, y: initialY });
   }, [initialX, initialY]);
 
-  const handleMouseDown = useCallback((e: MouseEvent) => {
+  const handleMouseDown = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (target.closest('input, button')) return;
+    if (target.closest('input, button')) {
+      return;
+    }
 
-    e.preventDefault();
-    e.stopPropagation();
     setDragStart({ x: e.clientX, y: e.clientY });
     setIsDragging(true);
-  }, []);
+    e.stopPropagation();
+  };
 
   useEffect(() => {
-    if (!isDragging) return;
-
     const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
-      e.preventDefault();
-      const deltaX = (e.clientX - dragStart.x) / zoom;
-      const deltaY = (e.clientY - dragStart.y) / zoom;
+      if (isDragging) {
+        const deltaX = (e.clientX - dragStart.x) / zoom;
+        const deltaY = (e.clientY - dragStart.y) / zoom;
 
-      setPosition(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
-      setDragStart({ x: e.clientX, y: e.clientY });
+        const newX = position.x + deltaX;
+        const newY = position.y + deltaY;
+
+        setPosition({ x: newX, y: newY });
+        setDragStart({ x: e.clientX, y: e.clientY });
+      }
     };
 
-    const handleGlobalMouseUp = (e: globalThis.MouseEvent) => {
-      e.preventDefault();
+    const handleGlobalMouseUp = () => {
+      if (isDragging) {
+        onPositionChange(id, position.x, position.y);
+      }
       setIsDragging(false);
-      onPositionChange(id, position.x, position.y);
     };
 
     if (isDragging) {
@@ -98,21 +98,6 @@ export default function WorkspaceDroneStarter({
   const handleRemove = (e: MouseEvent) => {
     e.stopPropagation();
     onRemove(id);
-  };
-
-  const handleMinimize = (e: MouseEvent) => {
-    e.stopPropagation();
-    onToggleMinimize(id);
-  };
-
-  const handleHeaderKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onToggleMinimize(id);
-    } else if (e.key === 'Delete') {
-      e.preventDefault();
-      onRemove(id);
-    }
   };
 
   const handleConnect = () => {
@@ -156,13 +141,7 @@ export default function WorkspaceDroneStarter({
       }}
       onMouseDown={handleMouseDown}
     >
-      <div
-        className="workspace-block-header"
-        tabIndex={0}
-        onKeyDown={handleHeaderKeyDown}
-        role="button"
-        aria-label="Window header"
-      >
+      <div className="workspace-block-header">
         <div className="workspace-block-title">
           {isConnected ? (
             <>
@@ -173,32 +152,15 @@ export default function WorkspaceDroneStarter({
             'Drone Starter'
           )}
         </div>
-        <div className="header-actions">
-          <button
-            className="workspace-block-minimize"
-            onClick={handleMinimize}
-            aria-label={isMinimized ? "Restore" : "Minimize"}
-            title={isMinimized ? "Restore" : "Minimize"}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-          <button
-            className="workspace-block-remove"
-            onClick={handleRemove}
-            aria-label="Close"
-            title="Close"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
+        <button className="workspace-block-remove" onClick={handleRemove}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
       </div>
 
-      {!isMinimized && <div className="drone-starter-body">
+      <div className="drone-starter-body">
         <div className="connection-section">
           {!isConnected && (
             <div className="input-wrapper">
@@ -384,7 +346,7 @@ export default function WorkspaceDroneStarter({
             </div>
           </div>
         )}
-      </div>}
+      </div>
     </div>
   );
 }
