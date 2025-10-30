@@ -1,35 +1,99 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import './MapViewTab.css';
 
 export default function MapViewTab() {
   const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!mapRef.current) return;
 
-    const loadMap = () => {
-      const iframe = document.createElement('iframe');
-      iframe.src = 'https://www.openstreetmap.org/export/embed.html?bbox=126.9%2C37.5%2C127.1%2C37.6&layer=mapnik';
-      iframe.style.width = '100%';
-      iframe.style.height = '100%';
-      iframe.style.border = 'none';
-      iframe.style.borderRadius = '8px';
-      iframe.title = 'Mission Map';
+    if (mapInstanceRef.current) {
+      setTimeout(() => {
+        mapInstanceRef.current?.invalidateSize();
+      }, 100);
+      setIsLoading(false);
+      return;
+    }
 
-      if (mapRef.current) {
-        mapRef.current.innerHTML = '';
-        mapRef.current.appendChild(iframe);
+    try {
+      const map = L.map(mapRef.current, {
+        center: [37.5665, 126.9780],
+        zoom: 13,
+        zoomControl: true,
+        attributionControl: true,
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+        minZoom: 3,
+      }).addTo(map);
+
+      map.on('load', () => {
+        setIsLoading(false);
+        setError(null);
+      });
+
+      map.on('tileerror', (e) => {
+        console.error('Tile load error:', e);
+        setError('Failed to load map tiles. Check network connection.');
+      });
+
+      setTimeout(() => {
+        map.invalidateSize();
+        setIsLoading(false);
+      }, 100);
+
+      mapInstanceRef.current = map;
+
+    } catch (err) {
+      console.error('Map initialization error:', err);
+      setError('Failed to initialize map. Please refresh.');
+      setIsLoading(false);
+    }
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
       }
     };
-
-    loadMap();
   }, []);
+
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
+    window.location.reload();
+  };
 
   return (
     <div className="map-view-tab">
-      <div className="map-container" ref={mapRef}>
-        <div className="map-loading">Loading map...</div>
-      </div>
+      {isLoading && (
+        <div className="map-loading-overlay">
+          <div className="map-loading-spinner"></div>
+          <div className="map-loading-text">Loading map...</div>
+        </div>
+      )}
+
+      {error && (
+        <div className="map-error-banner">
+          <div className="map-error-message">{error}</div>
+          <button className="map-error-retry" onClick={handleRetry}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      <div ref={mapRef} className="map-container" />
     </div>
   );
 }
