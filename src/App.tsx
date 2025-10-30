@@ -20,7 +20,9 @@ function App() {
       <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
       <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
 
-      {activeTab === 'plan' && <PlanView />}
+      <div style={{ display: activeTab === 'plan' ? 'block' : 'none' }}>
+        <PlanView />
+      </div>
       {activeTab === 'map' && <MapViewTab />}
     </div>
   );

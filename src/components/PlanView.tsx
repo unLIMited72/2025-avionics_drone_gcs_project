@@ -50,7 +50,9 @@ export default function PlanView() {
   }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
+    if ((e.target as HTMLElement).closest('.dashboard-panel, .minimap')) return;
     e.preventDefault();
+    e.stopPropagation();
     if (!mainRef.current) return;
 
     const rect = mainRef.current.getBoundingClientRect();
@@ -73,9 +75,11 @@ export default function PlanView() {
   }, [zoom, pan, clampPan]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log')) {
+    if (e.button !== 0) return;
+    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log, .minimap')) {
       return;
     }
+    e.preventDefault();
     setIsDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
@@ -84,18 +88,27 @@ export default function PlanView() {
     if (!isDragging) return;
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (!mainRef.current) return;
+      if (!mainRef.current || !isDragging) return;
+      e.preventDefault();
       setPan(clampPan(e.clientX - dragStart.x, e.clientY - dragStart.y, zoom));
     };
 
-    const handleGlobalMouseUp = () => setIsDragging(false);
+    const handleGlobalMouseUp = () => {
+      setIsDragging(false);
+    };
 
-    document.addEventListener('mousemove', handleGlobalMouseMove);
+    const handleMouseLeave = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener('mousemove', handleGlobalMouseMove, { passive: false });
     document.addEventListener('mouseup', handleGlobalMouseUp);
+    document.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
+      document.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, [isDragging, dragStart, zoom, clampPan]);
 

@@ -5,6 +5,8 @@
   right: 0;
   bottom: 0;
   overflow: hidden;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .main-canvas {
@@ -14,6 +16,10 @@
   background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
   position: relative;
   cursor: grab;
+  transform: translateZ(0);
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  -webkit-font-smoothing: subpixel-antialiased;
 }
 
 .main-canvas:active {
@@ -28,6 +34,7 @@
   height: 0;
   pointer-events: none;
   will-change: transform;
+  transform-origin: 0 0;
 }
 
 .grid-background {
@@ -43,4 +50,6 @@
     linear-gradient(90deg, rgba(100, 150, 255, 0.05) 2px, transparent 2px);
   background-size: 50px 50px, 50px 50px, 200px 200px, 200px 200px;
   pointer-events: none;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
