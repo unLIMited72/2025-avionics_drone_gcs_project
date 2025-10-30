@@ -164,11 +164,14 @@ function App() {
     };
 
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isDragSelecting) {
-        console.log('MARQUEE_CANCEL');
-        setIsDragSelecting(false);
-        setMarqueeStart({ x: 0, y: 0 });
-        setMarqueeEnd({ x: 0, y: 0 });
+      if (e.key === 'Escape') {
+        if (isDragSelecting) {
+          console.log('MARQUEE_CANCEL');
+          setIsDragSelecting(false);
+          setMarqueeStart({ x: 0, y: 0 });
+          setMarqueeEnd({ x: 0, y: 0 });
+        }
+        setSelectedBlockIds([]);
       }
     };
 
@@ -221,6 +224,39 @@ function App() {
     setMarqueeEnd({ x: 0, y: 0 });
   };
 
+  const recomputeEdges = useCallback((reason: 'drag' | 'zoom' | 'pan' | 'node') => {
+    console.log('EDGE_RECOMPUTE', { reason });
+    setEdges(prevEdges => {
+      return prevEdges.map(edge => {
+        const fromBlock = blocks.find(b => b.id === edge.fromId);
+        const toBlock = blocks.find(b => b.id === edge.toId);
+        if (!fromBlock || !toBlock) return edge;
+
+        const fromDims = getBlockDimensions(fromBlock.type);
+        const toDims = getBlockDimensions(toBlock.type);
+        const fromRect = { x: fromBlock.x, y: fromBlock.y, width: fromDims.width, height: fromDims.height };
+        const toRect = { x: toBlock.x, y: toBlock.y, width: toDims.width, height: toDims.height };
+
+        const anchorA = calculateAnchorPoint(fromRect, toRect, true);
+        const anchorB = calculateAnchorPoint(fromRect, toRect, false);
+
+        return { ...edge, anchorA, anchorB };
+      });
+    });
+  }, [blocks]);
+
+  useEffect(() => {
+    if (edges.length > 0) {
+      recomputeEdges('zoom');
+    }
+  }, [zoom]);
+
+  useEffect(() => {
+    if (edges.length > 0) {
+      recomputeEdges('pan');
+    }
+  }, [pan]);
+
   const handleDragSelectStart = () => {
     setIsDragSelecting(true);
     setSelectedBlockIds([]);
@@ -262,7 +298,7 @@ function App() {
         anchorB
       };
       newEdges.push(edge);
-      console.log('EDGE', { fromId: fromBlock.id, toId: toBlock.id, anchorA, anchorB, orderIndex: i });
+      console.log('EDGE_DRAW', { fromId: fromBlock.id, toId: toBlock.id, anchorA, anchorB, orderIndex: i });
     }
 
     setEdges(prev => [...prev, ...newEdges]);
@@ -283,7 +319,7 @@ function App() {
     };
     setNodes(prev => [...prev, newNode]);
 
-    console.log('MAKE_NODE', { nodeId, selectedIds: selectedBlockIds, droneName });
+    console.log('MAKE_NODE', { nodeId, members: selectedBlockIds, droneName });
     setSelectedBlockIds([]);
   };
 
@@ -371,6 +407,13 @@ function App() {
       block.id === id && block.type === 'drone-starter' ? { ...block, droneName } : block
     ));
   };
+
+  const handlePositionChange = useCallback((id: string, newX: number, newY: number) => {
+    setBlocks(prev => prev.map(b =>
+      b.id === id ? { ...b, x: newX, y: newY } : b
+    ));
+    setTimeout(() => recomputeEdges('drag'), 0);
+  }, [recomputeEdges]);
 
   const handleMinimapPan = useCallback((x: number, y: number) => {
     setPan(clampPan(x, y, zoom));
@@ -502,92 +545,72 @@ function App() {
           >
           {blocks.map(block => {
             const isSelected = selectedBlockIds.includes(block.id);
-            const highlightStyle = isSelected ? {
-              boxShadow: '0 0 0 3px #00d4ff',
-              border: '2px solid #00d4ff'
-            } : {};
             if (block.type === 'drone-starter') {
               return (
-                <div key={block.id} style={highlightStyle}>
-                  <WorkspaceDroneStarter
-                    id={block.id}
-                    initialX={block.x}
-                    initialY={block.y}
-                    zoom={zoom}
-                    onRemove={handleRemoveBlock}
-                    onPositionChange={(id, newX, newY) => {
-                      setBlocks(prev => prev.map(b =>
-                        b.id === id ? { ...b, x: newX, y: newY } : b
-                      ));
-                    }}
-                    onToggleMinimize={handleToggleMinimize}
-                    isMinimized={block.isMinimized || false}
-                    droneName={block.droneName}
-                    onDroneNameUpdate={handleDroneNameUpdate}
-                  />
-                </div>
+                <WorkspaceDroneStarter
+                  key={block.id}
+                  id={block.id}
+                  initialX={block.x}
+                  initialY={block.y}
+                  zoom={zoom}
+                  onRemove={handleRemoveBlock}
+                  onPositionChange={handlePositionChange}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
+                  droneName={block.droneName}
+                  onDroneNameUpdate={handleDroneNameUpdate}
+                  isSelected={isSelected}
+                />
               );
             } else if (block.type === 'controller') {
               return (
-                <div key={block.id} style={highlightStyle}>
-                  <ControllerBlock
-                    id={block.id}
-                    initialX={block.x}
-                    initialY={block.y}
-                    zoom={zoom}
-                    onRemove={handleRemoveBlock}
-                    onPositionChange={(id, newX, newY) => {
-                      setBlocks(prev => prev.map(b =>
-                        b.id === id ? { ...b, x: newX, y: newY } : b
-                      ));
-                    }}
-                    onToggleMinimize={handleToggleMinimize}
-                    isMinimized={block.isMinimized || false}
-                    droneName={block.droneName}
-                  />
-                </div>
+                <ControllerBlock
+                  key={block.id}
+                  id={block.id}
+                  initialX={block.x}
+                  initialY={block.y}
+                  zoom={zoom}
+                  onRemove={handleRemoveBlock}
+                  onPositionChange={handlePositionChange}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
+                  droneName={block.droneName}
+                  isSelected={isSelected}
+                />
               );
             } else if (block.type === 'log') {
               return (
-                <div key={block.id} style={highlightStyle}>
-                  <WorkspaceLog
-                    id={block.id}
-                    initialX={block.x}
-                    initialY={block.y}
-                    zoom={zoom}
-                    onRemove={handleRemoveBlock}
-                    onPositionChange={(id, newX, newY) => {
-                      setBlocks(prev => prev.map(b =>
-                        b.id === id ? { ...b, x: newX, y: newY } : b
-                      ));
-                    }}
-                    onToggleMinimize={handleToggleMinimize}
-                    isMinimized={block.isMinimized || false}
-                    droneName={block.droneName}
-                  />
-                </div>
+                <WorkspaceLog
+                  key={block.id}
+                  id={block.id}
+                  initialX={block.x}
+                  initialY={block.y}
+                  zoom={zoom}
+                  onRemove={handleRemoveBlock}
+                  onPositionChange={handlePositionChange}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
+                  droneName={block.droneName}
+                  isSelected={isSelected}
+                />
               );
             } else {
               return (
-                <div key={block.id} style={highlightStyle}>
-                  <WorkspaceBlock
-                    id={block.id}
-                    initialX={block.x}
-                    initialY={block.y}
-                    zoom={zoom}
-                    onRemove={handleRemoveBlock}
-                    onPositionChange={(id, newX, newY) => {
-                      setBlocks(prev => prev.map(b =>
-                        b.id === id ? { ...b, x: newX, y: newY } : b
-                      ));
-                    }}
-                    onToggleMinimize={handleToggleMinimize}
-                    isMinimized={block.isMinimized || false}
-                    velocity={15.2}
-                    acceleration={2.3}
-                    droneName={block.droneName}
-                  />
-                </div>
+                <WorkspaceBlock
+                  key={block.id}
+                  id={block.id}
+                  initialX={block.x}
+                  initialY={block.y}
+                  zoom={zoom}
+                  onRemove={handleRemoveBlock}
+                  onPositionChange={handlePositionChange}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
+                  velocity={15.2}
+                  acceleration={2.3}
+                  droneName={block.droneName}
+                  isSelected={isSelected}
+                />
               );
             }
           })}

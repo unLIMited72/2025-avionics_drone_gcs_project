@@ -13,6 +13,7 @@ interface WorkspaceBlockProps {
   velocity: number;
   acceleration: number;
   droneName?: string;
+  isSelected?: boolean;
 }
 
 export default function WorkspaceBlock({
@@ -26,7 +27,8 @@ export default function WorkspaceBlock({
   isMinimized,
   velocity,
   acceleration,
-  droneName
+  droneName,
+  isSelected
 }: WorkspaceBlockProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -116,7 +118,7 @@ export default function WorkspaceBlock({
   return (
     <div
       ref={blockRef}
-      className={`workspace-block ${isDragging ? 'dragging' : ''}`}
+      className={`workspace-block ${isDragging ? 'dragging' : ''} ${isSelected ? 'is-selected' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`

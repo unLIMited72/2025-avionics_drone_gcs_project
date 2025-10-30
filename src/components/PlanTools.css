@@ -1,35 +1,42 @@
 .plan-tools {
   position: fixed;
-  right: 30px;
-  top: 90px;
-  z-index: 1000;
+  right: 128px;
+  top: 72px;
+  z-index: 150;
 }
 
 .plan-tools-button {
   width: 44px;
   height: 44px;
-  background: rgba(22, 33, 62, 0.95);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  border-radius: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+  border: 1px solid rgba(0, 212, 255, 0.4);
   color: #00d4ff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
+              0 0 15px rgba(0, 212, 255, 0.15);
+  backdrop-filter: blur(10px);
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .plan-tools-button:hover {
-  background: rgba(22, 33, 62, 1);
-  border-color: #00d4ff;
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(32, 32, 56, 0.95) 0%, rgba(28, 43, 72, 0.95) 100%);
+  border-color: rgba(0, 212, 255, 0.6);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5),
+              0 0 20px rgba(0, 212, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.plan-tools-button:active {
+  transform: scale(0.95);
 }
 
 .plan-tools-button svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .plan-tools-dropdown {
