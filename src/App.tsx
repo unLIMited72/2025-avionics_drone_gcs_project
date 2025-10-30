@@ -167,6 +167,7 @@ function App() {
             transformOrigin: 'center center'
           }}
         >
+          <ConnectorLine currentDrone={currentDrone} controllerLinked={controllerLinked} />
           {blocks.map(block => {
             if (block.type === 'drone-starter') {
               return (
@@ -245,7 +246,6 @@ function App() {
         <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
         <DigitalClock onReset={handleResetView} />
         <DroneStatus />
-        <ConnectorLine currentDrone={currentDrone} controllerLinked={controllerLinked} />
       </main>
     </div>
   );
