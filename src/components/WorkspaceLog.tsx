@@ -10,6 +10,7 @@ interface WorkspaceLogProps {
   onPositionChange: (id: string, x: number, y: number) => void;
   onToggleMinimize: (id: string) => void;
   isMinimized: boolean;
+  isSelected?: boolean;
 }
 
 interface LogEntry {
@@ -26,7 +27,8 @@ export default function WorkspaceLog({
   onRemove,
   onPositionChange,
   onToggleMinimize,
-  isMinimized
+  isMinimized,
+  isSelected = false
 }: WorkspaceLogProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -154,7 +156,7 @@ export default function WorkspaceLog({
   return (
     <div
       ref={blockRef}
-      className={`workspace-log ${isDragging ? 'dragging' : ''}`}
+      className={`workspace-log ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`

@@ -177,6 +177,7 @@ function App() {
 
         setSelectionBox(null);
         setIsSelecting(false);
+        setIsDragSelectMode(false);
       }
 
       setIsDragging(false);
@@ -382,6 +383,7 @@ function App() {
                   }}
                   onToggleMinimize={handleToggleMinimize}
                   isMinimized={block.isMinimized || false}
+                  isSelected={block.isSelected || false}
                 />
               );
             } else if (block.type === 'controller') {
@@ -400,6 +402,7 @@ function App() {
                   }}
                   onToggleMinimize={handleToggleMinimize}
                   isMinimized={block.isMinimized || false}
+                  isSelected={block.isSelected || false}
                 />
               );
             } else if (block.type === 'log') {
@@ -418,6 +421,7 @@ function App() {
                   }}
                   onToggleMinimize={handleToggleMinimize}
                   isMinimized={block.isMinimized || false}
+                  isSelected={block.isSelected || false}
                 />
               );
             } else {
@@ -438,6 +442,7 @@ function App() {
                   isMinimized={block.isMinimized || false}
                   velocity={15.2}
                   acceleration={2.3}
+                  isSelected={block.isSelected || false}
                 />
               );
             }

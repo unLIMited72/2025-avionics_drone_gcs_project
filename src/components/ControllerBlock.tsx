@@ -10,6 +10,7 @@ interface ControllerBlockProps {
   onPositionChange: (id: string, x: number, y: number) => void;
   onToggleMinimize: (id: string) => void;
   isMinimized: boolean;
+  isSelected?: boolean;
 }
 
 type FlightControlMode = 'mission' | 'controller';
@@ -22,7 +23,8 @@ export default function ControllerBlock({
   onRemove,
   onPositionChange,
   onToggleMinimize,
-  isMinimized
+  isMinimized,
+  isSelected = false
 }: ControllerBlockProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -109,7 +111,7 @@ export default function ControllerBlock({
   return (
     <div
       ref={blockRef}
-      className={`controller-block ${isDragging ? 'dragging' : ''}`}
+      className={`controller-block ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`

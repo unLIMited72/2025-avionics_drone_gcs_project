@@ -1,7 +1,7 @@
 .clock-controls {
   position: fixed;
   top: 72px;
-  right: 76px;
+  right: 16px;
   display: flex;
   align-items: center;
   gap: 12px;

@@ -10,6 +10,7 @@ interface WorkspaceDroneStarterProps {
   onPositionChange: (id: string, x: number, y: number) => void;
   onToggleMinimize: (id: string) => void;
   isMinimized: boolean;
+  isSelected?: boolean;
 }
 
 
@@ -21,7 +22,8 @@ export default function WorkspaceDroneStarter({
   onRemove,
   onPositionChange,
   onToggleMinimize,
-  isMinimized
+  isMinimized,
+  isSelected = false
 }: WorkspaceDroneStarterProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -149,7 +151,7 @@ export default function WorkspaceDroneStarter({
   return (
     <div
       ref={blockRef}
-      className={`workspace-drone-starter ${isDragging ? 'dragging' : ''}`}
+      className={`workspace-drone-starter ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`

@@ -12,6 +12,7 @@ interface WorkspaceBlockProps {
   isMinimized: boolean;
   velocity: number;
   acceleration: number;
+  isSelected?: boolean;
 }
 
 export default function WorkspaceBlock({
@@ -24,7 +25,8 @@ export default function WorkspaceBlock({
   onToggleMinimize,
   isMinimized,
   velocity,
-  acceleration
+  acceleration,
+  isSelected = false
 }: WorkspaceBlockProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -114,7 +116,7 @@ export default function WorkspaceBlock({
   return (
     <div
       ref={blockRef}
-      className={`workspace-block ${isDragging ? 'dragging' : ''}`}
+      className={`workspace-block ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`
