@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type MouseEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type MouseEvent } from 'react';
 import './WorkspaceBlock.css';
 
 interface WorkspaceBlockProps {
@@ -53,39 +53,31 @@ export default function WorkspaceBlock({
     return () => clearInterval(animationInterval);
   }, []);
 
-  const handleMouseDown = (e: MouseEvent) => {
-    if (blockRef.current) {
-      e.preventDefault();
-      e.stopPropagation();
-      setDragStart({
-        x: e.clientX,
-        y: e.clientY
-      });
-      setIsDragging(true);
-    }
-  };
+  const handleMouseDown = useCallback((e: MouseEvent) => {
+    if (!blockRef.current) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    setDragStart({ x: e.clientX, y: e.clientY });
+    setIsDragging(true);
+  }, []);
 
   useEffect(() => {
+    if (!isDragging) return;
+
     const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
-      if (isDragging) {
-        e.preventDefault();
-        const deltaX = (e.clientX - dragStart.x) / zoom;
-        const deltaY = (e.clientY - dragStart.y) / zoom;
+      e.preventDefault();
+      const deltaX = (e.clientX - dragStart.x) / zoom;
+      const deltaY = (e.clientY - dragStart.y) / zoom;
 
-        const newX = position.x + deltaX;
-        const newY = position.y + deltaY;
-
-        setPosition({ x: newX, y: newY });
-        setDragStart({ x: e.clientX, y: e.clientY });
-      }
+      setPosition(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
+      setDragStart({ x: e.clientX, y: e.clientY });
     };
 
     const handleGlobalMouseUp = (e: globalThis.MouseEvent) => {
-      if (isDragging) {
-        e.preventDefault();
-        onPositionChange(id, position.x, position.y);
-      }
+      e.preventDefault();
       setIsDragging(false);
+      onPositionChange(id, position.x, position.y);
     };
 
     if (isDragging) {

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type MouseEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type MouseEvent } from 'react';
 import './WorkspaceLog.css';
 
 interface WorkspaceLogProps {
@@ -56,56 +56,47 @@ export default function WorkspaceLog({
     }
   }, [logs, autoScroll]);
 
-  const handleMouseDown = (e: MouseEvent) => {
+  const handleMouseDown = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (target.closest('.log-content, button')) {
-      return;
-    }
+    if (target.closest('.log-content, button')) return;
 
     e.preventDefault();
     e.stopPropagation();
     setDragStart({ x: e.clientX, y: e.clientY });
     setIsDragging(true);
-  };
+  }, []);
 
   useEffect(() => {
+    if (!isDragging) return;
+
     const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
-      if (isDragging) {
-        e.preventDefault();
-        const deltaX = (e.clientX - dragStart.x) / zoom;
-        const deltaY = (e.clientY - dragStart.y) / zoom;
+      e.preventDefault();
+      const deltaX = (e.clientX - dragStart.x) / zoom;
+      const deltaY = (e.clientY - dragStart.y) / zoom;
 
-        const newX = position.x + deltaX;
-        const newY = position.y + deltaY;
-
-        setPosition({ x: newX, y: newY });
-        setDragStart({ x: e.clientX, y: e.clientY });
-      }
+      setPosition(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
+      setDragStart({ x: e.clientX, y: e.clientY });
     };
 
     const handleGlobalMouseUp = (e: globalThis.MouseEvent) => {
-      if (isDragging) {
-        e.preventDefault();
-        onPositionChange(id, position.x, position.y);
-      }
+      e.preventDefault();
       setIsDragging(false);
+      onPositionChange(id, position.x, position.y);
     };
 
-    if (isDragging) {
-      document.addEventListener('mousemove', handleGlobalMouseMove);
-      document.addEventListener('mouseup', handleGlobalMouseUp);
-    }
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    document.addEventListener('mouseup', handleGlobalMouseUp);
 
     return () => {
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [isDragging, dragStart, position, zoom, id, onPositionChange]);
+  }, [isDragging, dragStart, zoom, id, position, onPositionChange]);
 
-  const handleRemove = (e: MouseEvent) => {
+  const handleRemove = useCallback((e: MouseEvent) => {
     e.stopPropagation();
     onRemove(id);
-  };
+  }, [id, onRemove]);
 
   const handleMinimize = (e: MouseEvent) => {
     e.stopPropagation();
@@ -122,13 +113,13 @@ export default function WorkspaceLog({
     }
   };
 
-  const handleClearLogs = (e: MouseEvent) => {
+  const handleClearLogs = useCallback((e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setAutoScroll(false);
     setLogs([]);
     setTimeout(() => setAutoScroll(true), 100);
-  };
+  }, []);
 
   const getLevelColor = (level: LogEntry['level']): string => {
     switch (level) {
