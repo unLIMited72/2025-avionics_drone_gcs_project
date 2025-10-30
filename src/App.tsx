@@ -8,6 +8,7 @@ import WorkspaceDroneStarter from './components/WorkspaceDroneStarter';
 import ControllerBlock from './components/ControllerBlock';
 import WorkspaceLog from './components/WorkspaceLog';
 import Minimap from './components/Minimap';
+import MapView from './components/MapView';
 import './App.css';
 
 interface DroppedBlock {
@@ -36,6 +37,7 @@ function getBlockDimensions(type: string): { width: number; height: number } {
 function App() {
   const [serverStatus] = useState<ServerStatus>('disconnected');
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'plan' | 'map'>('plan');
   const [blocks, setBlocks] = useState<DroppedBlock[]>(() => {
     const saved = localStorage.getItem('workspace-blocks');
     return saved ? JSON.parse(saved) : [];
@@ -189,12 +191,38 @@ function App() {
     }
   }, [isDragging]);
 
+  useEffect(() => {
+    if (activeTab === 'plan') {
+      console.log('PLAN_ROOT OK');
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'map' && isDashboardOpen) {
+      setIsDashboardOpen(false);
+    }
+  }, [activeTab]);
+
   return (
     <div className="gcs-app">
       <Header
         serverStatus={serverStatus}
         onLogoClick={() => setIsDashboardOpen(!isDashboardOpen)}
       />
+      <div className="tab-navigation">
+        <button
+          className={`tab-button ${activeTab === 'plan' ? 'active' : ''}`}
+          onClick={() => setActiveTab('plan')}
+        >
+          Plan
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'map' ? 'active' : ''}`}
+          onClick={() => setActiveTab('map')}
+        >
+          Map
+        </button>
+      </div>
       <main
         ref={mainRef}
         className="gcs-main"
@@ -203,19 +231,20 @@ function App() {
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
-        <div
-          className="main-background"
-          style={{
-            transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
-            transformOrigin: 'center center'
-          }}
-        />
-        <div
-          className="workspace-blocks-container"
-          style={{
-            transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`
-          }}
-        >
+        <div className="plan-scope" style={{ display: activeTab === 'plan' ? 'block' : 'none' }}>
+          <div
+            className="main-background"
+            style={{
+              transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+              transformOrigin: 'center center'
+            }}
+          />
+          <div
+            className="workspace-blocks-container"
+            style={{
+              transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`
+            }}
+          >
           {blocks.map(block => {
             if (block.type === 'drone-starter') {
               return (
@@ -293,21 +322,23 @@ function App() {
               );
             }
           })}
+          </div>
+          <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
+          <Minimap
+            isVisible={!isDashboardOpen}
+            canvasWidth={mainRef.current?.clientWidth || 1920}
+            canvasHeight={mainRef.current?.clientHeight || 1080}
+            viewportWidth={mainRef.current?.clientWidth || 1920}
+            viewportHeight={mainRef.current?.clientHeight || 1080}
+            zoom={zoom}
+            pan={pan}
+            onPanChange={handleMinimapPan}
+            blocks={blocks}
+          />
+          <DigitalClock onReset={handleResetView} />
+          <DroneStatus />
         </div>
-        <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
-        <Minimap
-          isVisible={!isDashboardOpen}
-          canvasWidth={mainRef.current?.clientWidth || 1920}
-          canvasHeight={mainRef.current?.clientHeight || 1080}
-          viewportWidth={mainRef.current?.clientWidth || 1920}
-          viewportHeight={mainRef.current?.clientHeight || 1080}
-          zoom={zoom}
-          pan={pan}
-          onPanChange={handleMinimapPan}
-          blocks={blocks}
-        />
-        <DigitalClock onReset={handleResetView} />
-        <DroneStatus />
+        {activeTab === 'map' && <MapView />}
       </main>
     </div>
   );
