@@ -3,14 +3,27 @@ import './FlightStateBlock.css';
 
 interface FlightStateBlockProps {
   onDragStart?: (e: DragEvent) => void;
+  onClickAdd?: () => void;
 }
 
-export default function FlightStateBlock({ onDragStart }: FlightStateBlockProps) {
+export default function FlightStateBlock({ onDragStart, onClickAdd }: FlightStateBlockProps) {
   const handleDragStart = (e: DragEvent) => {
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('blockType', 'flight-state-info');
+    console.info('FD_DRAG_START', { type: 'flight-state-info', clientX: e.clientX, clientY: e.clientY });
     if (onDragStart) {
       onDragStart(e);
+    }
+  };
+
+  const handleDoubleClick = () => {
+    console.info('FD_CLICK_ADD', { type: 'flight-state-info', position: 'center' });
+    if (onClickAdd) {
+      onClickAdd();
+    } else {
+      window.dispatchEvent(new CustomEvent('addFlightDisplay', {
+        detail: { type: 'flight-state-info', position: 'center' }
+      }));
     }
   };
 
@@ -19,6 +32,8 @@ export default function FlightStateBlock({ onDragStart }: FlightStateBlockProps)
       className="flight-state-block"
       draggable
       onDragStart={handleDragStart}
+      onDoubleClick={handleDoubleClick}
+      title="Drag to canvas or double-click to add at center"
     >
       <div className="block-icon">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

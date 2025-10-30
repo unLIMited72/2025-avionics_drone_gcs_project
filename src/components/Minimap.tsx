@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo, useCallback, memo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './Minimap.css';
 
 interface MinimapProps {
@@ -32,27 +32,21 @@ function Minimap({
   const minimapRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const { scaleX, scaleY, viewportBox } = useMemo(() => {
-    const scaleX = MINIMAP_WIDTH / CANVAS_WIDTH;
-    const scaleY = MINIMAP_HEIGHT / CANVAS_HEIGHT;
+  const scaleX = MINIMAP_WIDTH / CANVAS_WIDTH;
+  const scaleY = MINIMAP_HEIGHT / CANVAS_HEIGHT;
 
-    const visibleWorldWidth = viewportWidth / zoom;
-    const visibleWorldHeight = viewportHeight / zoom;
+  const visibleWorldWidth = viewportWidth / zoom;
+  const visibleWorldHeight = viewportHeight / zoom;
 
-    const boxWidth = Math.max(MIN_BOX_SIZE, (visibleWorldWidth / CANVAS_WIDTH) * MINIMAP_WIDTH);
-    const boxHeight = Math.max(MIN_BOX_SIZE, (visibleWorldHeight / CANVAS_HEIGHT) * MINIMAP_HEIGHT);
+  const boxWidth = Math.max(MIN_BOX_SIZE, (visibleWorldWidth / CANVAS_WIDTH) * MINIMAP_WIDTH);
+  const boxHeight = Math.max(MIN_BOX_SIZE, (visibleWorldHeight / CANVAS_HEIGHT) * MINIMAP_HEIGHT);
 
-    const boxX = Math.max(0, Math.min(MINIMAP_WIDTH - boxWidth, (MINIMAP_WIDTH / 2 - pan.x * scaleX) - boxWidth / 2));
-    const boxY = Math.max(0, Math.min(MINIMAP_HEIGHT - boxHeight, (MINIMAP_HEIGHT / 2 - pan.y * scaleY) - boxHeight / 2));
+  const boxX = Math.max(0, Math.min(MINIMAP_WIDTH - boxWidth, (MINIMAP_WIDTH / 2 - pan.x * scaleX) - boxWidth / 2));
+  const boxY = Math.max(0, Math.min(MINIMAP_HEIGHT - boxHeight, (MINIMAP_HEIGHT / 2 - pan.y * scaleY) - boxHeight / 2));
 
-    return {
-      scaleX,
-      scaleY,
-      viewportBox: { x: boxX, y: boxY, width: boxWidth, height: boxHeight }
-    };
-  }, [viewportWidth, viewportHeight, zoom, pan]);
+  const viewportBox = { x: boxX, y: boxY, width: boxWidth, height: boxHeight };
 
-  const handleMinimapClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMinimapClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!minimapRef.current) return;
 
     const rect = minimapRef.current.getBoundingClientRect();
@@ -63,14 +57,14 @@ function Minimap({
     const canvasY = (clickY - MINIMAP_HEIGHT / 2) / scaleY;
 
     onPanChange(-canvasX, -canvasY);
-  }, [scaleX, scaleY, onPanChange]);
+  };
 
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
     handleMinimapClick(e);
-  }, [handleMinimapClick]);
+  };
 
   useEffect(() => {
     if (!isDragging) return;
@@ -96,14 +90,14 @@ function Minimap({
     };
   }, [isDragging, scaleX, scaleY, onPanChange]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
 
     e.preventDefault();
     const deltaX = e.key === 'ArrowLeft' ? ARROW_STEP : e.key === 'ArrowRight' ? -ARROW_STEP : 0;
     const deltaY = e.key === 'ArrowUp' ? ARROW_STEP : e.key === 'ArrowDown' ? -ARROW_STEP : 0;
     onPanChange(pan.x + deltaX, pan.y + deltaY);
-  }, [pan, onPanChange]);
+  };
 
   if (!isVisible) return null;
 
@@ -120,7 +114,7 @@ function Minimap({
       <div className="minimap-canvas">
         <div className="minimap-grid" />
 
-        {blocks.map(block => (
+        {blocks.length > 0 && blocks.map(block => (
           <div
             key={block.id}
             className="minimap-block"
@@ -147,4 +141,4 @@ function Minimap({
   );
 }
 
-export default memo(Minimap);
+export default Minimap;

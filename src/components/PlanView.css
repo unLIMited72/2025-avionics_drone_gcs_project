@@ -1,0 +1,55 @@
+.plan-view {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.main-canvas {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+  position: relative;
+  cursor: grab;
+  transform: translateZ(0);
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  -webkit-font-smoothing: subpixel-antialiased;
+}
+
+.main-canvas:active {
+  cursor: grabbing;
+}
+
+.canvas-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  will-change: transform;
+  transform-origin: 0 0;
+}
+
+.grid-background {
+  position: absolute;
+  top: -1500px;
+  left: -2000px;
+  width: 4000px;
+  height: 3000px;
+  background-image:
+    linear-gradient(rgba(100, 150, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 150, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(rgba(100, 150, 255, 0.05) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(100, 150, 255, 0.05) 2px, transparent 2px);
+  background-size: 50px 50px, 50px 50px, 200px 200px, 200px 200px;
+  pointer-events: none;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
