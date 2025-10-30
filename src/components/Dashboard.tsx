@@ -3,6 +3,7 @@ import FlightStateBlock from './FlightStateBlock';
 import DroneStarterBlock from './DroneStarterBlock';
 import ControllerBlockButton from './ControllerBlockButton';
 import LogBlock from './LogBlock';
+import DroneSimulator from './DroneSimulator';
 
 interface DashboardProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export default function Dashboard({ isOpen }: DashboardProps) {
             <LogBlock />
           </div>
         </div>
+        <DroneSimulator />
       </div>
     </aside>
   );
