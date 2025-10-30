@@ -10,6 +10,7 @@ interface ControllerBlockProps {
   onPositionChange: (id: string, x: number, y: number) => void;
   onToggleMinimize: (id: string) => void;
   isMinimized: boolean;
+  droneName?: string;
 }
 
 type FlightControlMode = 'mission' | 'controller';
@@ -22,7 +23,8 @@ export default function ControllerBlock({
   onRemove,
   onPositionChange,
   onToggleMinimize,
-  isMinimized
+  isMinimized,
+  droneName
 }: ControllerBlockProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -123,7 +125,9 @@ export default function ControllerBlock({
         role="button"
         aria-label="Window header"
       >
-        <div className="workspace-block-title">Controller</div>
+        <div className="workspace-block-title">
+          {droneName ? `Controller — ${droneName}` : 'Controller'}
+        </div>
         <div className="header-actions">
           <button
             className="workspace-block-minimize"

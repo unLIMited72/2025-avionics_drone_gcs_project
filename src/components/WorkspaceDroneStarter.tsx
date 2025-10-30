@@ -10,6 +10,8 @@ interface WorkspaceDroneStarterProps {
   onPositionChange: (id: string, x: number, y: number) => void;
   onToggleMinimize: (id: string) => void;
   isMinimized: boolean;
+  droneName?: string;
+  onDroneNameUpdate?: (id: string, droneName: string) => void;
 }
 
 
@@ -21,7 +23,9 @@ export default function WorkspaceDroneStarter({
   onRemove,
   onPositionChange,
   onToggleMinimize,
-  isMinimized
+  isMinimized,
+  droneName: nodeDroneName,
+  onDroneNameUpdate
 }: WorkspaceDroneStarterProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -118,6 +122,9 @@ export default function WorkspaceDroneStarter({
   const handleConnect = () => {
     if (serialNumber.trim() && droneName.trim()) {
       setIsConnected(true);
+      if (onDroneNameUpdate) {
+        onDroneNameUpdate(id, droneName);
+      }
     }
   };
 
@@ -168,9 +175,10 @@ export default function WorkspaceDroneStarter({
             <>
               <span className="drone-name">{droneName}</span>
               <span className="drone-serial">#{serialNumber}</span>
+              {nodeDroneName && <span className="node-suffix"> — {nodeDroneName}</span>}
             </>
           ) : (
-            'Drone Starter'
+            <>{nodeDroneName ? `Drone Starter — ${nodeDroneName}` : 'Drone Starter'}</>
           )}
         </div>
         <div className="header-actions">

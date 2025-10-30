@@ -12,6 +12,7 @@ interface WorkspaceBlockProps {
   isMinimized: boolean;
   velocity: number;
   acceleration: number;
+  droneName?: string;
 }
 
 export default function WorkspaceBlock({
@@ -24,7 +25,8 @@ export default function WorkspaceBlock({
   onToggleMinimize,
   isMinimized,
   velocity,
-  acceleration
+  acceleration,
+  droneName
 }: WorkspaceBlockProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -128,7 +130,9 @@ export default function WorkspaceBlock({
         role="button"
         aria-label="Window header"
       >
-        <div className="workspace-block-title">Primary Flight Display</div>
+        <div className="workspace-block-title">
+          {droneName ? `Primary Flight Display — ${droneName}` : 'Primary Flight Display'}
+        </div>
         <div className="header-actions">
           <button
             className="workspace-block-minimize"
