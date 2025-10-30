@@ -54,7 +54,7 @@ export default function WorkspaceLog({
 
   const handleMouseDown = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (target.closest('.terminal-body, .terminal-header, .terminal-footer, button')) {
+    if (target.closest('.log-content, button')) {
       return;
     }
 
@@ -165,39 +165,25 @@ export default function WorkspaceLog({
         </div>
       </div>
 
-      <div className="log-terminal" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="terminal-header">
-          <div className="terminal-buttons">
-            <span className="terminal-button terminal-close"></span>
-            <span className="terminal-button terminal-minimize"></span>
-            <span className="terminal-button terminal-maximize"></span>
-          </div>
-          <div className="terminal-title">drone_log_terminal</div>
-        </div>
-
-        <div className="terminal-body">
-          {logs.length === 0 ? (
-            <div className="terminal-empty">
-              <div className="empty-text">Terminal cleared. Waiting for new logs...</div>
+      <div className="log-content" onMouseDown={(e) => e.stopPropagation()}>
+        {logs.length === 0 ? (
+          <div className="log-empty">Terminal cleared. Waiting for new logs...</div>
+        ) : (
+          logs.map((log, index) => (
+            <div key={index} className="log-entry">
+              <span className="log-timestamp">{log.timestamp}</span>
+              <span className="log-level" style={{ color: getLevelColor(log.level) }}>
+                {getLevelPrefix(log.level)}
+              </span>
+              <span className="log-message">{log.message}</span>
             </div>
-          ) : (
-            logs.map((log, index) => (
-              <div key={index} className="log-entry">
-                <span className="log-timestamp">{log.timestamp}</span>
-                <span className="log-level" style={{ color: getLevelColor(log.level) }}>
-                  {getLevelPrefix(log.level)}
-                </span>
-                <span className="log-message">{log.message}</span>
-              </div>
-            ))
-          )}
-          <div ref={logEndRef} />
-        </div>
+          ))
+        )}
+        <div ref={logEndRef} />
+      </div>
 
-        <div className="terminal-footer">
-          <span className="terminal-cursor">▊</span>
-          <span className="terminal-prompt">Ready</span>
-        </div>
+      <div className="log-status">
+        <span className="status-text">Ready</span>
       </div>
     </div>
   );
