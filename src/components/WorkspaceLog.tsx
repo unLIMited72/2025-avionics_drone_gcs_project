@@ -1,0 +1,198 @@
+import { useState, useRef, useEffect, type MouseEvent } from 'react';
+import './WorkspaceLog.css';
+
+interface WorkspaceLogProps {
+  id: string;
+  initialX: number;
+  initialY: number;
+  zoom: number;
+  onRemove: (id: string) => void;
+  onPositionChange: (id: string, x: number, y: number) => void;
+}
+
+interface LogEntry {
+  timestamp: string;
+  level: 'info' | 'warning' | 'error' | 'success';
+  message: string;
+}
+
+export default function WorkspaceLog({
+  id,
+  initialX,
+  initialY,
+  zoom,
+  onRemove,
+  onPositionChange
+}: WorkspaceLogProps) {
+  const [position, setPosition] = useState({ x: initialX, y: initialY });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const blockRef = useRef<HTMLDivElement>(null);
+  const logEndRef = useRef<HTMLDivElement>(null);
+
+  const [logs, setLogs] = useState<LogEntry[]>([
+    { timestamp: '00:00:01', level: 'info', message: 'System initialized' },
+    { timestamp: '00:00:02', level: 'info', message: 'Waiting for drone connection...' },
+    { timestamp: '00:00:03', level: 'success', message: 'Drone connected successfully' },
+    { timestamp: '00:00:04', level: 'info', message: 'Starting telemetry stream' },
+    { timestamp: '00:00:05', level: 'warning', message: 'GPS signal weak - 4 satellites' },
+    { timestamp: '00:00:06', level: 'info', message: 'Calibrating sensors...' },
+    { timestamp: '00:00:07', level: 'success', message: 'IMU calibration complete' },
+    { timestamp: '00:00:08', level: 'error', message: 'EKF estimation invalid' }
+  ]);
+
+  useEffect(() => {
+    setPosition({ x: initialX, y: initialY });
+  }, [initialX, initialY]);
+
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [logs]);
+
+  const handleMouseDown = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.log-terminal, button')) {
+      return;
+    }
+
+    setDragStart({ x: e.clientX, y: e.clientY });
+    setIsDragging(true);
+    e.stopPropagation();
+  };
+
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
+      if (isDragging) {
+        const deltaX = (e.clientX - dragStart.x) / zoom;
+        const deltaY = (e.clientY - dragStart.y) / zoom;
+
+        const newX = position.x + deltaX;
+        const newY = position.y + deltaY;
+
+        setPosition({ x: newX, y: newY });
+        setDragStart({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      if (isDragging) {
+        onPositionChange(id, position.x, position.y);
+      }
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging, dragStart, position, zoom, id, onPositionChange]);
+
+  const handleRemove = (e: MouseEvent) => {
+    e.stopPropagation();
+    onRemove(id);
+  };
+
+  const handleClearLogs = (e: MouseEvent) => {
+    e.stopPropagation();
+    setLogs([]);
+  };
+
+  const getLevelColor = (level: LogEntry['level']): string => {
+    switch (level) {
+      case 'info':
+        return '#6496ff';
+      case 'success':
+        return '#00ff96';
+      case 'warning':
+        return '#ffaa00';
+      case 'error':
+        return '#ff6464';
+      default:
+        return '#e0e0e0';
+    }
+  };
+
+  const getLevelPrefix = (level: LogEntry['level']): string => {
+    switch (level) {
+      case 'info':
+        return '[INFO]';
+      case 'success':
+        return '[OK]';
+      case 'warning':
+        return '[WARN]';
+      case 'error':
+        return '[ERR]';
+      default:
+        return '[LOG]';
+    }
+  };
+
+  return (
+    <div
+      ref={blockRef}
+      className={`workspace-log ${isDragging ? 'dragging' : ''}`}
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`
+      }}
+      onMouseDown={handleMouseDown}
+    >
+      <div className="workspace-block-header">
+        <div className="workspace-block-title">Log Terminal</div>
+        <div className="header-actions">
+          <button className="log-clear-btn" onClick={handleClearLogs} title="Clear logs">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" />
+            </svg>
+          </button>
+          <button className="workspace-block-remove" onClick={handleRemove}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div className="log-terminal">
+        <div className="terminal-header">
+          <div className="terminal-buttons">
+            <span className="terminal-button terminal-close"></span>
+            <span className="terminal-button terminal-minimize"></span>
+            <span className="terminal-button terminal-maximize"></span>
+          </div>
+          <div className="terminal-title">drone_log_terminal</div>
+        </div>
+
+        <div className="terminal-body">
+          {logs.length === 0 ? (
+            <div className="terminal-empty">
+              <div className="empty-text">Terminal cleared. Waiting for new logs...</div>
+            </div>
+          ) : (
+            logs.map((log, index) => (
+              <div key={index} className="log-entry">
+                <span className="log-timestamp">{log.timestamp}</span>
+                <span className="log-level" style={{ color: getLevelColor(log.level) }}>
+                  {getLevelPrefix(log.level)}
+                </span>
+                <span className="log-message">{log.message}</span>
+              </div>
+            ))
+          )}
+          <div ref={logEndRef} />
+        </div>
+
+        <div className="terminal-footer">
+          <span className="terminal-cursor">▊</span>
+          <span className="terminal-prompt">Ready</span>
+        </div>
+      </div>
+    </div>
+  );
+}
