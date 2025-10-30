@@ -62,14 +62,16 @@ export default function WorkspaceDroneStarter({
       return;
     }
 
+    e.preventDefault();
+    e.stopPropagation();
     setDragStart({ x: e.clientX, y: e.clientY });
     setIsDragging(true);
-    e.stopPropagation();
   };
 
   useEffect(() => {
     const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
       if (isDragging) {
+        e.preventDefault();
         const deltaX = (e.clientX - dragStart.x) / zoom;
         const deltaY = (e.clientY - dragStart.y) / zoom;
 
@@ -81,8 +83,9 @@ export default function WorkspaceDroneStarter({
       }
     };
 
-    const handleGlobalMouseUp = () => {
+    const handleGlobalMouseUp = (e: globalThis.MouseEvent) => {
       if (isDragging) {
+        e.preventDefault();
         onPositionChange(id, position.x, position.y);
       }
       setIsDragging(false);

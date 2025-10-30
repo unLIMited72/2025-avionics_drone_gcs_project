@@ -41,7 +41,7 @@ function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const zoom = 1;
+  const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -49,6 +49,26 @@ function App() {
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
+
+    if (!mainRef.current) return;
+
+    const rect = mainRef.current.getBoundingClientRect();
+    const pointerX = e.clientX - rect.left;
+    const pointerY = e.clientY - rect.top;
+
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.min(Math.max(0.5, zoom * delta), 2);
+
+    const scaleRatio = newZoom / zoom;
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const newPanX = pointerX - (pointerX - centerX - pan.x) * scaleRatio - centerX;
+    const newPanY = pointerY - (pointerY - centerY - pan.y) * scaleRatio - centerY;
+
+    setZoom(newZoom);
+    setPan({ x: newPanX, y: newPanY });
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -97,6 +117,7 @@ function App() {
   }, [isDragging, dragStart, zoom]);
 
   const handleResetView = () => {
+    setZoom(1);
     setPan({ x: 0, y: 0 });
   };
 

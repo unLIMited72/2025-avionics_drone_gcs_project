@@ -14,8 +14,6 @@ interface MinimapProps {
 
 export default function Minimap({
   isVisible,
-  canvasWidth,
-  canvasHeight,
   viewportWidth,
   viewportHeight,
   pan,
@@ -27,8 +25,11 @@ export default function Minimap({
   const minimapWidth = 220;
   const minimapHeight = 140;
 
-  const scaleX = minimapWidth / canvasWidth;
-  const scaleY = minimapHeight / canvasHeight;
+  const totalCanvasWidth = 4000;
+  const totalCanvasHeight = 3000;
+
+  const scaleX = minimapWidth / totalCanvasWidth;
+  const scaleY = minimapHeight / totalCanvasHeight;
 
   const viewportBoxWidth = viewportWidth * scaleX;
   const viewportBoxHeight = viewportHeight * scaleY;
@@ -127,8 +128,8 @@ export default function Minimap({
             key={block.id}
             className="minimap-block"
             style={{
-              left: `${(block.x + canvasWidth / 2) * scaleX}px`,
-              top: `${(block.y + canvasHeight / 2) * scaleY}px`,
+              left: `${(block.x + totalCanvasWidth / 2) * scaleX}px`,
+              top: `${(block.y + totalCanvasHeight / 2) * scaleY}px`,
             }}
           />
         ))}
