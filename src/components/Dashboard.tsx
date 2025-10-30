@@ -2,16 +2,14 @@ import './Dashboard.css';
 import FlightStateBlock from './FlightStateBlock';
 import DroneStarterBlock from './DroneStarterBlock';
 import ControllerBlockButton from './ControllerBlockButton';
-import WorkspaceLogBlock from './WorkspaceLogBlock';
+import SystemLogBlock from './SystemLogBlock';
 
 interface DashboardProps {
   isOpen: boolean;
   onClose: () => void;
-  onDragStart?: (type: string) => void;
-  onDragEnd?: () => void;
 }
 
-export default function Dashboard({ isOpen, onDragStart = () => {}, onDragEnd = () => {} }: DashboardProps) {
+export default function Dashboard({ isOpen }: DashboardProps) {
   return (
     <aside className={`dashboard-panel ${isOpen ? 'open' : ''}`}>
       <div className="dashboard-header">
@@ -23,7 +21,7 @@ export default function Dashboard({ isOpen, onDragStart = () => {}, onDragEnd = 
             <DroneStarterBlock />
             <FlightStateBlock />
             <ControllerBlockButton />
-            <WorkspaceLogBlock onDragStart={onDragStart} onDragEnd={onDragEnd} />
+            <SystemLogBlock />
           </div>
         </div>
       </div>
