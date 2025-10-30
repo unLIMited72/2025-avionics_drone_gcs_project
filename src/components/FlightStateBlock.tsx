@@ -9,6 +9,7 @@ export default function FlightStateBlock({ onDragStart }: FlightStateBlockProps)
   const handleDragStart = (e: DragEvent) => {
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('blockType', 'flight-state-info');
+    console.info('FD_DRAG_START', { type: 'flight-state-info', clientX: e.clientX, clientY: e.clientY });
     if (onDragStart) {
       onDragStart(e);
     }

@@ -8,6 +8,8 @@ import DigitalClock from './DigitalClock';
 import DroneStatus from './DroneStatus';
 import './PlanView.css';
 
+declare const __BUILD_HASH__: string;
+
 interface Block {
   id: string;
   type: string;
@@ -36,19 +38,31 @@ export default function PlanView() {
 
   renderCount++;
 
+  const CANVAS_WIDTH = 4000;
+  const CANVAS_HEIGHT = 3000;
+
   useEffect(() => {
-    console.info('plan: ok', {
-      hudSizes: 'Clock(20px) Reset(44px) Minimap(220x140) DroneCount(24px)',
+    if (!mainRef.current) return;
+
+    const { clientWidth, clientHeight } = mainRef.current;
+    const visibleWorldWidth = clientWidth / zoom;
+    const visibleWorldHeight = clientHeight / zoom;
+    const minimapBoxWidth = Math.max(12, (visibleWorldWidth / CANVAS_WIDTH) * 220);
+    const minimapBoxHeight = Math.max(12, (visibleWorldHeight / CANVAS_HEIGHT) * 140);
+
+    console.info('plan:ok', {
       theme: 'dark',
+      hud: 'restored',
       gridDPI: window.devicePixelRatio || 1,
       scale: zoom,
       offset: pan,
-      markers: blocks.length
+      minimap: {
+        box: `${Math.round(minimapBoxWidth)}x${Math.round(minimapBoxHeight)}`,
+        clamped: true
+      },
+      buildHash: typeof __BUILD_HASH__ !== 'undefined' ? __BUILD_HASH__ : 'dev'
     });
   }, [zoom, pan, blocks.length]);
-
-  const CANVAS_WIDTH = 4000;
-  const CANVAS_HEIGHT = 3000;
   const MIN_ZOOM = 0.5;
   const MAX_ZOOM = 2;
   const ZOOM_SPEED = 0.1;
@@ -129,22 +143,43 @@ export default function PlanView() {
     };
   }, [isDragging, dragStart, zoom, clampPan]);
 
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!mainRef.current) return;
 
     const type = e.dataTransfer.getData('blockType');
-    if (!type) return;
+    if (!type) {
+      console.warn('FD_DROP: No blockType in dataTransfer');
+      return;
+    }
 
     const rect = mainRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left - rect.width / 2 - pan.x) / zoom;
-    const y = (e.clientY - rect.top - rect.height / 2 - pan.y) / zoom;
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+
+    const worldX = (clientX - rect.left - rect.width / 2 - pan.x) / zoom;
+    const worldY = (clientY - rect.top - rect.height / 2 - pan.y) / zoom;
+
+    console.info('FD_DROP', {
+      type,
+      clientXY: { x: clientX, y: clientY },
+      worldXY: { x: Math.round(worldX), y: Math.round(worldY) },
+      scale: zoom,
+      offset: pan,
+      accepted: true
+    });
 
     const newBlock: Block = {
       id: `${type}-${Date.now()}`,
       type,
-      x,
-      y,
+      x: worldX,
+      y: worldY,
       velocity: type === 'telemetry' ? 0 : undefined,
       acceleration: type === 'telemetry' ? 0 : undefined,
       isMinimized: false
@@ -190,7 +225,7 @@ export default function PlanView() {
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}
+        onDragOver={handleDragOver}
       >
         <div
           className="canvas-content"
