@@ -43,12 +43,6 @@
   letter-spacing: 0.3px;
 }
 
-.drone-name-label {
-  color: #00ff96;
-  font-weight: 500;
-  margin-left: 4px;
-}
-
 .workspace-block-remove {
   display: flex;
   align-items: center;

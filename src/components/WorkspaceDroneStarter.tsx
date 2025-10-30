@@ -1,12 +1,6 @@
 import { useState, useRef, useEffect, type MouseEvent } from 'react';
 import './WorkspaceDroneStarter.css';
 
-interface CurrentDrone {
-  serial: string;
-  name: string;
-  connected: boolean;
-}
-
 interface WorkspaceDroneStarterProps {
   id: string;
   initialX: number;
@@ -14,8 +8,6 @@ interface WorkspaceDroneStarterProps {
   zoom: number;
   onRemove: (id: string) => void;
   onPositionChange: (id: string, x: number, y: number) => void;
-  onDroneConnect: (drone: CurrentDrone) => void;
-  onControllerLink: (linked: boolean) => void;
 }
 
 
@@ -25,9 +17,7 @@ export default function WorkspaceDroneStarter({
   initialY,
   zoom,
   onRemove,
-  onPositionChange,
-  onDroneConnect,
-  onControllerLink
+  onPositionChange
 }: WorkspaceDroneStarterProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -37,8 +27,6 @@ export default function WorkspaceDroneStarter({
   const [serialNumber, setSerialNumber] = useState('');
   const [droneName, setDroneName] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [connectionError, setConnectionError] = useState('');
 
   const [px4Connection] = useState<'connected' | 'disconnected'>('disconnected');
   const [failsafe] = useState<'normal' | 'active'>('normal');
@@ -112,112 +100,14 @@ export default function WorkspaceDroneStarter({
     onRemove(id);
   };
 
-  const handleConnect = async () => {
-    if (!serialNumber.trim() || !droneName.trim()) {
-      setConnectionError('Serial Number and Drone Name are required');
-      return;
-    }
-
-    setIsConnecting(true);
-    setConnectionError('');
-
-    try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/drones/connect`;
-      console.log('[WorkspaceDroneStarter] Connecting drone:', { serial: serialNumber, name: droneName });
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          serial: serialNumber,
-          name: droneName,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to connect drone');
-      }
-
-      const data = await response.json();
-      console.log('[WorkspaceDroneStarter] Drone connected successfully:', data);
-
+  const handleConnect = () => {
+    if (serialNumber.trim() && droneName.trim()) {
       setIsConnected(true);
-      setConnectionError('');
-
-      onDroneConnect({
-        serial: serialNumber,
-        name: droneName,
-        connected: true
-      });
-
-      setTimeout(() => {
-        const svg = document.getElementById('connector-layer');
-        if (svg) {
-          svg.dispatchEvent(new Event('force-redraw'));
-        }
-      }, 100);
-    } catch (error) {
-      console.error('[WorkspaceDroneStarter] Connection error:', error);
-      setConnectionError(error instanceof Error ? error.message : 'Failed to connect drone');
-      setIsConnected(false);
-    } finally {
-      setIsConnecting(false);
     }
   };
 
-  const handleDisconnect = async () => {
-    setIsConnecting(true);
-    setConnectionError('');
-
-    try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/drones/disconnect`;
-      console.log('[WorkspaceDroneStarter] Disconnecting drone:', serialNumber);
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          serial: serialNumber,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to disconnect drone');
-      }
-
-      const data = await response.json();
-      console.log('[WorkspaceDroneStarter] Drone disconnected successfully:', data);
-
-      setIsConnected(false);
-      setConnectionError('');
-
-      onDroneConnect({
-        serial: '',
-        name: '',
-        connected: false
-      });
-      onControllerLink(false);
-
-      setTimeout(() => {
-        const svg = document.getElementById('connector-layer');
-        if (svg) {
-          svg.dispatchEvent(new Event('force-redraw'));
-        }
-      }, 100);
-    } catch (error) {
-      console.error('[WorkspaceDroneStarter] Disconnection error:', error);
-      setConnectionError(error instanceof Error ? error.message : 'Failed to disconnect drone');
-    } finally {
-      setIsConnecting(false);
-    }
+  const handleDisconnect = () => {
+    setIsConnected(false);
   };
 
   const getGpsHealthStatus = (): 'ok' | 'warning' | 'error' => {
@@ -244,7 +134,6 @@ export default function WorkspaceDroneStarter({
   return (
     <div
       ref={blockRef}
-      id="drone-starter"
       className={`workspace-drone-starter ${isDragging ? 'dragging' : ''}`}
       style={{
         left: `${position.x}px`,
@@ -291,24 +180,17 @@ export default function WorkspaceDroneStarter({
               />
             </div>
           )}
-          {connectionError && (
-            <div className="connection-error">{connectionError}</div>
-          )}
           {!isConnected ? (
             <button
               className="connect-btn"
               onClick={handleConnect}
-              disabled={!serialNumber.trim() || !droneName.trim() || isConnecting}
+              disabled={!serialNumber.trim() || !droneName.trim()}
             >
-              {isConnecting ? 'Connecting...' : 'Connect'}
+              Connect
             </button>
           ) : (
-            <button
-              className="disconnect-btn"
-              onClick={handleDisconnect}
-              disabled={isConnecting}
-            >
-              {isConnecting ? 'Disconnecting...' : 'Disconnect'}
+            <button className="disconnect-btn" onClick={handleDisconnect}>
+              Disconnect
             </button>
           )}
         </div>

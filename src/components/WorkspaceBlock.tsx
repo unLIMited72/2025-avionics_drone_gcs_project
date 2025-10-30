@@ -1,12 +1,6 @@
 import { useState, useRef, useEffect, type MouseEvent } from 'react';
 import './WorkspaceBlock.css';
 
-interface CurrentDrone {
-  serial: string;
-  name: string;
-  connected: boolean;
-}
-
 interface WorkspaceBlockProps {
   id: string;
   initialX: number;
@@ -16,7 +10,6 @@ interface WorkspaceBlockProps {
   onPositionChange: (id: string, x: number, y: number) => void;
   velocity: number;
   acceleration: number;
-  currentDrone: CurrentDrone;
 }
 
 export default function WorkspaceBlock({
@@ -27,8 +20,7 @@ export default function WorkspaceBlock({
   onRemove,
   onPositionChange,
   velocity,
-  acceleration,
-  currentDrone
+  acceleration
 }: WorkspaceBlockProps) {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -108,7 +100,6 @@ export default function WorkspaceBlock({
   return (
     <div
       ref={blockRef}
-      id="primary-flight"
       className={`workspace-block ${isDragging ? 'dragging' : ''}`}
       style={{
         left: `${position.x}px`,
@@ -117,12 +108,7 @@ export default function WorkspaceBlock({
       onMouseDown={handleMouseDown}
     >
       <div className="workspace-block-header">
-        <div className="workspace-block-title">
-          Primary Flight Display
-          {currentDrone.name && (
-            <span className="drone-name-label"> — {currentDrone.name}</span>
-          )}
-        </div>
+        <div className="workspace-block-title">Primary Flight Display</div>
         <button className="workspace-block-remove" onClick={handleRemove}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18" />
