@@ -30,9 +30,58 @@ function getBlockDimensions(type: string): { width: number; height: number } {
   }
 }
 
+function rayBoxIntersection(
+  boxX: number,
+  boxY: number,
+  boxW: number,
+  boxH: number,
+  centerX: number,
+  centerY: number,
+  dirX: number,
+  dirY: number
+): { x: number; y: number } {
+  const candidates: Array<{ x: number; y: number; t: number }> = [];
+
+  if (dirX !== 0) {
+    const tLeft = (boxX - centerX) / dirX;
+    const yLeft = centerY + tLeft * dirY;
+    if (tLeft > 0 && yLeft >= boxY && yLeft <= boxY + boxH) {
+      candidates.push({ x: boxX, y: yLeft, t: tLeft });
+    }
+
+    const tRight = (boxX + boxW - centerX) / dirX;
+    const yRight = centerY + tRight * dirY;
+    if (tRight > 0 && yRight >= boxY && yRight <= boxY + boxH) {
+      candidates.push({ x: boxX + boxW, y: yRight, t: tRight });
+    }
+  }
+
+  if (dirY !== 0) {
+    const tTop = (boxY - centerY) / dirY;
+    const xTop = centerX + tTop * dirX;
+    if (tTop > 0 && xTop >= boxX && xTop <= boxX + boxW) {
+      candidates.push({ x: xTop, y: boxY, t: tTop });
+    }
+
+    const tBottom = (boxY + boxH - centerY) / dirY;
+    const xBottom = centerX + tBottom * dirX;
+    if (tBottom > 0 && xBottom >= boxX && xBottom <= boxX + boxW) {
+      candidates.push({ x: xBottom, y: boxY + boxH, t: tBottom });
+    }
+  }
+
+  if (candidates.length === 0) {
+    return { x: centerX, y: centerY };
+  }
+
+  candidates.sort((a, b) => a.t - b.t);
+  return { x: candidates[0].x, y: candidates[0].y };
+}
+
 function getClosestAnchor(
   fromBlock: Block,
-  toBlock: Block
+  toBlock: Block,
+  orderIndex: number
 ): { from: { x: number; y: number }; to: { x: number; y: number } } {
   const fromDim = getBlockDimensions(fromBlock.type);
   const toDim = getBlockDimensions(toBlock.type);
@@ -42,36 +91,40 @@ function getClosestAnchor(
   const toCenterX = toBlock.x + toDim.width / 2;
   const toCenterY = toBlock.y + toDim.height / 2;
 
-  const fromAnchors = [
-    { x: fromBlock.x, y: fromCenterY },
-    { x: fromBlock.x + fromDim.width, y: fromCenterY },
-    { x: fromCenterX, y: fromBlock.y },
-    { x: fromCenterX, y: fromBlock.y + fromDim.height }
-  ];
+  const dirX = toCenterX - fromCenterX;
+  const dirY = toCenterY - fromCenterY;
 
-  const toAnchors = [
-    { x: toBlock.x, y: toCenterY },
-    { x: toBlock.x + toDim.width, y: toCenterY },
-    { x: toCenterX, y: toBlock.y },
-    { x: toCenterX, y: toBlock.y + toDim.height }
-  ];
+  const anchorA = rayBoxIntersection(
+    fromBlock.x,
+    fromBlock.y,
+    fromDim.width,
+    fromDim.height,
+    fromCenterX,
+    fromCenterY,
+    dirX,
+    dirY
+  );
 
-  let minDist = Infinity;
-  let bestFrom = fromAnchors[0];
-  let bestTo = toAnchors[0];
+  const anchorB = rayBoxIntersection(
+    toBlock.x,
+    toBlock.y,
+    toDim.width,
+    toDim.height,
+    toCenterX,
+    toCenterY,
+    -dirX,
+    -dirY
+  );
 
-  for (const fa of fromAnchors) {
-    for (const ta of toAnchors) {
-      const dist = Math.sqrt(Math.pow(fa.x - ta.x, 2) + Math.pow(fa.y - ta.y, 2));
-      if (dist < minDist) {
-        minDist = dist;
-        bestFrom = fa;
-        bestTo = ta;
-      }
-    }
-  }
+  console.info('EDGE', {
+    from: fromBlock.id,
+    to: toBlock.id,
+    anchorA,
+    anchorB,
+    orderIndex
+  });
 
-  return { from: bestFrom, to: bestTo };
+  return { from: anchorA, to: anchorB };
 }
 
 export default function ConnectionLines({ edges, blocks, zoom, pan }: ConnectionLinesProps) {
@@ -93,14 +146,15 @@ export default function ConnectionLines({ edges, blocks, zoom, pan }: Connection
     ctx.strokeStyle = '#00d4ff';
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
+    ctx.lineCap = 'round';
 
-    edges.forEach(([fromId, toId]) => {
+    edges.forEach(([fromId, toId], index) => {
       const fromBlock = blocks.find(b => b.id === fromId);
       const toBlock = blocks.find(b => b.id === toId);
 
       if (!fromBlock || !toBlock) return;
 
-      const anchors = getClosestAnchor(fromBlock, toBlock);
+      const anchors = getClosestAnchor(fromBlock, toBlock, index);
 
       const fromX = anchors.from.x * zoom + pan.x + rect.width / 2;
       const fromY = anchors.from.y * zoom + pan.y + rect.height / 2;

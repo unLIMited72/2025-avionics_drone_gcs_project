@@ -117,26 +117,20 @@ function App() {
       e.preventDefault();
       e.stopPropagation();
 
-      const canvasRect = mainRef.current?.getBoundingClientRect();
-      if (!canvasRect) return;
+      const rect = mainRef.current?.getBoundingClientRect();
+      if (!rect) return;
 
-      const pageX = e.clientX + window.scrollX;
-      const pageY = e.clientY + window.scrollY;
-      const localX = pageX - (canvasRect.left + window.scrollX);
-      const localY = pageY - (canvasRect.top + window.scrollY);
+      const localX = e.clientX - rect.left;
+      const localY = e.clientY - rect.top;
       const worldX = (localX - pan.x) / zoom;
       const worldY = (localY - pan.y) / zoom;
 
-      console.log('MARQUEE_START', {
-        clientX: e.clientX,
-        clientY: e.clientY,
-        localX,
-        localY,
-        worldX,
-        worldY,
-        scale: zoom,
-        panX: pan.x,
-        panY: pan.y
+      console.info('MARQUEE_START', {
+        client: [e.clientX, e.clientY],
+        local: [localX, localY],
+        world: [worldX, worldY],
+        pan: pan,
+        scale: zoom
       });
 
       setIsSelecting(true);
@@ -159,11 +153,9 @@ function App() {
         e.preventDefault();
         e.stopPropagation();
 
-        const canvasRect = mainRef.current.getBoundingClientRect();
-        const pageX = e.clientX + window.scrollX;
-        const pageY = e.clientY + window.scrollY;
-        const localX = pageX - (canvasRect.left + window.scrollX);
-        const localY = pageY - (canvasRect.top + window.scrollY);
+        const rect = mainRef.current.getBoundingClientRect();
+        const localX = e.clientX - rect.left;
+        const localY = e.clientY - rect.top;
 
         setSelectionBox({
           x: Math.min(selectionStart.screenX, localX),
@@ -181,28 +173,46 @@ function App() {
         e.preventDefault();
         e.stopPropagation();
 
-        const canvasRect = mainRef.current?.getBoundingClientRect();
-        if (canvasRect) {
+        const rect = mainRef.current?.getBoundingClientRect();
+        if (rect) {
           const selectedBlocks = blocks.filter(block => {
             const dimensions = getBlockDimensions(block.type);
             const blockWorldX = block.x;
             const blockWorldY = block.y;
+            const blockWorldW = dimensions.width;
+            const blockWorldH = dimensions.height;
 
             const marqueeWorldX1 = (selectionBox.x - pan.x) / zoom;
             const marqueeWorldY1 = (selectionBox.y - pan.y) / zoom;
             const marqueeWorldX2 = ((selectionBox.x + selectionBox.width) - pan.x) / zoom;
             const marqueeWorldY2 = ((selectionBox.y + selectionBox.height) - pan.y) / zoom;
 
-            return (
-              blockWorldX + dimensions.width > marqueeWorldX1 &&
-              blockWorldX < marqueeWorldX2 &&
-              blockWorldY + dimensions.height > marqueeWorldY1 &&
-              blockWorldY < marqueeWorldY2
+            const intersects = (
+              blockWorldX + blockWorldW >= marqueeWorldX1 &&
+              blockWorldX <= marqueeWorldX2 &&
+              blockWorldY + blockWorldH >= marqueeWorldY1 &&
+              blockWorldY <= marqueeWorldY2
             );
+
+            const bboxWorld = {
+              x: blockWorldX,
+              y: blockWorldY,
+              w: blockWorldW,
+              h: blockWorldH
+            };
+
+            console.info('MARQUEE_HIT', {
+              id: block.id,
+              role: block.type,
+              bboxWorld,
+              intersects
+            });
+
+            return intersects;
           });
 
           const selectedIds = selectedBlocks.map(b => b.id);
-          console.log('MARQUEE_END', { selectedIds, count: selectedIds.length });
+          console.info('MARQUEE_END', { selectedIds, count: selectedIds.length });
 
           setBlocks(prev => prev.map(b => ({
             ...b,
