@@ -13,6 +13,7 @@
   border-bottom: 2px solid rgba(0, 212, 255, 0.3);
   padding: 0;
   gap: 0;
+  width: 240px;
 }
 
 .tab-button {
