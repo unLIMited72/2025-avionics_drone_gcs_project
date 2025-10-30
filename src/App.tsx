@@ -16,6 +16,21 @@ interface DroppedBlock {
   y: number;
 }
 
+function getBlockDimensions(type: string): { width: number; height: number } {
+  switch (type) {
+    case 'log':
+      return { width: 520, height: 450 };
+    case 'controller':
+      return { width: 320, height: 400 };
+    case 'drone-starter':
+      return { width: 280, height: 380 };
+    case 'flight-state-info':
+      return { width: 560, height: 380 };
+    default:
+      return { width: 300, height: 300 };
+  }
+}
+
 function App() {
   const [serverStatus] = useState<ServerStatus>('disconnected');
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
@@ -91,18 +106,23 @@ function App() {
 
   const handleDrop = (e: DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     const blockType = e.dataTransfer.getData('blockType');
 
     if (blockType && mainRef.current) {
       const rect = mainRef.current.getBoundingClientRect();
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
+      const viewportCenterX = rect.width / 2;
+      const viewportCenterY = rect.height / 2;
 
-      const dropX = e.clientX - rect.left;
-      const dropY = e.clientY - rect.top;
+      const clientX = e.clientX - rect.left;
+      const clientY = e.clientY - rect.top;
 
-      const x = (dropX - centerX - pan.x) / zoom;
-      const y = (dropY - centerY - pan.y) / zoom;
+      const canvasX = (clientX - viewportCenterX) / zoom - pan.x / zoom;
+      const canvasY = (clientY - viewportCenterY) / zoom - pan.y / zoom;
+
+      const dimensions = getBlockDimensions(blockType);
+      const x = canvasX - dimensions.width / 2;
+      const y = canvasY - dimensions.height / 2;
 
       const newBlock: DroppedBlock = {
         id: `block-${Date.now()}`,

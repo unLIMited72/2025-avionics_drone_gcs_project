@@ -10,10 +10,10 @@
   backdrop-filter: blur(10px);
   cursor: move;
   user-select: none;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.2s ease;
   z-index: 10;
   pointer-events: auto;
-  will-change: transform;
+  transform-origin: top left;
 }
 
 .workspace-drone-starter:hover {
