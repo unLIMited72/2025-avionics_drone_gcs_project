@@ -21,6 +21,8 @@ interface Block {
 let renderCount = 0;
 
 export default function PlanView() {
+  console.info('Plan root =', 'src/components/PlanView.tsx');
+
   const [blocks, setBlocks] = useState<Block[]>(() => {
     const saved = localStorage.getItem('workspace-blocks');
     return saved ? JSON.parse(saved) : [];
@@ -35,12 +37,15 @@ export default function PlanView() {
   renderCount++;
 
   useEffect(() => {
-    console.log('[PLAN DEBUG] Render count:', renderCount);
-    console.log('[PLAN DEBUG] Theme tokens: dark black (#0a0a1a, #1a1a2e)');
-    console.log('[PLAN DEBUG] HUD sizes: Clock(20px), Reset(44px), Minimap(220x140), DroneCount(24px)');
-    console.log('[PLAN DEBUG] Grid scale:', 1);
-    console.log('[PLAN DEBUG] Zoom:', zoom, 'Pan offset:', pan);
-  });
+    console.info('plan: ok', {
+      hudSizes: 'Clock(20px) Reset(44px) Minimap(220x140) DroneCount(24px)',
+      theme: 'dark',
+      gridDPI: window.devicePixelRatio || 1,
+      scale: zoom,
+      offset: pan,
+      markers: blocks.length
+    });
+  }, [zoom, pan, blocks.length]);
 
   const CANVAS_WIDTH = 4000;
   const CANVAS_HEIGHT = 3000;
