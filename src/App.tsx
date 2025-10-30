@@ -257,6 +257,18 @@ function App() {
     }
   }, [pan]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (edges.length > 0) {
+        console.log('EDGE_RECOMPUTE', { reason: 'resize' });
+        recomputeEdges('pan');
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [edges.length, recomputeEdges]);
+
   const handleDragSelectStart = () => {
     setIsDragSelecting(true);
     setSelectedBlockIds([]);
@@ -272,34 +284,68 @@ function App() {
     const nodeId = `node-${nodeCounter}`;
     setNodeCounter(prev => prev + 1);
 
-    const sortedBlocks = [...selectedBlocks].sort((a, b) => {
-      if (Math.abs(a.x - b.x) < 50) return a.y - b.y;
-      return a.x - b.x;
-    });
+    const starterBlockObj = selectedBlocks.find(b => b.type === 'drone-starter');
+    const flightDisplayBlock = selectedBlocks.find(b => b.type === 'flight-state-info');
+    const controllerBlock = selectedBlocks.find(b => b.type === 'controller');
 
     const newEdges: Edge[] = [];
-    for (let i = 0; i < sortedBlocks.length - 1; i++) {
-      const fromBlock = sortedBlocks[i];
-      const toBlock = sortedBlocks[i + 1];
-      const fromDims = getBlockDimensions(fromBlock.type);
-      const toDims = getBlockDimensions(toBlock.type);
+    const edgePairs: string[] = [];
 
-      const fromRect = { x: fromBlock.x, y: fromBlock.y, width: fromDims.width, height: fromDims.height };
-      const toRect = { x: toBlock.x, y: toBlock.y, width: toDims.width, height: toDims.height };
+    if (starterBlockObj && flightDisplayBlock) {
+      const fromDims = getBlockDimensions(starterBlockObj.type);
+      const toDims = getBlockDimensions(flightDisplayBlock.type);
+
+      const fromRect = { x: starterBlockObj.x, y: starterBlockObj.y, width: fromDims.width, height: fromDims.height };
+      const toRect = { x: flightDisplayBlock.x, y: flightDisplayBlock.y, width: toDims.width, height: toDims.height };
 
       const anchorA = calculateAnchorPoint(fromRect, toRect, true);
       const anchorB = calculateAnchorPoint(fromRect, toRect, false);
 
       const edge: Edge = {
-        id: `edge-${fromBlock.id}-${toBlock.id}`,
-        fromId: fromBlock.id,
-        toId: toBlock.id,
+        id: `edge-${starterBlockObj.id}-${flightDisplayBlock.id}`,
+        fromId: starterBlockObj.id,
+        toId: flightDisplayBlock.id,
         anchorA,
         anchorB
       };
       newEdges.push(edge);
-      console.log('EDGE_DRAW', { fromId: fromBlock.id, toId: toBlock.id, anchorA, anchorB, orderIndex: i });
+      edgePairs.push('Starter→FlightDisplay');
+      console.log('EDGE_ANCHORS', {
+        from: starterBlockObj.id,
+        to: flightDisplayBlock.id,
+        anchorA: [anchorA.x, anchorA.y],
+        anchorB: [anchorB.x, anchorB.y]
+      });
     }
+
+    if (flightDisplayBlock && controllerBlock) {
+      const fromDims = getBlockDimensions(flightDisplayBlock.type);
+      const toDims = getBlockDimensions(controllerBlock.type);
+
+      const fromRect = { x: flightDisplayBlock.x, y: flightDisplayBlock.y, width: fromDims.width, height: fromDims.height };
+      const toRect = { x: controllerBlock.x, y: controllerBlock.y, width: toDims.width, height: toDims.height };
+
+      const anchorA = calculateAnchorPoint(fromRect, toRect, true);
+      const anchorB = calculateAnchorPoint(fromRect, toRect, false);
+
+      const edge: Edge = {
+        id: `edge-${flightDisplayBlock.id}-${controllerBlock.id}`,
+        fromId: flightDisplayBlock.id,
+        toId: controllerBlock.id,
+        anchorA,
+        anchorB
+      };
+      newEdges.push(edge);
+      edgePairs.push('FlightDisplay→Controller');
+      console.log('EDGE_ANCHORS', {
+        from: flightDisplayBlock.id,
+        to: controllerBlock.id,
+        anchorA: [anchorA.x, anchorA.y],
+        anchorB: [anchorB.x, anchorB.y]
+      });
+    }
+
+    console.log('EDGE_ORDER', { pairs: edgePairs });
 
     setEdges(prev => [...prev, ...newEdges]);
 
@@ -494,48 +540,53 @@ function App() {
               }}
             />
           )}
-          <svg
-            className="edges-layer"
+          <div
+            className="workspace-world-container"
             style={{
               position: 'absolute',
-              left: 0,
-              top: 0,
-              width: '100%',
-              height: '100%',
-              pointerEvents: 'none',
-              zIndex: 1
+              top: '50%',
+              left: '50%',
+              width: 0,
+              height: 0,
+              transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
+              transformOrigin: '0 0',
+              pointerEvents: 'none'
             }}
           >
-            {edges.map(edge => {
-              const fromBlock = blocks.find(b => b.id === edge.fromId);
-              const toBlock = blocks.find(b => b.id === edge.toId);
-              if (!fromBlock || !toBlock || !mainRef.current) return null;
+            <svg
+              className="edges-layer"
+              style={{
+                position: 'absolute',
+                left: '-10000px',
+                top: '-10000px',
+                width: '20000px',
+                height: '20000px',
+                pointerEvents: 'none',
+                overflow: 'visible'
+              }}
+            >
+              {edges.map(edge => {
+                const fromBlock = blocks.find(b => b.id === edge.fromId);
+                const toBlock = blocks.find(b => b.id === edge.toId);
+                if (!fromBlock || !toBlock) return null;
 
-              const rect = mainRef.current.getBoundingClientRect();
-              const viewportCenterX = rect.width / 2;
-              const viewportCenterY = rect.height / 2;
-
-              const x1 = (edge.anchorA.x * zoom) + viewportCenterX + pan.x;
-              const y1 = (edge.anchorA.y * zoom) + viewportCenterY + pan.y;
-              const x2 = (edge.anchorB.x * zoom) + viewportCenterX + pan.x;
-              const y2 = (edge.anchorB.y * zoom) + viewportCenterY + pan.y;
-
-              return (
-                <line
-                  key={edge.id}
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke="#00d4ff"
-                  strokeWidth="2"
-                  strokeDasharray="5,5"
-                  strokeLinecap="round"
-                  opacity="0.6"
-                />
-              );
-            })}
-          </svg>
+                return (
+                  <line
+                    key={edge.id}
+                    x1={edge.anchorA.x + 10000}
+                    y1={edge.anchorA.y + 10000}
+                    x2={edge.anchorB.x + 10000}
+                    y2={edge.anchorB.y + 10000}
+                    stroke="#00d4ff"
+                    strokeWidth="2"
+                    strokeDasharray="5,5"
+                    strokeLinecap="round"
+                    opacity="0.6"
+                  />
+                );
+              })}
+            </svg>
+          </div>
           <div
             className="workspace-blocks-container"
             style={{
