@@ -29,24 +29,6 @@
   z-index: 20;
 }
 
-.workspace-log.selected {
-  border: 3px solid #00d4ff;
-  box-shadow: 0 0 25px rgba(0, 212, 255, 0.6),
-              inset 0 0 20px rgba(0, 212, 255, 0.15);
-}
-
-.workspace-log.selected::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 212, 255, 0.08);
-  pointer-events: none;
-  border-radius: inherit;
-}
-
 .workspace-log .workspace-block-header {
   display: flex;
   align-items: center;

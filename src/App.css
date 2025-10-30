@@ -57,13 +57,6 @@
   transform: scaleX(1);
 }
 
-.settings-button-container {
-  position: fixed;
-  top: 72px;
-  right: 232px;
-  z-index: 150;
-}
-
 .gcs-main {
   flex: 1;
   position: relative;

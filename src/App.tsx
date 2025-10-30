@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, type DragEvent, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, type DragEvent } from 'react';
 import Header, { type ServerStatus } from './components/Header';
 import Dashboard from './components/Dashboard';
 import DigitalClock from './components/DigitalClock';
@@ -9,8 +9,6 @@ import ControllerBlock from './components/ControllerBlock';
 import WorkspaceLog from './components/WorkspaceLog';
 import Minimap from './components/Minimap';
 import MapView from './components/MapView';
-import SettingsButton from './components/SettingsButton';
-import ConnectionLines from './components/ConnectionLines';
 import './App.css';
 
 interface DroppedBlock {
@@ -19,14 +17,6 @@ interface DroppedBlock {
   x: number;
   y: number;
   isMinimized?: boolean;
-  isSelected?: boolean;
-}
-
-interface NodeGroup {
-  id: string;
-  blockIds: string[];
-  droneName?: string;
-  edges: Array<[string, string]>;
 }
 
 function getBlockDimensions(type: string): { width: number; height: number } {
@@ -58,13 +48,6 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mainRef = useRef<HTMLDivElement>(null);
-
-  const [isDragSelectMode, setIsDragSelectMode] = useState(false);
-  const [selectionBox, setSelectionBox] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [selectionStart, setSelectionStart] = useState({ worldX: 0, worldY: 0, screenX: 0, screenY: 0 });
-  const [nodeGroups, setNodeGroups] = useState<NodeGroup[]>([]);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const CANVAS_WIDTH = 4000;
   const CANVAS_HEIGHT = 3000;
@@ -109,124 +92,22 @@ function App() {
   }, [zoom, pan, clampPan]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log, .settings-container')) {
+    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log')) {
       return;
     }
-
-    if (isDragSelectMode) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const rect = mainRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      const localX = e.clientX - rect.left;
-      const localY = e.clientY - rect.top;
-      const worldX = (localX - pan.x) / zoom;
-      const worldY = (localY - pan.y) / zoom;
-
-      console.info('MARQUEE_START', {
-        client: [e.clientX, e.clientY],
-        local: [localX, localY],
-        world: [worldX, worldY],
-        pan: pan,
-        scale: zoom
-      });
-
-      setIsSelecting(true);
-      setSelectionStart({ worldX, worldY, screenX: localX, screenY: localY });
-      setSelectionBox({ x: localX, y: localY, width: 0, height: 0 });
-      return;
-    }
-
     setIsDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
 
   useEffect(() => {
-    if (!isDragging && !isSelecting) return;
+    if (!isDragging) return;
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
       if (!mainRef.current) return;
-
-      if (isSelecting && selectionBox) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const rect = mainRef.current.getBoundingClientRect();
-        const localX = e.clientX - rect.left;
-        const localY = e.clientY - rect.top;
-
-        setSelectionBox({
-          x: Math.min(selectionStart.screenX, localX),
-          y: Math.min(selectionStart.screenY, localY),
-          width: Math.abs(localX - selectionStart.screenX),
-          height: Math.abs(localY - selectionStart.screenY)
-        });
-      } else if (isDragging) {
-        setPan(clampPan(e.clientX - dragStart.x, e.clientY - dragStart.y, zoom));
-      }
+      setPan(clampPan(e.clientX - dragStart.x, e.clientY - dragStart.y, zoom));
     };
 
-    const handleGlobalMouseUp = (e: MouseEvent) => {
-      if (isSelecting && selectionBox) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const rect = mainRef.current?.getBoundingClientRect();
-        if (rect) {
-          const selectedBlocks = blocks.filter(block => {
-            const dimensions = getBlockDimensions(block.type);
-            const blockWorldX = block.x;
-            const blockWorldY = block.y;
-            const blockWorldW = dimensions.width;
-            const blockWorldH = dimensions.height;
-
-            const marqueeWorldX1 = (selectionBox.x - pan.x) / zoom;
-            const marqueeWorldY1 = (selectionBox.y - pan.y) / zoom;
-            const marqueeWorldX2 = ((selectionBox.x + selectionBox.width) - pan.x) / zoom;
-            const marqueeWorldY2 = ((selectionBox.y + selectionBox.height) - pan.y) / zoom;
-
-            const intersects = (
-              blockWorldX + blockWorldW >= marqueeWorldX1 &&
-              blockWorldX <= marqueeWorldX2 &&
-              blockWorldY + blockWorldH >= marqueeWorldY1 &&
-              blockWorldY <= marqueeWorldY2
-            );
-
-            const bboxWorld = {
-              x: blockWorldX,
-              y: blockWorldY,
-              w: blockWorldW,
-              h: blockWorldH
-            };
-
-            console.info('MARQUEE_HIT', {
-              id: block.id,
-              role: block.type,
-              bboxWorld,
-              intersects
-            });
-
-            return intersects;
-          });
-
-          const selectedIds = selectedBlocks.map(b => b.id);
-          console.info('MARQUEE_END', { selectedIds, count: selectedIds.length });
-
-          setBlocks(prev => prev.map(b => ({
-            ...b,
-            isSelected: selectedIds.includes(b.id)
-          })));
-        }
-
-        setSelectionBox(null);
-        setIsSelecting(false);
-        setIsDragSelectMode(false);
-      }
-
-      setIsDragging(false);
-    };
+    const handleGlobalMouseUp = () => setIsDragging(false);
 
     document.addEventListener('mousemove', handleGlobalMouseMove);
     document.addEventListener('mouseup', handleGlobalMouseUp);
@@ -235,7 +116,7 @@ function App() {
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [isDragging, isSelecting, dragStart, zoom, clampPan, selectionBox, selectionStart, blocks, pan]);
+  }, [isDragging, dragStart, zoom, clampPan]);
 
   const handleResetView = () => {
     setZoom(1);
@@ -317,91 +198,6 @@ function App() {
   }, [activeTab]);
 
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isDragSelectMode) {
-        setIsDragSelectMode(false);
-        setBlocks(prev => prev.map(b => ({ ...b, isSelected: false })));
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isDragSelectMode]);
-
-  const handleDragSelectToggle = () => {
-    setIsDragSelectMode(!isDragSelectMode);
-  };
-
-  const handleMakeNode = () => {
-    const selectedBlocks = blocks.filter(b => b.isSelected);
-
-    if (selectedBlocks.length < 1) {
-      console.warn('Make Node: No blocks selected');
-      return;
-    }
-
-    const sortedBlocks = [...selectedBlocks].sort((a, b) => {
-      if (Math.abs(a.x - b.x) < 50) {
-        return a.y - b.y;
-      }
-      return a.x - b.x;
-    });
-
-    const droneStarter = selectedBlocks.find(b => b.type === 'drone-starter');
-    const droneName = droneStarter ? `Drone-${nodeGroups.length + 1}` : 'Unnamed';
-
-    const nodeId = `node-${Date.now()}`;
-    const selectedIds = selectedBlocks.map(b => b.id);
-
-    const edges: Array<[string, string]> = [];
-    for (let i = 0; i < sortedBlocks.length - 1; i++) {
-      edges.push([sortedBlocks[i].id, sortedBlocks[i + 1].id]);
-    }
-
-    const newNode: NodeGroup = {
-      id: nodeId,
-      blockIds: selectedIds,
-      droneName,
-      edges
-    };
-
-    console.log('MAKE_NODE', {
-      selectedIds,
-      count: selectedIds.length,
-      nodeId,
-      droneName
-    });
-
-    console.log('EDGES', {
-      pairs: edges
-    });
-
-    setNodeGroups(prev => [...prev, newNode]);
-    setBlocks(prev => prev.map(b => ({ ...b, isSelected: false })));
-  };
-
-  const handleUngroupNode = () => {
-    if (!selectedNodeId) return;
-
-    const node = nodeGroups.find(n => n.id === selectedNodeId);
-    if (!node) return;
-
-    console.log('UNGROUP_NODE', { nodeId: selectedNodeId, blockIds: node.blockIds });
-
-    setNodeGroups(prev => prev.filter(n => n.id !== selectedNodeId));
-    setBlocks(prev => prev.map(b => ({ ...b, isSelected: false })));
-    setSelectedNodeId(null);
-  };
-
-  const selectedBlocksCount = blocks.filter(b => b.isSelected).length;
-  const canMakeNode = selectedBlocksCount > 0;
-  const canUngroupNode = selectedNodeId !== null;
-
-  const allEdges = useMemo(() => {
-    return nodeGroups.flatMap(node => node.edges || []);
-  }, [nodeGroups]);
-
-  useEffect(() => {
     if (activeTab === 'map' && isDashboardOpen) {
       setIsDashboardOpen(false);
     }
@@ -466,7 +262,6 @@ function App() {
                   }}
                   onToggleMinimize={handleToggleMinimize}
                   isMinimized={block.isMinimized || false}
-                  isSelected={block.isSelected || false}
                 />
               );
             } else if (block.type === 'controller') {
@@ -485,7 +280,6 @@ function App() {
                   }}
                   onToggleMinimize={handleToggleMinimize}
                   isMinimized={block.isMinimized || false}
-                  isSelected={block.isSelected || false}
                 />
               );
             } else if (block.type === 'log') {
@@ -504,7 +298,6 @@ function App() {
                   }}
                   onToggleMinimize={handleToggleMinimize}
                   isMinimized={block.isMinimized || false}
-                  isSelected={block.isSelected || false}
                 />
               );
             } else {
@@ -525,18 +318,11 @@ function App() {
                   isMinimized={block.isMinimized || false}
                   velocity={15.2}
                   acceleration={2.3}
-                  isSelected={block.isSelected || false}
                 />
               );
             }
           })}
           </div>
-          <ConnectionLines
-            edges={allEdges}
-            blocks={blocks}
-            zoom={zoom}
-            pan={pan}
-          />
           <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
           <Minimap
             isVisible={!isDashboardOpen}
@@ -549,33 +335,6 @@ function App() {
             onPanChange={handleMinimapPan}
             blocks={blocks}
           />
-          {selectionBox && (
-            <div
-              className="selection-marquee"
-              style={{
-                position: 'fixed',
-                left: `${selectionBox.x}px`,
-                top: `${selectionBox.y}px`,
-                width: `${selectionBox.width}px`,
-                height: `${selectionBox.height}px`,
-                border: '2px dashed #00d4ff',
-                background: 'rgba(0, 212, 255, 0.1)',
-                pointerEvents: 'none',
-                zIndex: 100
-              }}
-            />
-          )}
-          <div className="settings-button-container">
-            <SettingsButton
-              onDragSelectToggle={handleDragSelectToggle}
-              onMakeNode={handleMakeNode}
-              onUngroupNode={handleUngroupNode}
-              isDragSelectActive={isDragSelectMode}
-              canMakeNode={canMakeNode}
-              canUngroupNode={canUngroupNode}
-              isVisible={activeTab === 'plan'}
-            />
-          </div>
           <DigitalClock onReset={handleResetView} />
           <DroneStatus />
         </div>
