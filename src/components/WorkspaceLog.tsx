@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect, useCallback, type MouseEvent } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useBlockDrag } from '../hooks/useBlockDrag';
+import { createHeaderKeyDownHandler, createStopPropagationHandler } from '../utils/blockUtils';
 import './WorkspaceLog.css';
 
 interface WorkspaceLogProps {
@@ -28,9 +30,6 @@ export default function WorkspaceLog({
   onToggleMinimize,
   isMinimized
 }: WorkspaceLogProps) {
-  const [position, setPosition] = useState({ x: initialX, y: initialY });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const blockRef = useRef<HTMLDivElement>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
@@ -46,9 +45,14 @@ export default function WorkspaceLog({
   ]);
   const [autoScroll, setAutoScroll] = useState(true);
 
-  useEffect(() => {
-    setPosition({ x: initialX, y: initialY });
-  }, [initialX, initialY]);
+  const { position, isDragging, handleMouseDown } = useBlockDrag({
+    initialX,
+    initialY,
+    zoom,
+    id,
+    onPositionChange,
+    shouldPreventDrag: (target) => !!target.closest('.log-content, button')
+  });
 
   useEffect(() => {
     if (autoScroll && logs.length > 0 && logEndRef.current) {
@@ -56,64 +60,14 @@ export default function WorkspaceLog({
     }
   }, [logs, autoScroll]);
 
-  const handleMouseDown = useCallback((e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.closest('.log-content, button')) return;
+  const handleRemove = createStopPropagationHandler(() => onRemove(id));
+  const handleMinimize = createStopPropagationHandler(() => onToggleMinimize(id));
+  const handleHeaderKeyDown = createHeaderKeyDownHandler(
+    () => onToggleMinimize(id),
+    () => onRemove(id)
+  );
 
-    e.preventDefault();
-    e.stopPropagation();
-    setDragStart({ x: e.clientX, y: e.clientY });
-    setIsDragging(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
-      e.preventDefault();
-      const deltaX = (e.clientX - dragStart.x) / zoom;
-      const deltaY = (e.clientY - dragStart.y) / zoom;
-
-      setPosition(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
-      setDragStart({ x: e.clientX, y: e.clientY });
-    };
-
-    const handleGlobalMouseUp = (e: globalThis.MouseEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      onPositionChange(id, position.x, position.y);
-    };
-
-    document.addEventListener('mousemove', handleGlobalMouseMove);
-    document.addEventListener('mouseup', handleGlobalMouseUp);
-
-    return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-    };
-  }, [isDragging, dragStart, zoom, id, position, onPositionChange]);
-
-  const handleRemove = useCallback((e: MouseEvent) => {
-    e.stopPropagation();
-    onRemove(id);
-  }, [id, onRemove]);
-
-  const handleMinimize = (e: MouseEvent) => {
-    e.stopPropagation();
-    onToggleMinimize(id);
-  };
-
-  const handleHeaderKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onToggleMinimize(id);
-    } else if (e.key === 'Delete') {
-      e.preventDefault();
-      onRemove(id);
-    }
-  };
-
-  const handleClearLogs = useCallback((e: MouseEvent) => {
+  const handleClearLogs = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setAutoScroll(false);

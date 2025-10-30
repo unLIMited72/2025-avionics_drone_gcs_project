@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect, useCallback, type MouseEvent } from 'react';
+import { useState, useRef } from 'react';
+import { useBlockDrag } from '../hooks/useBlockDrag';
+import { createHeaderKeyDownHandler, createStopPropagationHandler, shouldPreventDragFromInteractiveElements } from '../utils/blockUtils';
 import './ControllerBlock.css';
 
 interface ControllerBlockProps {
@@ -24,78 +26,27 @@ export default function ControllerBlock({
   onToggleMinimize,
   isMinimized
 }: ControllerBlockProps) {
-  const [position, setPosition] = useState({ x: initialX, y: initialY });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const blockRef = useRef<HTMLDivElement>(null);
-
   const [maxSpeed, setMaxSpeed] = useState('');
   const [maxAltitude, setMaxAltitude] = useState('');
   const [flightMode, setFlightMode] = useState<FlightControlMode>('mission');
   const [isSaved, setIsSaved] = useState(false);
 
-  useEffect(() => {
-    setPosition({ x: initialX, y: initialY });
-  }, [initialX, initialY]);
+  const { position, isDragging, handleMouseDown } = useBlockDrag({
+    initialX,
+    initialY,
+    zoom,
+    id,
+    onPositionChange,
+    shouldPreventDrag: shouldPreventDragFromInteractiveElements
+  });
 
-  const handleMouseDown = useCallback((e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.closest('input, button')) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    setDragStart({ x: e.clientX, y: e.clientY });
-    setIsDragging(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
-      e.preventDefault();
-      const deltaX = (e.clientX - dragStart.x) / zoom;
-      const deltaY = (e.clientY - dragStart.y) / zoom;
-
-      setPosition(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
-      setDragStart({ x: e.clientX, y: e.clientY });
-    };
-
-    const handleGlobalMouseUp = (e: globalThis.MouseEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      onPositionChange(id, position.x, position.y);
-    };
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleGlobalMouseMove);
-      document.addEventListener('mouseup', handleGlobalMouseUp);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-    };
-  }, [isDragging, dragStart, position, zoom, id, onPositionChange]);
-
-  const handleRemove = (e: MouseEvent) => {
-    e.stopPropagation();
-    onRemove(id);
-  };
-
-  const handleMinimize = (e: MouseEvent) => {
-    e.stopPropagation();
-    onToggleMinimize(id);
-  };
-
-  const handleHeaderKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onToggleMinimize(id);
-    } else if (e.key === 'Delete') {
-      e.preventDefault();
-      onRemove(id);
-    }
-  };
+  const handleRemove = createStopPropagationHandler(() => onRemove(id));
+  const handleMinimize = createStopPropagationHandler(() => onToggleMinimize(id));
+  const handleHeaderKeyDown = createHeaderKeyDownHandler(
+    () => onToggleMinimize(id),
+    () => onRemove(id)
+  );
 
   const handleSet = () => {
     if (maxSpeed.trim() && maxAltitude.trim()) {

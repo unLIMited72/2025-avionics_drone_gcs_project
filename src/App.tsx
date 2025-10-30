@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, type DragEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type DragEvent, type ComponentType } from 'react';
 import Header, { type ServerStatus } from './components/Header';
 import Dashboard from './components/Dashboard';
 import DigitalClock from './components/DigitalClock';
@@ -19,6 +19,22 @@ interface DroppedBlock {
   isMinimized?: boolean;
 }
 
+interface BaseBlockProps {
+  id: string;
+  initialX: number;
+  initialY: number;
+  zoom: number;
+  onRemove: (id: string) => void;
+  onPositionChange: (id: string, x: number, y: number) => void;
+  onToggleMinimize: (id: string) => void;
+  isMinimized: boolean;
+}
+
+interface FlightBlockProps extends BaseBlockProps {
+  velocity: number;
+  acceleration: number;
+}
+
 function getBlockDimensions(type: string): { width: number; height: number } {
   switch (type) {
     case 'log':
@@ -34,6 +50,19 @@ function getBlockDimensions(type: string): { width: number; height: number } {
   }
 }
 
+const CANVAS_WIDTH = 4000;
+const CANVAS_HEIGHT = 3000;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 2;
+const ZOOM_SPEED = 0.1;
+
+const BLOCK_COMPONENT_MAP: Record<string, ComponentType<BaseBlockProps | FlightBlockProps>> = {
+  'drone-starter': WorkspaceDroneStarter,
+  'controller': ControllerBlock,
+  'log': WorkspaceLog,
+  'flight-state-info': WorkspaceBlock as ComponentType<BaseBlockProps | FlightBlockProps>
+};
+
 function App() {
   const [serverStatus] = useState<ServerStatus>('disconnected');
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
@@ -48,12 +77,6 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mainRef = useRef<HTMLDivElement>(null);
-
-  const CANVAS_WIDTH = 4000;
-  const CANVAS_HEIGHT = 3000;
-  const MIN_ZOOM = 0.5;
-  const MAX_ZOOM = 2;
-  const ZOOM_SPEED = 0.1;
 
   const clampPan = useCallback((x: number, y: number, currentZoom: number) => {
     if (!mainRef.current) return { x, y };
@@ -166,15 +189,21 @@ function App() {
     setBlocks(prev => [...prev, newBlock]);
   };
 
-  const handleRemoveBlock = (id: string) => {
+  const handleRemoveBlock = useCallback((id: string) => {
     setBlocks(prev => prev.filter(block => block.id !== id));
-  };
+  }, []);
 
-  const handleToggleMinimize = (id: string) => {
+  const handleToggleMinimize = useCallback((id: string) => {
     setBlocks(prev => prev.map(block =>
       block.id === id ? { ...block, isMinimized: !block.isMinimized } : block
     ));
-  };
+  }, []);
+
+  const handleBlockPositionChange = useCallback((id: string, x: number, y: number) => {
+    setBlocks(prev => prev.map(b =>
+      b.id === id ? { ...b, x, y } : b
+    ));
+  }, []);
 
   const handleMinimapPan = useCallback((x: number, y: number) => {
     setPan(clampPan(x, y, zoom));
@@ -246,81 +275,25 @@ function App() {
             }}
           >
           {blocks.map(block => {
-            if (block.type === 'drone-starter') {
-              return (
-                <WorkspaceDroneStarter
-                  key={block.id}
-                  id={block.id}
-                  initialX={block.x}
-                  initialY={block.y}
-                  zoom={zoom}
-                  onRemove={handleRemoveBlock}
-                  onPositionChange={(id, newX, newY) => {
-                    setBlocks(prev => prev.map(b =>
-                      b.id === id ? { ...b, x: newX, y: newY } : b
-                    ));
-                  }}
-                  onToggleMinimize={handleToggleMinimize}
-                  isMinimized={block.isMinimized || false}
-                />
-              );
-            } else if (block.type === 'controller') {
-              return (
-                <ControllerBlock
-                  key={block.id}
-                  id={block.id}
-                  initialX={block.x}
-                  initialY={block.y}
-                  zoom={zoom}
-                  onRemove={handleRemoveBlock}
-                  onPositionChange={(id, newX, newY) => {
-                    setBlocks(prev => prev.map(b =>
-                      b.id === id ? { ...b, x: newX, y: newY } : b
-                    ));
-                  }}
-                  onToggleMinimize={handleToggleMinimize}
-                  isMinimized={block.isMinimized || false}
-                />
-              );
-            } else if (block.type === 'log') {
-              return (
-                <WorkspaceLog
-                  key={block.id}
-                  id={block.id}
-                  initialX={block.x}
-                  initialY={block.y}
-                  zoom={zoom}
-                  onRemove={handleRemoveBlock}
-                  onPositionChange={(id, newX, newY) => {
-                    setBlocks(prev => prev.map(b =>
-                      b.id === id ? { ...b, x: newX, y: newY } : b
-                    ));
-                  }}
-                  onToggleMinimize={handleToggleMinimize}
-                  isMinimized={block.isMinimized || false}
-                />
-              );
-            } else {
-              return (
-                <WorkspaceBlock
-                  key={block.id}
-                  id={block.id}
-                  initialX={block.x}
-                  initialY={block.y}
-                  zoom={zoom}
-                  onRemove={handleRemoveBlock}
-                  onPositionChange={(id, newX, newY) => {
-                    setBlocks(prev => prev.map(b =>
-                      b.id === id ? { ...b, x: newX, y: newY } : b
-                    ));
-                  }}
-                  onToggleMinimize={handleToggleMinimize}
-                  isMinimized={block.isMinimized || false}
-                  velocity={15.2}
-                  acceleration={2.3}
-                />
-              );
-            }
+            const BlockComponent = BLOCK_COMPONENT_MAP[block.type] || WorkspaceBlock;
+            const extraProps = block.type === 'flight-state-info'
+              ? { velocity: 15.2, acceleration: 2.3 }
+              : {};
+
+            return (
+              <BlockComponent
+                key={block.id}
+                id={block.id}
+                initialX={block.x}
+                initialY={block.y}
+                zoom={zoom}
+                onRemove={handleRemoveBlock}
+                onPositionChange={handleBlockPositionChange}
+                onToggleMinimize={handleToggleMinimize}
+                isMinimized={block.isMinimized || false}
+                {...extraProps}
+              />
+            );
           })}
           </div>
           <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />

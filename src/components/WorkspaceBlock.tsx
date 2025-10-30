@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect, useCallback, type MouseEvent } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useBlockDrag } from '../hooks/useBlockDrag';
+import { createHeaderKeyDownHandler, createStopPropagationHandler } from '../utils/blockUtils';
 import './WorkspaceBlock.css';
 
 interface WorkspaceBlockProps {
@@ -26,23 +28,20 @@ export default function WorkspaceBlock({
   velocity,
   acceleration
 }: WorkspaceBlockProps) {
-  const [position, setPosition] = useState({ x: initialX, y: initialY });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const blockRef = useRef<HTMLDivElement>(null);
   const [pitch, setPitch] = useState(0);
   const [roll, setRoll] = useState(0);
   const [heading, setHeading] = useState(0);
-  const blockRef = useRef<HTMLDivElement>(null);
+
+  const { position, isDragging, handleMouseDown } = useBlockDrag({
+    initialX,
+    initialY,
+    zoom,
+    id,
+    onPositionChange
+  });
 
   useEffect(() => {
-    setPosition({ x: initialX, y: initialY });
-  }, [initialX, initialY]);
-
-  useEffect(() => {
-    setPitch(0);
-    setRoll(0);
-    setHeading(0);
-
     const animationInterval = setInterval(() => {
       const time = Date.now() / 1000;
       setPitch(Math.sin(time * 0.5) * 15);
@@ -53,63 +52,12 @@ export default function WorkspaceBlock({
     return () => clearInterval(animationInterval);
   }, []);
 
-  const handleMouseDown = useCallback((e: MouseEvent) => {
-    if (!blockRef.current) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    setDragStart({ x: e.clientX, y: e.clientY });
-    setIsDragging(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
-      e.preventDefault();
-      const deltaX = (e.clientX - dragStart.x) / zoom;
-      const deltaY = (e.clientY - dragStart.y) / zoom;
-
-      setPosition(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
-      setDragStart({ x: e.clientX, y: e.clientY });
-    };
-
-    const handleGlobalMouseUp = (e: globalThis.MouseEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      onPositionChange(id, position.x, position.y);
-    };
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleGlobalMouseMove);
-      document.addEventListener('mouseup', handleGlobalMouseUp);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-    };
-  }, [isDragging, dragStart, position, zoom, id, onPositionChange]);
-
-  const handleRemove = (e: MouseEvent) => {
-    e.stopPropagation();
-    onRemove(id);
-  };
-
-  const handleMinimize = (e: MouseEvent) => {
-    e.stopPropagation();
-    onToggleMinimize(id);
-  };
-
-  const handleHeaderKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onToggleMinimize(id);
-    } else if (e.key === 'Delete') {
-      e.preventDefault();
-      onRemove(id);
-    }
-  };
+  const handleRemove = createStopPropagationHandler(() => onRemove(id));
+  const handleMinimize = createStopPropagationHandler(() => onToggleMinimize(id));
+  const handleHeaderKeyDown = createHeaderKeyDownHandler(
+    () => onToggleMinimize(id),
+    () => onRemove(id)
+  );
 
   return (
     <div
