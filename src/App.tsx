@@ -9,6 +9,7 @@ import ControllerBlock from './components/ControllerBlock';
 import WorkspaceLog from './components/WorkspaceLog';
 import Minimap from './components/Minimap';
 import MapView from './components/MapView';
+import SettingsButton from './components/SettingsButton';
 import './App.css';
 
 interface DroppedBlock {
@@ -17,6 +18,13 @@ interface DroppedBlock {
   x: number;
   y: number;
   isMinimized?: boolean;
+  isSelected?: boolean;
+}
+
+interface NodeGroup {
+  id: string;
+  blockIds: string[];
+  droneName?: string;
 }
 
 function getBlockDimensions(type: string): { width: number; height: number } {
@@ -48,6 +56,13 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mainRef = useRef<HTMLDivElement>(null);
+
+  const [isDragSelectMode, setIsDragSelectMode] = useState(false);
+  const [selectionBox, setSelectionBox] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
+  const [, setNodeGroups] = useState<NodeGroup[]>([]);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const CANVAS_WIDTH = 4000;
   const CANVAS_HEIGHT = 3000;
@@ -92,22 +107,80 @@ function App() {
   }, [zoom, pan, clampPan]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log')) {
+    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log, .settings-container')) {
       return;
     }
+
+    if (isDragSelectMode) {
+      const rect = mainRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      setIsSelecting(true);
+      setSelectionStart({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      setSelectionBox({ x: e.clientX - rect.left, y: e.clientY - rect.top, width: 0, height: 0 });
+      return;
+    }
+
     setIsDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
 
   useEffect(() => {
-    if (!isDragging) return;
+    if (!isDragging && !isSelecting) return;
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
       if (!mainRef.current) return;
-      setPan(clampPan(e.clientX - dragStart.x, e.clientY - dragStart.y, zoom));
+
+      if (isSelecting && selectionBox) {
+        const rect = mainRef.current.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+
+        setSelectionBox({
+          x: Math.min(selectionStart.x, currentX),
+          y: Math.min(selectionStart.y, currentY),
+          width: Math.abs(currentX - selectionStart.x),
+          height: Math.abs(currentY - selectionStart.y)
+        });
+      } else if (isDragging) {
+        setPan(clampPan(e.clientX - dragStart.x, e.clientY - dragStart.y, zoom));
+      }
     };
 
-    const handleGlobalMouseUp = () => setIsDragging(false);
+    const handleGlobalMouseUp = () => {
+      if (isSelecting && selectionBox) {
+        const rect = mainRef.current?.getBoundingClientRect();
+        if (rect) {
+          const viewportCenterX = rect.width / 2;
+          const viewportCenterY = rect.height / 2;
+
+          const selectedBlocks = blocks.filter(block => {
+            const dimensions = getBlockDimensions(block.type);
+            const blockScreenX = (block.x * zoom + pan.x) + viewportCenterX;
+            const blockScreenY = (block.y * zoom + pan.y) + viewportCenterY;
+            const blockScreenW = dimensions.width * zoom;
+            const blockScreenH = dimensions.height * zoom;
+
+            return (
+              blockScreenX + blockScreenW > selectionBox.x &&
+              blockScreenX < selectionBox.x + selectionBox.width &&
+              blockScreenY + blockScreenH > selectionBox.y &&
+              blockScreenY < selectionBox.y + selectionBox.height
+            );
+          });
+
+          setBlocks(prev => prev.map(b => ({
+            ...b,
+            isSelected: selectedBlocks.some(sb => sb.id === b.id)
+          })));
+        }
+
+        setSelectionBox(null);
+        setIsSelecting(false);
+      }
+
+      setIsDragging(false);
+    };
 
     document.addEventListener('mousemove', handleGlobalMouseMove);
     document.addEventListener('mouseup', handleGlobalMouseUp);
@@ -116,7 +189,7 @@ function App() {
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [isDragging, dragStart, zoom, clampPan]);
+  }, [isDragging, isSelecting, dragStart, zoom, clampPan, selectionBox, selectionStart, blocks, pan]);
 
   const handleResetView = () => {
     setZoom(1);
@@ -196,6 +269,53 @@ function App() {
       console.log('PLAN_ROOT OK');
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isDragSelectMode) {
+        setIsDragSelectMode(false);
+        setBlocks(prev => prev.map(b => ({ ...b, isSelected: false })));
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isDragSelectMode]);
+
+  const handleDragSelectToggle = () => {
+    setIsDragSelectMode(!isDragSelectMode);
+    if (isDragSelectMode) {
+      setBlocks(prev => prev.map(b => ({ ...b, isSelected: false })));
+    }
+  };
+
+  const handleMakeNode = () => {
+    const selectedBlocks = blocks.filter(b => b.isSelected);
+    if (selectedBlocks.length === 0) return;
+
+    const droneStarter = selectedBlocks.find(b => b.type === 'drone-starter');
+    const droneName = droneStarter ? `Drone-${Date.now()}` : undefined;
+
+    const newNode: NodeGroup = {
+      id: `node-${Date.now()}`,
+      blockIds: selectedBlocks.map(b => b.id),
+      droneName
+    };
+
+    setNodeGroups(prev => [...prev, newNode]);
+    setBlocks(prev => prev.map(b => ({ ...b, isSelected: false })));
+  };
+
+  const handleUngroupNode = () => {
+    if (!selectedNodeId) return;
+
+    setNodeGroups(prev => prev.filter(n => n.id !== selectedNodeId));
+    setSelectedNodeId(null);
+  };
+
+  const selectedBlocksCount = blocks.filter(b => b.isSelected).length;
+  const canMakeNode = selectedBlocksCount > 0;
+  const canUngroupNode = selectedNodeId !== null;
 
   useEffect(() => {
     if (activeTab === 'map' && isDashboardOpen) {
@@ -335,6 +455,33 @@ function App() {
             onPanChange={handleMinimapPan}
             blocks={blocks}
           />
+          {selectionBox && (
+            <div
+              className="selection-marquee"
+              style={{
+                position: 'fixed',
+                left: `${selectionBox.x}px`,
+                top: `${selectionBox.y}px`,
+                width: `${selectionBox.width}px`,
+                height: `${selectionBox.height}px`,
+                border: '2px dashed #00d4ff',
+                background: 'rgba(0, 212, 255, 0.1)',
+                pointerEvents: 'none',
+                zIndex: 100
+              }}
+            />
+          )}
+          <div className="settings-button-container">
+            <SettingsButton
+              onDragSelectToggle={handleDragSelectToggle}
+              onMakeNode={handleMakeNode}
+              onUngroupNode={handleUngroupNode}
+              isDragSelectActive={isDragSelectMode}
+              canMakeNode={canMakeNode}
+              canUngroupNode={canUngroupNode}
+              isVisible={activeTab === 'plan'}
+            />
+          </div>
           <DigitalClock onReset={handleResetView} />
           <DroneStatus />
         </div>
