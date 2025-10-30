@@ -1,19 +1,28 @@
 import { useState, useEffect } from 'react';
 import './DroneStatus.css';
 
+const DISCONNECTED_COLOR = '#00d4ff';
+const CONNECTED_COLOR = '#00ff96';
+
 export default function DroneStatus() {
   const [droneCount, setDroneCount] = useState(0);
 
   useEffect(() => {
+    setDroneCount(0);
+
     const fetchDroneCount = async () => {
       try {
         const response = await fetch('/api/drones?status=connected');
         if (response.ok) {
           const drones = await response.json();
-          setDroneCount(Array.isArray(drones) ? drones.length : 0);
+          const count = Array.isArray(drones) ? drones.length : 0;
+          setDroneCount(count);
+        } else {
+          setDroneCount(0);
         }
       } catch (error) {
         console.error('Failed to fetch drone count:', error);
+        setDroneCount(0);
       }
     };
 
@@ -24,7 +33,7 @@ export default function DroneStatus() {
     return () => clearInterval(interval);
   }, []);
 
-  const statusColor = droneCount === 0 ? '#6496ff' : '#00ff96';
+  const statusColor = droneCount === 0 ? DISCONNECTED_COLOR : CONNECTED_COLOR;
 
   return (
     <div className="drone-status">
