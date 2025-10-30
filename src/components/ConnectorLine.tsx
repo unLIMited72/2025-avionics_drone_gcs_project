@@ -16,29 +16,50 @@ function R(el: HTMLElement | null) {
   return el?.getBoundingClientRect?.();
 }
 
-function anchors(ra: DOMRect, rb: DOMRect) {
-  const acx = ra.left + ra.width / 2;
-  const acy = ra.top + ra.height / 2;
-  const bcx = rb.left + rb.width / 2;
-  const bcy = rb.top + rb.height / 2;
+function anchorsLocal(aEl: HTMLElement | null, bEl: HTMLElement | null, root: HTMLElement | null) {
+  const ar = R(aEl);
+  const br = R(bEl);
+  const rr = R(root);
+
+  if (!ar || !br || !rr) return null;
+
+  const acx = ar.left + ar.width / 2 - rr.left;
+  const acy = ar.top + ar.height / 2 - rr.top;
+  const bcx = br.left + br.width / 2 - rr.left;
+  const bcy = br.top + br.height / 2 - rr.top;
   const dx = bcx - acx;
   const dy = bcy - acy;
 
   if (Math.abs(dx) >= Math.abs(dy)) {
-    const ax = dx >= 0 ? ra.right : ra.left;
-    const bx = dx >= 0 ? rb.left : rb.right;
+    const ax = dx >= 0 ? (ar.right - rr.left) : (ar.left - rr.left);
+    const bx = dx >= 0 ? (br.left - rr.left) : (br.right - rr.left);
     return { ax, ay: acy, bx, by: bcy };
   } else {
-    const ay = dy >= 0 ? ra.bottom : ra.top;
-    const by = dy >= 0 ? rb.top : rb.bottom;
+    const ay = dy >= 0 ? (ar.bottom - rr.top) : (ar.top - rr.top);
+    const by = dy >= 0 ? (br.top - rr.top) : (br.bottom - rr.top);
     return { ax: acx, ay, bx: bcx, by };
   }
 }
 
-function avoidRectPath(ra: DOMRect, rb: DOMRect, ro: DOMRect, m = 24) {
-  const { ax, ay, bx, by } = anchors(ra, rb);
+function avoidRectPathLocal(
+  aEl: HTMLElement | null,
+  bEl: HTMLElement | null,
+  obsEl: HTMLElement | null,
+  root: HTMLElement | null,
+  margin = 24
+) {
+  const anchors = anchorsLocal(aEl, bEl, root);
+  if (!anchors) return null;
+
+  const { ax, ay, bx, by } = anchors;
+  const o = R(obsEl);
+  const rr = R(root);
+
+  if (!o || !rr) return null;
+
   const toRight = bx > ax;
-  const laneX = toRight ? ro.right + m : ro.left - m;
+  const laneX = toRight ? o.right - rr.left + margin : o.left - rr.left - margin;
+
   return `${ax},${ay} ${laneX},${ay} ${laneX},${by} ${bx},${by}`;
 }
 
@@ -81,16 +102,24 @@ export default function ConnectorLine({ currentDrone, controllerLinked }: Connec
   const renderStarterToPFD = () => {
     if (!currentDrone.connected) return null;
 
-    const a = R(document.getElementById('drone-starter'));
-    const b = R(document.getElementById('primary-flight'));
+    const root = document.getElementById('connector-layer');
+    const aEl = document.getElementById('drone-starter');
+    const bEl = document.getElementById('primary-flight');
 
-    console.log('[ConnectorLine] Starter→PFD rects:', { a, b });
+    const anchors = anchorsLocal(aEl, bEl, root);
 
-    if (!a || !b) return null;
+    console.log('[ConnectorLine] Starter→PFD elements:', {
+      root: R(root),
+      starter: R(aEl),
+      pfd: R(bEl),
+      anchors,
+    });
 
-    const { ax, ay, bx, by } = anchors(a, b);
+    if (!anchors) return null;
 
-    console.log('[ConnectorLine] Starter→PFD line coords:', { ax, ay, bx, by });
+    const { ax, ay, bx, by } = anchors;
+
+    console.log('[ConnectorLine] Starter→PFD local coords:', { ax, ay, bx, by });
 
     return (
       <line
@@ -110,17 +139,24 @@ export default function ConnectorLine({ currentDrone, controllerLinked }: Connec
   const renderStarterToController = () => {
     if (!controllerLinked) return null;
 
-    const a = R(document.getElementById('drone-starter'));
-    const c = R(document.getElementById('controller-panel'));
-    const o = R(document.getElementById('primary-flight'));
+    const root = document.getElementById('connector-layer');
+    const aEl = document.getElementById('drone-starter');
+    const cEl = document.getElementById('controller-panel');
+    const oEl = document.getElementById('primary-flight');
 
-    console.log('[ConnectorLine] Starter→Controller rects:', { a, c, o });
+    const pts = avoidRectPathLocal(aEl, cEl, oEl, root, 24);
 
-    if (!a || !c || !o) return null;
+    console.log('[ConnectorLine] Starter→Controller elements:', {
+      root: R(root),
+      starter: R(aEl),
+      controller: R(cEl),
+      obstacle: R(oEl),
+      points: pts,
+    });
 
-    const pts = avoidRectPath(a, c, o, 24);
+    if (!pts) return null;
 
-    console.log('[ConnectorLine] Starter→Controller polyline points:', pts);
+    console.log('[ConnectorLine] Starter→Controller local polyline:', pts);
 
     return (
       <polyline

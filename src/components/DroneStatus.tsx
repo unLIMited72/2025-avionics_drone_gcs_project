@@ -1,24 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import './DroneStatus.css';
 
-interface DroneSummary {
-  connectedCount: number;
-  disconnectedCount: number;
-  errorCount: number;
-  totalCount: number;
+interface Drone {
+  id: string;
+  drone_id: string;
+  name: string;
+  status: string;
 }
 
 export default function DroneStatus() {
-  const [droneCount, setDroneCount] = useState<number | null>(null);
+  const [droneCount, setDroneCount] = useState<number>(0);
   const [serverConnected, setServerConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const wsRef = useRef<WebSocket | null>(null);
   const pollIntervalRef = useRef<number | null>(null);
 
-  const fetchDroneSummary = async () => {
+  const updateDroneCount = async () => {
     try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/drones/summary`;
-      console.log('[DroneStatus] Fetching from:', apiUrl);
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/drones?status=connected`;
+      console.log('[DroneStatus] Fetching connected drones from:', apiUrl);
 
       const response = await fetch(apiUrl, {
         headers: {
@@ -32,88 +31,52 @@ export default function DroneStatus() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[DroneStatus] API Error:', response.status, errorText);
-        throw new Error(`Failed to fetch drone summary: ${response.status}`);
+        throw new Error(`Failed to fetch drones: ${response.status}`);
       }
 
-      const data: DroneSummary = await response.json();
+      const data = await response.json();
       console.log('[DroneStatus] Received data:', data);
-      console.log('[DroneStatus] Raw connectedCount:', data.connectedCount, 'Type:', typeof data.connectedCount);
 
-      const count = Number(data?.connectedCount ?? 0);
+      const list: Drone[] = Array.isArray(data) ? data : [];
+      const ids = list.map(d => d.id || d.drone_id).filter(Boolean);
+      const uniqueIds = [...new Set(ids)];
+      const count = uniqueIds.length;
+
+      console.log('[DroneStatus] Drone list:', list);
+      console.log('[DroneStatus] Unique IDs:', uniqueIds);
       console.log('[DroneStatus] Setting drone count to:', count);
 
       setDroneCount(count);
       setServerConnected(true);
       setIsLoading(false);
     } catch (error) {
-      console.error('[DroneStatus] Error fetching drone summary:', error);
+      console.error('[DroneStatus] Error fetching drones:', error);
+      setDroneCount(0);
       setServerConnected(false);
       setIsLoading(false);
     }
   };
 
-  const connectWebSocket = () => {
-    try {
-      const wsUrl = import.meta.env.VITE_SUPABASE_URL?.replace('https://', 'wss://').replace('http://', 'ws://');
-      if (!wsUrl) return;
-
-      const ws = new WebSocket(`${wsUrl}/functions/v1/drones/ws`);
-
-      ws.onopen = () => {
-        console.log('WebSocket connected');
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.connectedCount !== undefined) {
-            const count = Number(data?.connectedCount ?? 0);
-            console.log('[DroneStatus] WebSocket update - setting count to:', count);
-            setDroneCount(count);
-            setServerConnected(true);
-          }
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-
-      ws.onclose = () => {
-        console.log('WebSocket closed, will rely on polling');
-        wsRef.current = null;
-      };
-
-      wsRef.current = ws;
-    } catch (error) {
-      console.error('Error connecting WebSocket:', error);
-    }
-  };
-
   useEffect(() => {
-    fetchDroneSummary();
+    console.log('[DroneStatus] Component mounted, initializing count to 0');
+    setDroneCount(0);
+
+    updateDroneCount();
 
     pollIntervalRef.current = window.setInterval(() => {
-      fetchDroneSummary();
+      updateDroneCount();
     }, 2000);
-
-    connectWebSocket();
 
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
-      }
-      if (wsRef.current) {
-        wsRef.current.close();
       }
     };
   }, []);
 
   const getStatusClass = () => {
     if (!serverConnected) return 'status-disconnected';
-    if (droneCount === null || droneCount === 0) return 'status-default';
+    if (droneCount === 0) return 'status-default';
     if (droneCount >= 1) return 'status-success';
     return 'status-default';
   };
