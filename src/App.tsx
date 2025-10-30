@@ -9,6 +9,8 @@ import ControllerBlock from './components/ControllerBlock';
 import WorkspaceLog from './components/WorkspaceLog';
 import Minimap from './components/Minimap';
 import MapView from './components/MapView';
+import type { PlanState, PlanEdge, PlanNode } from './types/plan';
+import { rectsIntersect, getMarqueeRect, calculateEdgeAnchors, type Rect } from './utils/planGeometry';
 import './App.css';
 
 interface DroppedBlock {
@@ -17,6 +19,7 @@ interface DroppedBlock {
   x: number;
   y: number;
   isMinimized?: boolean;
+  droneName?: string;
 }
 
 function getBlockDimensions(type: string): { width: number; height: number } {
@@ -49,11 +52,33 @@ function App() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mainRef = useRef<HTMLDivElement>(null);
 
+  const [planState, setPlanState] = useState<PlanState>({
+    selection: { panelIds: [] },
+    nodes: [],
+    edges: [],
+    dragSelectMode: false
+  });
+
+  const [marqueeStart, setMarqueeStart] = useState<{ x: number; y: number } | null>(null);
+  const [marqueeEnd, setMarqueeEnd] = useState<{ x: number; y: number } | null>(null);
+  const [isMarqueeActive, setIsMarqueeActive] = useState(false);
+  const marqueePointerIdRef = useRef<number | null>(null);
+
   const CANVAS_WIDTH = 4000;
   const CANVAS_HEIGHT = 3000;
   const MIN_ZOOM = 0.5;
   const MAX_ZOOM = 2;
   const ZOOM_SPEED = 0.1;
+
+  const toWorldCoords = useCallback((clientX: number, clientY: number) => {
+    if (!mainRef.current) return { x: 0, y: 0 };
+    const rect = mainRef.current.getBoundingClientRect();
+    const localX = clientX - rect.left;
+    const localY = clientY - rect.top;
+    const worldX = (localX - pan.x) / zoom;
+    const worldY = (localY - pan.y) / zoom;
+    return { x: worldX, y: worldY };
+  }, [pan, zoom]);
 
   const clampPan = useCallback((x: number, y: number, currentZoom: number) => {
     if (!mainRef.current) return { x, y };
@@ -69,6 +94,7 @@ function App() {
   }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (planState.dragSelectMode || isMarqueeActive) return;
     e.preventDefault();
     if (!mainRef.current) return;
 
@@ -89,14 +115,93 @@ function App() {
 
     setZoom(newZoom);
     setPan(clampPan(newPanX, newPanY, newZoom));
-  }, [zoom, pan, clampPan]);
+  }, [zoom, pan, clampPan, planState.dragSelectMode, isMarqueeActive]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log')) {
+    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log, .gear-menu-container')) {
       return;
     }
+
+    if (planState.dragSelectMode) {
+      e.preventDefault();
+      e.stopPropagation();
+      const world = toWorldCoords(e.clientX, e.clientY);
+      setMarqueeStart(world);
+      setMarqueeEnd(world);
+      setIsMarqueeActive(true);
+      if (e.currentTarget instanceof Element && e.nativeEvent instanceof window.PointerEvent) {
+        (e.currentTarget as HTMLElement).setPointerCapture(e.nativeEvent.pointerId);
+        marqueePointerIdRef.current = e.nativeEvent.pointerId;
+      }
+      console.log('MARQUEE_START', {
+        client: [e.clientX, e.clientY],
+        local: [e.clientX - mainRef.current!.getBoundingClientRect().left, e.clientY - mainRef.current!.getBoundingClientRect().top],
+        world: [world.x, world.y],
+        pan,
+        scale: zoom
+      });
+      return;
+    }
+
     setIsDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isMarqueeActive && marqueeStart) {
+      e.preventDefault();
+      e.stopPropagation();
+      const world = toWorldCoords(e.clientX, e.clientY);
+      setMarqueeEnd(world);
+    }
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (isMarqueeActive && marqueeStart && marqueeEnd) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (marqueePointerIdRef.current !== null && e.currentTarget instanceof Element) {
+        (e.currentTarget as HTMLElement).releasePointerCapture(marqueePointerIdRef.current);
+        marqueePointerIdRef.current = null;
+      }
+
+      const marqueeRect = getMarqueeRect(marqueeStart, marqueeEnd);
+      const selectedIds: string[] = [];
+
+      blocks.forEach(block => {
+        const dim = getBlockDimensions(block.type);
+        const blockRect: Rect = {
+          x: block.x,
+          y: block.y,
+          width: dim.width,
+          height: dim.height
+        };
+
+        const intersects = rectsIntersect(marqueeRect, blockRect);
+        console.log('MARQUEE_HIT', {
+          id: block.id,
+          role: block.type,
+          bboxWorld: blockRect,
+          intersects
+        });
+
+        if (intersects) {
+          selectedIds.push(block.id);
+        }
+      });
+
+      setPlanState(prev => ({
+        ...prev,
+        selection: { panelIds: selectedIds },
+        dragSelectMode: false
+      }));
+
+      setMarqueeStart(null);
+      setMarqueeEnd(null);
+      setIsMarqueeActive(false);
+      return;
+    }
   };
 
   useEffect(() => {
@@ -117,6 +222,22 @@ function App() {
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
   }, [isDragging, dragStart, zoom, clampPan]);
+
+  useEffect(() => {
+    if (!isMarqueeActive) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMarqueeStart(null);
+        setMarqueeEnd(null);
+        setIsMarqueeActive(false);
+        setPlanState(prev => ({ ...prev, dragSelectMode: false }));
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isMarqueeActive]);
 
   const handleResetView = () => {
     setZoom(1);
@@ -168,11 +289,124 @@ function App() {
 
   const handleRemoveBlock = (id: string) => {
     setBlocks(prev => prev.filter(block => block.id !== id));
+    setPlanState(prev => ({
+      ...prev,
+      selection: { panelIds: prev.selection.panelIds.filter(pid => pid !== id) }
+    }));
   };
 
   const handleToggleMinimize = (id: string) => {
     setBlocks(prev => prev.map(block =>
       block.id === id ? { ...block, isMinimized: !block.isMinimized } : block
+    ));
+  };
+
+  const handleDragSelectClick = () => {
+    setPlanState(prev => ({ ...prev, dragSelectMode: true }));
+  };
+
+  const handleMakeNodeClick = () => {
+    const selectedBlocks = blocks.filter(b => planState.selection.panelIds.includes(b.id));
+    if (selectedBlocks.length === 0) return;
+
+    const sortedBlocks = [...selectedBlocks].sort((a, b) => {
+      if (Math.abs(a.x - b.x) > 10) return a.x - b.x;
+      return a.y - b.y;
+    });
+
+    const droneStarter = selectedBlocks.find(b => b.type === 'drone-starter');
+    const droneName = droneStarter?.droneName || 'Unnamed';
+
+    const nodeId = `node-${Date.now()}`;
+    const minX = Math.min(...selectedBlocks.map(b => b.x));
+    const minY = Math.min(...selectedBlocks.map(b => b.y));
+    const maxX = Math.max(...selectedBlocks.map(b => b.x + getBlockDimensions(b.type).width));
+    const maxY = Math.max(...selectedBlocks.map(b => b.y + getBlockDimensions(b.type).height));
+
+    const newNode: PlanNode = {
+      id: nodeId,
+      droneName,
+      panelIds: selectedBlocks.map(b => b.id),
+      x: minX - 20,
+      y: minY - 50,
+      width: maxX - minX + 40,
+      height: maxY - minY + 70
+    };
+
+    const newEdges: PlanEdge[] = [];
+    for (let i = 0; i < sortedBlocks.length - 1; i++) {
+      const fromBlock = sortedBlocks[i];
+      const toBlock = sortedBlocks[i + 1];
+
+      const fromDim = getBlockDimensions(fromBlock.type);
+      const toDim = getBlockDimensions(toBlock.type);
+
+      const rectA: Rect = { x: fromBlock.x, y: fromBlock.y, width: fromDim.width, height: fromDim.height };
+      const rectB: Rect = { x: toBlock.x, y: toBlock.y, width: toDim.width, height: toDim.height };
+
+      const { anchorA, anchorB } = calculateEdgeAnchors(rectA, rectB);
+
+      const edge: PlanEdge = {
+        id: `edge-${Date.now()}-${i}`,
+        fromId: fromBlock.id,
+        toId: toBlock.id,
+        anchorA,
+        anchorB,
+        orderIndex: i
+      };
+
+      console.log('EDGE', {
+        fromId: fromBlock.id,
+        toId: toBlock.id,
+        anchorA,
+        anchorB,
+        orderIndex: i
+      });
+
+      newEdges.push(edge);
+    }
+
+    console.log('MAKE_NODE', {
+      selectedIds: selectedBlocks.map(b => b.id),
+      droneName,
+      nodeId
+    });
+
+    setPlanState(prev => ({
+      ...prev,
+      nodes: [...prev.nodes, newNode],
+      edges: [...prev.edges, ...newEdges],
+      selection: { panelIds: [] }
+    }));
+
+    setBlocks(prev => prev.map(b =>
+      selectedBlocks.find(sb => sb.id === b.id)
+        ? { ...b, droneName }
+        : b
+    ));
+  };
+
+  const handleUngroupClick = () => {
+    const selectedNodes = planState.nodes.filter(n =>
+      n.panelIds.some(pid => planState.selection.panelIds.includes(pid))
+    );
+
+    if (selectedNodes.length === 0) return;
+
+    const nodeIdsToRemove = new Set(selectedNodes.map(n => n.id));
+    const panelIdsInNodes = new Set(selectedNodes.flatMap(n => n.panelIds));
+
+    setPlanState(prev => ({
+      ...prev,
+      nodes: prev.nodes.filter(n => !nodeIdsToRemove.has(n.id)),
+      edges: prev.edges.filter(e => !panelIdsInNodes.has(e.fromId) && !panelIdsInNodes.has(e.toId)),
+      selection: { panelIds: [] }
+    }));
+
+    setBlocks(prev => prev.map(b =>
+      panelIdsInNodes.has(b.id)
+        ? { ...b, droneName: undefined }
+        : b
     ));
   };
 
@@ -187,9 +421,15 @@ function App() {
   useEffect(() => {
     const mainElement = mainRef.current;
     if (mainElement) {
-      mainElement.style.cursor = isDragging ? 'grabbing' : 'grab';
+      if (planState.dragSelectMode) {
+        mainElement.style.cursor = 'crosshair';
+      } else if (isDragging) {
+        mainElement.style.cursor = 'grabbing';
+      } else {
+        mainElement.style.cursor = 'grab';
+      }
     }
-  }, [isDragging]);
+  }, [isDragging, planState.dragSelectMode]);
 
   useEffect(() => {
     if (activeTab === 'plan') {
@@ -202,6 +442,13 @@ function App() {
       setIsDashboardOpen(false);
     }
   }, [activeTab]);
+
+  const canMakeNode = planState.selection.panelIds.length >= 1;
+  const canUngroup = planState.nodes.some(n =>
+    n.panelIds.some(pid => planState.selection.panelIds.includes(pid))
+  );
+
+  const marqueeRect = marqueeStart && marqueeEnd ? getMarqueeRect(marqueeStart, marqueeEnd) : null;
 
   return (
     <div className="gcs-app">
@@ -228,6 +475,8 @@ function App() {
         className="gcs-main"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
@@ -245,83 +494,188 @@ function App() {
               transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`
             }}
           >
-          {blocks.map(block => {
-            if (block.type === 'drone-starter') {
+            {planState.edges.map(edge => {
+              const fromBlock = blocks.find(b => b.id === edge.fromId);
+              const toBlock = blocks.find(b => b.id === edge.toId);
+              if (!fromBlock || !toBlock) return null;
+
               return (
-                <WorkspaceDroneStarter
-                  key={block.id}
-                  id={block.id}
-                  initialX={block.x}
-                  initialY={block.y}
-                  zoom={zoom}
-                  onRemove={handleRemoveBlock}
-                  onPositionChange={(id, newX, newY) => {
-                    setBlocks(prev => prev.map(b =>
-                      b.id === id ? { ...b, x: newX, y: newY } : b
-                    ));
+                <svg
+                  key={edge.id}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'none',
+                    zIndex: 1
                   }}
-                  onToggleMinimize={handleToggleMinimize}
-                  isMinimized={block.isMinimized || false}
-                />
+                >
+                  <line
+                    x1={edge.anchorA.x}
+                    y1={edge.anchorA.y}
+                    x2={edge.anchorB.x}
+                    y2={edge.anchorB.y}
+                    stroke="rgba(0, 212, 255, 0.6)"
+                    strokeWidth="2"
+                    strokeDasharray="5,5"
+                    strokeLinecap="round"
+                  />
+                </svg>
               );
-            } else if (block.type === 'controller') {
-              return (
-                <ControllerBlock
-                  key={block.id}
-                  id={block.id}
-                  initialX={block.x}
-                  initialY={block.y}
-                  zoom={zoom}
-                  onRemove={handleRemoveBlock}
-                  onPositionChange={(id, newX, newY) => {
-                    setBlocks(prev => prev.map(b =>
-                      b.id === id ? { ...b, x: newX, y: newY } : b
-                    ));
-                  }}
-                  onToggleMinimize={handleToggleMinimize}
-                  isMinimized={block.isMinimized || false}
-                />
+            })}
+
+            {planState.nodes.map(node => (
+              <div
+                key={node.id}
+                style={{
+                  position: 'absolute',
+                  left: `${node.x}px`,
+                  top: `${node.y}px`,
+                  width: `${node.width}px`,
+                  height: `${node.height}px`,
+                  border: '2px solid rgba(0, 255, 136, 0.5)',
+                  borderRadius: '8px',
+                  background: 'rgba(0, 255, 136, 0.05)',
+                  pointerEvents: 'none',
+                  zIndex: 0
+                }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  top: '-30px',
+                  left: '8px',
+                  padding: '4px 12px',
+                  background: 'rgba(0, 255, 136, 0.2)',
+                  border: '1px solid rgba(0, 255, 136, 0.5)',
+                  borderRadius: '4px',
+                  color: '#00ff88',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap'
+                }}>
+                  Node #{planState.nodes.indexOf(node) + 1} — {node.droneName}
+                </div>
+              </div>
+            ))}
+
+            {blocks.map(block => {
+              const isSelected = planState.selection.panelIds.includes(block.id);
+
+              const WrapperComponent = ({ children }: { children: React.ReactNode }) => (
+                <div style={{ position: 'relative' }}>
+                  {isSelected && (
+                    <div style={{
+                      position: 'absolute',
+                      inset: '-4px',
+                      border: '3px solid rgba(0, 212, 255, 0.8)',
+                      borderRadius: '10px',
+                      background: 'rgba(0, 212, 255, 0.1)',
+                      pointerEvents: 'none',
+                      zIndex: 5
+                    }} />
+                  )}
+                  {children}
+                </div>
               );
-            } else if (block.type === 'log') {
-              return (
-                <WorkspaceLog
-                  key={block.id}
-                  id={block.id}
-                  initialX={block.x}
-                  initialY={block.y}
-                  zoom={zoom}
-                  onRemove={handleRemoveBlock}
-                  onPositionChange={(id, newX, newY) => {
-                    setBlocks(prev => prev.map(b =>
-                      b.id === id ? { ...b, x: newX, y: newY } : b
-                    ));
-                  }}
-                  onToggleMinimize={handleToggleMinimize}
-                  isMinimized={block.isMinimized || false}
-                />
-              );
-            } else {
-              return (
-                <WorkspaceBlock
-                  key={block.id}
-                  id={block.id}
-                  initialX={block.x}
-                  initialY={block.y}
-                  zoom={zoom}
-                  onRemove={handleRemoveBlock}
-                  onPositionChange={(id, newX, newY) => {
-                    setBlocks(prev => prev.map(b =>
-                      b.id === id ? { ...b, x: newX, y: newY } : b
-                    ));
-                  }}
-                  onToggleMinimize={handleToggleMinimize}
-                  isMinimized={block.isMinimized || false}
-                  velocity={15.2}
-                  acceleration={2.3}
-                />
-              );
-            }
-          })}
+
+              if (block.type === 'drone-starter') {
+                return (
+                  <WrapperComponent key={block.id}>
+                    <WorkspaceDroneStarter
+                      id={block.id}
+                      initialX={block.x}
+                      initialY={block.y}
+                      zoom={zoom}
+                      onRemove={handleRemoveBlock}
+                      onPositionChange={(id, newX, newY) => {
+                        setBlocks(prev => prev.map(b =>
+                          b.id === id ? { ...b, x: newX, y: newY } : b
+                        ));
+                      }}
+                      onToggleMinimize={handleToggleMinimize}
+                      isMinimized={block.isMinimized || false}
+                    />
+                  </WrapperComponent>
+                );
+              } else if (block.type === 'controller') {
+                return (
+                  <WrapperComponent key={block.id}>
+                    <ControllerBlock
+                      id={block.id}
+                      initialX={block.x}
+                      initialY={block.y}
+                      zoom={zoom}
+                      onRemove={handleRemoveBlock}
+                      onPositionChange={(id, newX, newY) => {
+                        setBlocks(prev => prev.map(b =>
+                          b.id === id ? { ...b, x: newX, y: newY } : b
+                        ));
+                      }}
+                      onToggleMinimize={handleToggleMinimize}
+                      isMinimized={block.isMinimized || false}
+                    />
+                  </WrapperComponent>
+                );
+              } else if (block.type === 'log') {
+                return (
+                  <WrapperComponent key={block.id}>
+                    <WorkspaceLog
+                      id={block.id}
+                      initialX={block.x}
+                      initialY={block.y}
+                      zoom={zoom}
+                      onRemove={handleRemoveBlock}
+                      onPositionChange={(id, newX, newY) => {
+                        setBlocks(prev => prev.map(b =>
+                          b.id === id ? { ...b, x: newX, y: newY } : b
+                        ));
+                      }}
+                      onToggleMinimize={handleToggleMinimize}
+                      isMinimized={block.isMinimized || false}
+                    />
+                  </WrapperComponent>
+                );
+              } else {
+                return (
+                  <WrapperComponent key={block.id}>
+                    <WorkspaceBlock
+                      id={block.id}
+                      initialX={block.x}
+                      initialY={block.y}
+                      zoom={zoom}
+                      onRemove={handleRemoveBlock}
+                      onPositionChange={(id, newX, newY) => {
+                        setBlocks(prev => prev.map(b =>
+                          b.id === id ? { ...b, x: newX, y: newY } : b
+                        ));
+                      }}
+                      onToggleMinimize={handleToggleMinimize}
+                      isMinimized={block.isMinimized || false}
+                      velocity={15.2}
+                      acceleration={2.3}
+                    />
+                  </WrapperComponent>
+                );
+              }
+            })}
+
+            {marqueeRect && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: `${marqueeRect.x}px`,
+                  top: `${marqueeRect.y}px`,
+                  width: `${marqueeRect.width}px`,
+                  height: `${marqueeRect.height}px`,
+                  border: '2px dashed rgba(0, 212, 255, 0.8)',
+                  background: 'rgba(0, 212, 255, 0.1)',
+                  pointerEvents: 'none',
+                  zIndex: 100
+                }}
+              />
+            )}
           </div>
           <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
           <Minimap
@@ -335,7 +689,16 @@ function App() {
             onPanChange={handleMinimapPan}
             blocks={blocks}
           />
-          <DigitalClock onReset={handleResetView} />
+          <DigitalClock
+            onReset={handleResetView}
+            gearMenuProps={{
+              canMakeNode,
+              canUngroup,
+              onDragSelectClick: handleDragSelectClick,
+              onMakeNodeClick: handleMakeNodeClick,
+              onUngroupClick: handleUngroupClick
+            }}
+          />
           <DroneStatus />
         </div>
         {activeTab === 'map' && <MapView />}

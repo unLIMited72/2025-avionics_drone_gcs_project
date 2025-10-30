@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
 import './DigitalClock.css';
+import GearMenu from './GearMenu';
 
 interface DigitalClockProps {
   onReset?: () => void;
+  gearMenuProps?: {
+    canMakeNode: boolean;
+    canUngroup: boolean;
+    onDragSelectClick: () => void;
+    onMakeNodeClick: () => void;
+    onUngroupClick: () => void;
+  };
 }
 
-export default function DigitalClock({ onReset }: DigitalClockProps) {
+export default function DigitalClock({ onReset, gearMenuProps }: DigitalClockProps) {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -22,6 +30,15 @@ export default function DigitalClock({ onReset }: DigitalClockProps) {
 
   return (
     <div className="clock-controls">
+      {gearMenuProps && (
+        <GearMenu
+          canMakeNode={gearMenuProps.canMakeNode}
+          canUngroup={gearMenuProps.canUngroup}
+          onDragSelectClick={gearMenuProps.onDragSelectClick}
+          onMakeNodeClick={gearMenuProps.onMakeNodeClick}
+          onUngroupClick={gearMenuProps.onUngroupClick}
+        />
+      )}
       <button
         className="reset-view-btn"
         onClick={onReset}
