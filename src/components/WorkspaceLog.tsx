@@ -40,14 +40,17 @@ export default function WorkspaceLog({
     { timestamp: '00:00:07', level: 'success', message: 'IMU calibration complete' },
     { timestamp: '00:00:08', level: 'error', message: 'EKF estimation invalid' }
   ]);
+  const [autoScroll, setAutoScroll] = useState(true);
 
   useEffect(() => {
     setPosition({ x: initialX, y: initialY });
   }, [initialX, initialY]);
 
   useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
+    if (autoScroll && logs.length > 0) {
+      logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs, autoScroll]);
 
   const handleMouseDown = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -98,8 +101,11 @@ export default function WorkspaceLog({
   };
 
   const handleClearLogs = (e: MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
+    setAutoScroll(false);
     setLogs([]);
+    setTimeout(() => setAutoScroll(true), 100);
   };
 
   const getLevelColor = (level: LogEntry['level']): string => {

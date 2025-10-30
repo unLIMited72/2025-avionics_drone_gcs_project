@@ -9,10 +9,9 @@
   backdrop-filter: blur(10px);
   cursor: move;
   user-select: none;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.2s ease;
   z-index: 10;
   pointer-events: auto;
-  will-change: transform;
 }
 
 .workspace-log:hover {
@@ -60,10 +59,11 @@
   border-radius: 4px;
   color: #888;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .log-clear-btn:hover {
@@ -136,12 +136,15 @@
 
 .terminal-body {
   padding: 12px;
+  min-height: 280px;
+  max-height: 280px;
   height: 280px;
   overflow-y: auto;
   font-family: 'Courier New', monospace;
   font-size: 12px;
   line-height: 1.6;
   background: #0a0a0a;
+  position: relative;
 }
 
 .terminal-body::-webkit-scrollbar {
@@ -162,11 +165,16 @@
 }
 
 .terminal-empty {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
   color: #666;
+  padding: 12px;
 }
 
 .empty-text {
@@ -188,7 +196,6 @@
   display: flex;
   gap: 8px;
   padding: 2px 0;
-  transition: background 0.15s ease;
 }
 
 .log-entry:hover {
