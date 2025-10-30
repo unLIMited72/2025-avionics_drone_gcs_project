@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, type DragEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type DragEvent, useMemo } from 'react';
 import Header, { type ServerStatus } from './components/Header';
 import Dashboard from './components/Dashboard';
 import DigitalClock from './components/DigitalClock';
@@ -10,6 +10,7 @@ import WorkspaceLog from './components/WorkspaceLog';
 import Minimap from './components/Minimap';
 import MapView from './components/MapView';
 import SettingsButton from './components/SettingsButton';
+import ConnectionLines from './components/ConnectionLines';
 import './App.css';
 
 interface DroppedBlock {
@@ -25,6 +26,7 @@ interface NodeGroup {
   id: string;
   blockIds: string[];
   droneName?: string;
+  edges: Array<[string, string]>;
 }
 
 function getBlockDimensions(type: string): { width: number; height: number } {
@@ -60,8 +62,8 @@ function App() {
   const [isDragSelectMode, setIsDragSelectMode] = useState(false);
   const [selectionBox, setSelectionBox] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
-  const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
-  const [, setNodeGroups] = useState<NodeGroup[]>([]);
+  const [selectionStart, setSelectionStart] = useState({ worldX: 0, worldY: 0, screenX: 0, screenY: 0 });
+  const [nodeGroups, setNodeGroups] = useState<NodeGroup[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const CANVAS_WIDTH = 4000;
@@ -112,12 +114,34 @@ function App() {
     }
 
     if (isDragSelectMode) {
-      const rect = mainRef.current?.getBoundingClientRect();
-      if (!rect) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const canvasRect = mainRef.current?.getBoundingClientRect();
+      if (!canvasRect) return;
+
+      const pageX = e.clientX + window.scrollX;
+      const pageY = e.clientY + window.scrollY;
+      const localX = pageX - (canvasRect.left + window.scrollX);
+      const localY = pageY - (canvasRect.top + window.scrollY);
+      const worldX = (localX - pan.x) / zoom;
+      const worldY = (localY - pan.y) / zoom;
+
+      console.log('MARQUEE_START', {
+        clientX: e.clientX,
+        clientY: e.clientY,
+        localX,
+        localY,
+        worldX,
+        worldY,
+        scale: zoom,
+        panX: pan.x,
+        panY: pan.y
+      });
 
       setIsSelecting(true);
-      setSelectionStart({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-      setSelectionBox({ x: e.clientX - rect.left, y: e.clientY - rect.top, width: 0, height: 0 });
+      setSelectionStart({ worldX, worldY, screenX: localX, screenY: localY });
+      setSelectionBox({ x: localX, y: localY, width: 0, height: 0 });
       return;
     }
 
@@ -132,46 +156,57 @@ function App() {
       if (!mainRef.current) return;
 
       if (isSelecting && selectionBox) {
-        const rect = mainRef.current.getBoundingClientRect();
-        const currentX = e.clientX - rect.left;
-        const currentY = e.clientY - rect.top;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const canvasRect = mainRef.current.getBoundingClientRect();
+        const pageX = e.clientX + window.scrollX;
+        const pageY = e.clientY + window.scrollY;
+        const localX = pageX - (canvasRect.left + window.scrollX);
+        const localY = pageY - (canvasRect.top + window.scrollY);
 
         setSelectionBox({
-          x: Math.min(selectionStart.x, currentX),
-          y: Math.min(selectionStart.y, currentY),
-          width: Math.abs(currentX - selectionStart.x),
-          height: Math.abs(currentY - selectionStart.y)
+          x: Math.min(selectionStart.screenX, localX),
+          y: Math.min(selectionStart.screenY, localY),
+          width: Math.abs(localX - selectionStart.screenX),
+          height: Math.abs(localY - selectionStart.screenY)
         });
       } else if (isDragging) {
         setPan(clampPan(e.clientX - dragStart.x, e.clientY - dragStart.y, zoom));
       }
     };
 
-    const handleGlobalMouseUp = () => {
+    const handleGlobalMouseUp = (e: MouseEvent) => {
       if (isSelecting && selectionBox) {
-        const rect = mainRef.current?.getBoundingClientRect();
-        if (rect) {
-          const viewportCenterX = rect.width / 2;
-          const viewportCenterY = rect.height / 2;
+        e.preventDefault();
+        e.stopPropagation();
 
+        const canvasRect = mainRef.current?.getBoundingClientRect();
+        if (canvasRect) {
           const selectedBlocks = blocks.filter(block => {
             const dimensions = getBlockDimensions(block.type);
-            const blockScreenX = (block.x * zoom + pan.x) + viewportCenterX;
-            const blockScreenY = (block.y * zoom + pan.y) + viewportCenterY;
-            const blockScreenW = dimensions.width * zoom;
-            const blockScreenH = dimensions.height * zoom;
+            const blockWorldX = block.x;
+            const blockWorldY = block.y;
+
+            const marqueeWorldX1 = (selectionBox.x - pan.x) / zoom;
+            const marqueeWorldY1 = (selectionBox.y - pan.y) / zoom;
+            const marqueeWorldX2 = ((selectionBox.x + selectionBox.width) - pan.x) / zoom;
+            const marqueeWorldY2 = ((selectionBox.y + selectionBox.height) - pan.y) / zoom;
 
             return (
-              blockScreenX + blockScreenW > selectionBox.x &&
-              blockScreenX < selectionBox.x + selectionBox.width &&
-              blockScreenY + blockScreenH > selectionBox.y &&
-              blockScreenY < selectionBox.y + selectionBox.height
+              blockWorldX + dimensions.width > marqueeWorldX1 &&
+              blockWorldX < marqueeWorldX2 &&
+              blockWorldY + dimensions.height > marqueeWorldY1 &&
+              blockWorldY < marqueeWorldY2
             );
           });
 
+          const selectedIds = selectedBlocks.map(b => b.id);
+          console.log('MARQUEE_END', { selectedIds, count: selectedIds.length });
+
           setBlocks(prev => prev.map(b => ({
             ...b,
-            isSelected: selectedBlocks.some(sb => sb.id === b.id)
+            isSelected: selectedIds.includes(b.id)
           })));
         }
 
@@ -285,23 +320,51 @@ function App() {
 
   const handleDragSelectToggle = () => {
     setIsDragSelectMode(!isDragSelectMode);
-    if (isDragSelectMode) {
-      setBlocks(prev => prev.map(b => ({ ...b, isSelected: false })));
-    }
   };
 
   const handleMakeNode = () => {
     const selectedBlocks = blocks.filter(b => b.isSelected);
-    if (selectedBlocks.length === 0) return;
+
+    if (selectedBlocks.length < 1) {
+      console.warn('Make Node: No blocks selected');
+      return;
+    }
+
+    const sortedBlocks = [...selectedBlocks].sort((a, b) => {
+      if (Math.abs(a.x - b.x) < 50) {
+        return a.y - b.y;
+      }
+      return a.x - b.x;
+    });
 
     const droneStarter = selectedBlocks.find(b => b.type === 'drone-starter');
-    const droneName = droneStarter ? `Drone-${Date.now()}` : undefined;
+    const droneName = droneStarter ? `Drone-${nodeGroups.length + 1}` : 'Unnamed';
+
+    const nodeId = `node-${Date.now()}`;
+    const selectedIds = selectedBlocks.map(b => b.id);
+
+    const edges: Array<[string, string]> = [];
+    for (let i = 0; i < sortedBlocks.length - 1; i++) {
+      edges.push([sortedBlocks[i].id, sortedBlocks[i + 1].id]);
+    }
 
     const newNode: NodeGroup = {
-      id: `node-${Date.now()}`,
-      blockIds: selectedBlocks.map(b => b.id),
-      droneName
+      id: nodeId,
+      blockIds: selectedIds,
+      droneName,
+      edges
     };
+
+    console.log('MAKE_NODE', {
+      selectedIds,
+      count: selectedIds.length,
+      nodeId,
+      droneName
+    });
+
+    console.log('EDGES', {
+      pairs: edges
+    });
 
     setNodeGroups(prev => [...prev, newNode]);
     setBlocks(prev => prev.map(b => ({ ...b, isSelected: false })));
@@ -310,13 +373,23 @@ function App() {
   const handleUngroupNode = () => {
     if (!selectedNodeId) return;
 
+    const node = nodeGroups.find(n => n.id === selectedNodeId);
+    if (!node) return;
+
+    console.log('UNGROUP_NODE', { nodeId: selectedNodeId, blockIds: node.blockIds });
+
     setNodeGroups(prev => prev.filter(n => n.id !== selectedNodeId));
+    setBlocks(prev => prev.map(b => ({ ...b, isSelected: false })));
     setSelectedNodeId(null);
   };
 
   const selectedBlocksCount = blocks.filter(b => b.isSelected).length;
   const canMakeNode = selectedBlocksCount > 0;
   const canUngroupNode = selectedNodeId !== null;
+
+  const allEdges = useMemo(() => {
+    return nodeGroups.flatMap(node => node.edges || []);
+  }, [nodeGroups]);
 
   useEffect(() => {
     if (activeTab === 'map' && isDashboardOpen) {
@@ -448,6 +521,12 @@ function App() {
             }
           })}
           </div>
+          <ConnectionLines
+            edges={allEdges}
+            blocks={blocks}
+            zoom={zoom}
+            pan={pan}
+          />
           <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
           <Minimap
             isVisible={!isDashboardOpen}
