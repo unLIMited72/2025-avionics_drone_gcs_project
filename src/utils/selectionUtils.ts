@@ -35,19 +35,30 @@ export function calculateAnchorPoint(
   const dx = targetCenter.x - sourceCenter.x;
   const dy = targetCenter.y - sourceCenter.y;
 
+  if (dx === 0 && dy === 0) {
+    return { x: rect.x + rect.width, y: rect.y + rect.height / 2 };
+  }
+
   const halfWidth = rect.width / 2;
   const halfHeight = rect.height / 2;
-
   const centerX = rect.x + halfWidth;
   const centerY = rect.y + halfHeight;
 
-  if (dx === 0 && dy === 0) {
-    return { x: centerX + halfWidth, y: centerY };
-  }
+  const txLeft = dx !== 0 ? (-halfWidth) / dx : Infinity;
+  const txRight = dx !== 0 ? halfWidth / dx : Infinity;
+  const tyTop = dy !== 0 ? (-halfHeight) / dy : Infinity;
+  const tyBottom = dy !== 0 ? halfHeight / dy : Infinity;
 
-  const t1 = dx !== 0 ? halfWidth / Math.abs(dx) : Infinity;
-  const t2 = dy !== 0 ? halfHeight / Math.abs(dy) : Infinity;
-  const t = Math.min(t1, t2);
+  const tMin = Math.max(
+    Math.min(txLeft, txRight),
+    Math.min(tyTop, tyBottom)
+  );
+  const tMax = Math.min(
+    Math.max(txLeft, txRight),
+    Math.max(tyTop, tyBottom)
+  );
+
+  const t = tMax >= 0 ? tMax : tMin;
 
   return {
     x: centerX + dx * t,
