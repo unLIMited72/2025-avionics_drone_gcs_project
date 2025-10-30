@@ -98,6 +98,7 @@ export default function WorkspaceLog({
   };
 
   const handleClearLogs = (e: MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     setLogs([]);
   };
@@ -159,7 +160,7 @@ export default function WorkspaceLog({
         </div>
       </div>
 
-      <div className="log-terminal" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="log-content" onMouseDown={(e) => e.stopPropagation()}>
         <div className="terminal-header">
           <div className="terminal-buttons">
             <span className="terminal-button terminal-close"></span>
@@ -171,9 +172,7 @@ export default function WorkspaceLog({
 
         <div className="terminal-body">
           {logs.length === 0 ? (
-            <div className="terminal-empty">
-              <div className="empty-text">Terminal cleared. Waiting for new logs...</div>
-            </div>
+            <div className="terminal-empty">Terminal cleared. Waiting for new logs...</div>
           ) : (
             logs.map((log, index) => (
               <div key={index} className="log-entry">

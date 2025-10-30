@@ -6,11 +6,11 @@
   align-items: center;
   gap: 12px;
   background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
-  border: 1px solid rgba(0, 212, 255, 0.4);
+  border: 1px solid rgba(100, 150, 255, 0.4);
   border-radius: 8px;
   padding: 12px 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
-              0 0 15px rgba(0, 212, 255, 0.15);
+              0 0 15px rgba(100, 150, 255, 0.15);
   backdrop-filter: blur(10px);
   z-index: 150;
 }
@@ -21,12 +21,9 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 150, 255, 0.1) 100%);
-  border: 2px solid rgba(0, 212, 255, 0.4);
+  border: 2px solid;
   border-radius: 50%;
-  color: #00d4ff;
-  box-shadow: 0 2px 8px rgba(0, 212, 255, 0.2),
-              inset 0 0 15px rgba(0, 212, 255, 0.1);
+  transition: all 0.3s ease;
 }
 
 .drone-status-display {
@@ -49,9 +46,8 @@
   font-size: 24px;
   font-weight: 700;
   font-family: 'Courier New', monospace;
-  color: #00d4ff;
   line-height: 1;
-  text-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+  transition: all 0.3s ease;
 }
 
 @media (max-width: 768px) {
