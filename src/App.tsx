@@ -29,32 +29,9 @@ function App() {
 
 
   const handleWheel = (e: React.WheelEvent) => {
-    if ((e.target as HTMLElement).closest('.dashboard-panel, .clock-controls')) {
-      return;
-    }
-
     e.preventDefault();
-
-    if (!mainRef.current) return;
-
-    const rect = mainRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-
-    const worldX = (mouseX - centerX - pan.x) / zoom;
-    const worldY = (mouseY - centerY - pan.y) / zoom;
-
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.min(Math.max(0.5, zoom * delta), 2);
-
-    const newPanX = mouseX - centerX - worldX * newZoom;
-    const newPanY = mouseY - centerY - worldY * newZoom;
-
-    setZoom(newZoom);
-    setPan({ x: newPanX, y: newPanY });
+    setZoom(prevZoom => Math.min(Math.max(0.5, prevZoom * delta), 2));
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {

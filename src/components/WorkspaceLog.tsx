@@ -51,7 +51,7 @@ export default function WorkspaceLog({
 
   const handleMouseDown = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (target.closest('.terminal-body, .terminal-header, .terminal-footer, .workspace-block-header, button')) {
+    if (target.closest('.terminal-body, .terminal-header, .terminal-footer, button')) {
       return;
     }
 
@@ -98,7 +98,6 @@ export default function WorkspaceLog({
   };
 
   const handleClearLogs = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     setLogs([]);
   };
@@ -143,15 +142,15 @@ export default function WorkspaceLog({
       }}
       onMouseDown={handleMouseDown}
     >
-      <div className="workspace-block-header" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="workspace-block-header">
         <div className="workspace-block-title">Log Terminal</div>
         <div className="header-actions">
-          <button className="log-clear-btn" onClick={handleClearLogs} onMouseDown={(e) => e.stopPropagation()} title="Clear logs">
+          <button className="log-clear-btn" onClick={handleClearLogs} title="Clear logs">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" />
             </svg>
           </button>
-          <button className="workspace-block-remove" onClick={handleRemove} onMouseDown={(e) => e.stopPropagation()}>
+          <button className="workspace-block-remove" onClick={handleRemove}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -160,7 +159,7 @@ export default function WorkspaceLog({
         </div>
       </div>
 
-      <div className="log-content" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="log-terminal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="terminal-header">
           <div className="terminal-buttons">
             <span className="terminal-button terminal-close"></span>
@@ -172,7 +171,9 @@ export default function WorkspaceLog({
 
         <div className="terminal-body">
           {logs.length === 0 ? (
-            <div className="terminal-empty">Terminal cleared. Waiting for new logs...</div>
+            <div className="terminal-empty">
+              <div className="empty-text">Terminal cleared. Waiting for new logs...</div>
+            </div>
           ) : (
             logs.map((log, index) => (
               <div key={index} className="log-entry">
