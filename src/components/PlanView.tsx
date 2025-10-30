@@ -21,10 +21,9 @@ interface Block {
 }
 
 let renderCount = 0;
+const PLAN_SCOPE_ID = `plan-${Date.now().toString(36)}`;
 
 export default function PlanView() {
-  console.info('Plan root =', 'src/components/PlanView.tsx');
-
   const [blocks, setBlocks] = useState<Block[]>(() => {
     const saved = localStorage.getItem('workspace-blocks');
     return saved ? JSON.parse(saved) : [];
@@ -40,6 +39,40 @@ export default function PlanView() {
 
   const CANVAS_WIDTH = 4000;
   const CANVAS_HEIGHT = 3000;
+
+  useEffect(() => {
+    console.info('PLAN_ROOT:', {
+      file: 'src/components/PlanView.tsx',
+      buildHash: typeof __BUILD_HASH__ !== 'undefined' ? __BUILD_HASH__ : 'dev',
+      planScopeId: PLAN_SCOPE_ID,
+      scale: zoom,
+      offset: pan,
+      hudSizes: 'Clock(20px) Reset(44px) Minimap(220x140) DroneCount(24px)'
+    });
+
+    const handleAddFlightDisplay = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { type } = customEvent.detail;
+
+      const newBlock: Block = {
+        id: `${type}-${Date.now()}`,
+        type,
+        x: 0,
+        y: 0,
+        velocity: undefined,
+        acceleration: undefined,
+        isMinimized: false
+      };
+
+      setBlocks(prev => [...prev, newBlock]);
+      console.info('FD_CLICK_ADD', { type, worldXY: { x: 0, y: 0 }, accepted: true });
+    };
+
+    window.addEventListener('addFlightDisplay', handleAddFlightDisplay);
+    return () => {
+      window.removeEventListener('addFlightDisplay', handleAddFlightDisplay);
+    };
+  }, []);
 
   useEffect(() => {
     if (!mainRef.current) return;
@@ -146,16 +179,33 @@ export default function PlanView() {
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
+
+    const type = e.dataTransfer.types.includes('blocktype') || e.dataTransfer.types.includes('text/plain');
+    console.info('FD_DRAGOVER', {
+      clientX: e.clientX,
+      clientY: e.clientY,
+      hasBlockType: type,
+      scale: zoom,
+      offset: pan
+    });
   };
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!mainRef.current) return;
+
+    if (!mainRef.current) {
+      console.error('FD_DROP', { accepted: false, reason: 'mainRef not available' });
+      return;
+    }
 
     const type = e.dataTransfer.getData('blockType');
     if (!type) {
-      console.warn('FD_DROP: No blockType in dataTransfer');
+      console.error('FD_DROP', {
+        accepted: false,
+        reason: 'No blockType in dataTransfer',
+        availableTypes: Array.from(e.dataTransfer.types)
+      });
       return;
     }
 
@@ -165,6 +215,18 @@ export default function PlanView() {
 
     const worldX = (clientX - rect.left - rect.width / 2 - pan.x) / zoom;
     const worldY = (clientY - rect.top - rect.height / 2 - pan.y) / zoom;
+
+    if (isNaN(worldX) || isNaN(worldY)) {
+      console.error('FD_DROP', {
+        accepted: false,
+        reason: 'Invalid world coordinates (NaN)',
+        clientXY: { x: clientX, y: clientY },
+        rect: { width: rect.width, height: rect.height },
+        scale: zoom,
+        offset: pan
+      });
+      return;
+    }
 
     console.info('FD_DROP', {
       type,
@@ -218,7 +280,7 @@ export default function PlanView() {
   }, [blocks]);
 
   return (
-    <div className="plan-view">
+    <div className="plan-view" data-plan-root="true" data-scope-id={PLAN_SCOPE_ID}>
       <main
         ref={mainRef}
         className="main-canvas"
