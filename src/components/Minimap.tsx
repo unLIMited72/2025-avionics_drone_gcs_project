@@ -7,6 +7,7 @@ interface MinimapProps {
   canvasHeight: number;
   viewportWidth: number;
   viewportHeight: number;
+  zoom: number;
   pan: { x: number; y: number };
   onPanChange: (x: number, y: number) => void;
   blocks: Array<{ id: string; x: number; y: number; type: string }>;
@@ -16,6 +17,7 @@ export default function Minimap({
   isVisible,
   viewportWidth,
   viewportHeight,
+  zoom,
   pan,
   onPanChange,
   blocks
@@ -31,11 +33,14 @@ export default function Minimap({
   const scaleX = minimapWidth / totalCanvasWidth;
   const scaleY = minimapHeight / totalCanvasHeight;
 
-  const viewportBoxWidth = viewportWidth * scaleX;
-  const viewportBoxHeight = viewportHeight * scaleY;
+  const visibleWorldWidth = viewportWidth / zoom;
+  const visibleWorldHeight = viewportHeight / zoom;
 
-  const viewportBoxX = (minimapWidth / 2 - pan.x * scaleX) - viewportBoxWidth / 2;
-  const viewportBoxY = (minimapHeight / 2 - pan.y * scaleY) - viewportBoxHeight / 2;
+  const viewportBoxWidth = Math.max(12, (visibleWorldWidth / totalCanvasWidth) * minimapWidth);
+  const viewportBoxHeight = Math.max(12, (visibleWorldHeight / totalCanvasHeight) * minimapHeight);
+
+  const viewportBoxX = Math.max(0, Math.min(minimapWidth - viewportBoxWidth, (minimapWidth / 2 - pan.x * scaleX) - viewportBoxWidth / 2));
+  const viewportBoxY = Math.max(0, Math.min(minimapHeight - viewportBoxHeight, (minimapHeight / 2 - pan.y * scaleY) - viewportBoxHeight / 2));
 
   const handleMinimapClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!minimapRef.current) return;

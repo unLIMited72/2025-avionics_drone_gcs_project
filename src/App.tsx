@@ -314,6 +314,7 @@ function App() {
           canvasHeight={mainRef.current?.clientHeight || 1080}
           viewportWidth={mainRef.current?.clientWidth || 1920}
           viewportHeight={mainRef.current?.clientHeight || 1080}
+          zoom={zoom}
           pan={pan}
           onPanChange={handleMinimapPan}
           blocks={blocks}
