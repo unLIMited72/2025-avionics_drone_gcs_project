@@ -109,30 +109,37 @@ function App() {
     e.stopPropagation();
     const blockType = e.dataTransfer.getData('blockType');
 
-    if (blockType && mainRef.current) {
-      const rect = mainRef.current.getBoundingClientRect();
-      const viewportCenterX = rect.width / 2;
-      const viewportCenterY = rect.height / 2;
-
-      const clientX = e.clientX - rect.left;
-      const clientY = e.clientY - rect.top;
-
-      const canvasX = (clientX - viewportCenterX) / zoom - pan.x / zoom;
-      const canvasY = (clientY - viewportCenterY) / zoom - pan.y / zoom;
-
-      const dimensions = getBlockDimensions(blockType);
-      const x = canvasX - dimensions.width / 2;
-      const y = canvasY - dimensions.height / 2;
-
-      const newBlock: DroppedBlock = {
-        id: `block-${Date.now()}`,
-        type: blockType as 'flight-state-info' | 'drone-starter' | 'controller' | 'log',
-        x,
-        y
-      };
-
-      setBlocks(prev => [...prev, newBlock]);
+    if (!blockType || !mainRef.current) {
+      return;
     }
+
+    const rect = mainRef.current.getBoundingClientRect();
+    const viewportCenterX = rect.width / 2;
+    const viewportCenterY = rect.height / 2;
+
+    const clientX = e.clientX - rect.left;
+    const clientY = e.clientY - rect.top;
+
+    const canvasX = (clientX - viewportCenterX) / zoom - pan.x;
+    const canvasY = (clientY - viewportCenterY) / zoom - pan.y;
+
+    const dimensions = getBlockDimensions(blockType);
+    const x = canvasX - dimensions.width / 2;
+    const y = canvasY - dimensions.height / 2;
+
+    if (!isFinite(x) || !isFinite(y)) {
+      console.error('Invalid drop coordinates:', { x, y, clientX, clientY, zoom, pan });
+      return;
+    }
+
+    const newBlock: DroppedBlock = {
+      id: `block-${Date.now()}`,
+      type: blockType as 'flight-state-info' | 'drone-starter' | 'controller' | 'log',
+      x,
+      y
+    };
+
+    setBlocks(prev => [...prev, newBlock]);
   };
 
   const handleRemoveBlock = (id: string) => {
@@ -170,8 +177,7 @@ function App() {
         <div
           className="workspace-blocks-container"
           style={{
-            transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
-            transformOrigin: 'center center'
+            transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`
           }}
         >
           {blocks.map(block => {
