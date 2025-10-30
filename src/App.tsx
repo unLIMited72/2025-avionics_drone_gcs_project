@@ -47,6 +47,27 @@ function App() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mainRef = useRef<HTMLDivElement>(null);
 
+  const totalCanvasWidth = 4000;
+  const totalCanvasHeight = 3000;
+
+  const clampPan = (x: number, y: number, currentZoom: number) => {
+    if (!mainRef.current) return { x, y };
+
+    const viewportWidth = mainRef.current.clientWidth;
+    const viewportHeight = mainRef.current.clientHeight;
+
+    const scaledCanvasWidth = totalCanvasWidth * currentZoom;
+    const scaledCanvasHeight = totalCanvasHeight * currentZoom;
+
+    const maxPanX = (scaledCanvasWidth - viewportWidth) / 2;
+    const maxPanY = (scaledCanvasHeight - viewportHeight) / 2;
+
+    const clampedX = Math.max(-maxPanX, Math.min(maxPanX, x));
+    const clampedY = Math.max(-maxPanY, Math.min(maxPanY, y));
+
+    return { x: clampedX, y: clampedY };
+  };
+
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
 
@@ -67,8 +88,10 @@ function App() {
     const newPanX = pointerX - (pointerX - centerX - pan.x) * scaleRatio - centerX;
     const newPanY = pointerY - (pointerY - centerY - pan.y) * scaleRatio - centerY;
 
+    const clampedPan = clampPan(newPanX, newPanY, newZoom);
+
     setZoom(newZoom);
-    setPan({ x: newPanX, y: newPanY });
+    setPan(clampedPan);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -85,19 +108,8 @@ function App() {
         const newX = e.clientX - dragStart.x;
         const newY = e.clientY - dragStart.y;
 
-        const viewportWidth = mainRef.current.clientWidth;
-        const viewportHeight = mainRef.current.clientHeight;
-
-        const scaledGridWidth = (viewportWidth * 3) * zoom;
-        const scaledGridHeight = (viewportHeight * 3) * zoom;
-
-        const maxPanX = Math.max(0, (scaledGridWidth - viewportWidth) / (2 * zoom));
-        const maxPanY = Math.max(0, (scaledGridHeight - viewportHeight) / (2 * zoom));
-
-        setPan({
-          x: Math.min(Math.max(newX, -maxPanX), maxPanX),
-          y: Math.min(Math.max(newY, -maxPanY), maxPanY)
-        });
+        const clampedPan = clampPan(newX, newY, zoom);
+        setPan(clampedPan);
       }
     };
 
@@ -175,7 +187,8 @@ function App() {
   };
 
   const handleMinimapPan = (x: number, y: number) => {
-    setPan({ x, y });
+    const clampedPan = clampPan(x, y, zoom);
+    setPan(clampedPan);
   };
 
   useEffect(() => {

@@ -51,8 +51,8 @@ export default function WorkspaceLog({
   }, [initialX, initialY]);
 
   useEffect(() => {
-    if (autoScroll && logs.length > 0) {
-      logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (autoScroll && logs.length > 0 && logEndRef.current) {
+      logEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
     }
   }, [logs, autoScroll]);
 
