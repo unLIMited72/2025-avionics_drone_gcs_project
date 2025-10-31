@@ -131,6 +131,20 @@
   z-index: 100;
 }
 
+.ghost-rect {
+  z-index: 99;
+  animation: ghostFade 1.5s ease-in-out infinite;
+}
+
+@keyframes ghostFade {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
 .workspace-blocks-container {
   position: absolute;
   top: 50%;

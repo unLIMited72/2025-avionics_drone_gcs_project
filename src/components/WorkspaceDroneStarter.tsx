@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useBlockDrag } from '../hooks/useBlockDrag';
 import { createHeaderKeyDownHandler, createStopPropagationHandler, shouldPreventDragFromInteractiveElements } from '../utils/blockUtils';
 import './WorkspaceDroneStarter.css';
@@ -14,6 +14,7 @@ interface WorkspaceDroneStarterProps {
   isMinimized: boolean;
   nodeName?: string;
   isHighlighted?: boolean;
+  onDroneNameChange?: (name: string) => void;
 }
 
 
@@ -27,7 +28,8 @@ export default function WorkspaceDroneStarter({
   onToggleMinimize,
   isMinimized,
   nodeName,
-  isHighlighted
+  isHighlighted,
+  onDroneNameChange
 }: WorkspaceDroneStarterProps) {
   const blockRef = useRef<HTMLDivElement>(null);
   const [serialNumber, setSerialNumber] = useState('');
@@ -73,8 +75,15 @@ export default function WorkspaceDroneStarter({
   const handleConnect = () => {
     if (serialNumber.trim() && droneName.trim()) {
       setIsConnected(true);
+      onDroneNameChange?.(droneName);
     }
   };
+
+  useEffect(() => {
+    if (isConnected && droneName) {
+      onDroneNameChange?.(droneName);
+    }
+  }, [droneName, isConnected, onDroneNameChange]);
 
   const handleDisconnect = () => {
     setIsConnected(false);

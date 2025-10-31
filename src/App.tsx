@@ -32,6 +32,7 @@ interface Node {
   id: string;
   childIds: string[];
   name: string;
+  rect: SelectionRect;
 }
 
 interface BaseBlockProps {
@@ -45,6 +46,7 @@ interface BaseBlockProps {
   isMinimized: boolean;
   nodeName?: string;
   isHighlighted?: boolean;
+  onDroneNameChange?: (name: string) => void;
 }
 
 interface FlightBlockProps extends BaseBlockProps {
@@ -98,10 +100,12 @@ function App() {
   const [isDragSelectMode, setIsDragSelectMode] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
+  const [finalRect, setFinalRect] = useState<SelectionRect | null>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const [isDraggingNode, setIsDraggingNode] = useState(false);
   const [nodeDragStart, setNodeDragStart] = useState({ x: 0, y: 0 });
+  const [droneName, setDroneName] = useState<string>('');
 
   const clampPan = useCallback((x: number, y: number, currentZoom: number) => {
     if (!mainRef.current) return { x, y };
@@ -192,9 +196,10 @@ function App() {
         setIsSelecting(false);
         if (selectionRect) {
           checkIntersections();
+          setFinalRect(selectionRect);
         }
         setIsDragSelectMode(false);
-        setTimeout(() => setSelectionRect(null), 100);
+        setSelectionRect(null);
       };
 
       document.addEventListener('mousemove', handleSelectMouseMove);
@@ -216,12 +221,29 @@ function App() {
         const node = nodes.find(n => n.id === activeNodeId);
         if (!node) return;
 
-        setBlocks(prevBlocks => prevBlocks.map(block => {
-          if (node.childIds.includes(block.id)) {
-            return { ...block, x: block.x + dx, y: block.y + dy };
-          }
-          return block;
-        }));
+        requestAnimationFrame(() => {
+          setBlocks(prevBlocks => prevBlocks.map(block => {
+            if (node.childIds.includes(block.id)) {
+              return { ...block, x: block.x + dx, y: block.y + dy };
+            }
+            return block;
+          }));
+
+          setNodes(prevNodes => prevNodes.map(n => {
+            if (n.id === activeNodeId) {
+              return {
+                ...n,
+                rect: {
+                  startX: n.rect.startX + dx,
+                  startY: n.rect.startY + dy,
+                  endX: n.rect.endX + dx,
+                  endY: n.rect.endY + dy
+                }
+              };
+            }
+            return n;
+          }));
+        });
 
         setNodeDragStart({ x: e.clientX, y: e.clientY });
       };
@@ -291,6 +313,7 @@ function App() {
     setIsDragSelectMode(false);
     setIsSelecting(false);
     setSelectionRect(null);
+    setFinalRect(null);
     setNodes([]);
     setActiveNodeId(null);
     setBlocks(prevBlocks => prevBlocks.map(block => ({
@@ -308,34 +331,71 @@ function App() {
   }, [isSelecting]);
 
   const handleCreateNode = useCallback(() => {
+    if (!finalRect && !activeNodeId) {
+      alert('먼저 드래그로 영역을 지정하세요.');
+      return;
+    }
+
+    if (!droneName.trim()) {
+      alert('드론 이름이 설정되지 않았습니다. drone starter에서 먼저 지정하세요.');
+      return;
+    }
+
     let targetBlocks: DroppedBlock[] = [];
+    let nodeRect: SelectionRect;
 
     if (activeNodeId) {
       const node = nodes.find(n => n.id === activeNodeId);
       if (node) {
         targetBlocks = blocks.filter(b => node.childIds.includes(b.id));
+        nodeRect = node.rect;
+      } else {
+        return;
       }
+    } else if (finalRect) {
+      const selMinX = Math.min(finalRect.startX, finalRect.endX);
+      const selMaxX = Math.max(finalRect.startX, finalRect.endX);
+      const selMinY = Math.min(finalRect.startY, finalRect.endY);
+      const selMaxY = Math.max(finalRect.startY, finalRect.endY);
+
+      targetBlocks = blocks.filter(block => {
+        const dimensions = getBlockDimensions(block.type);
+        const blockMinX = block.x;
+        const blockMaxX = block.x + dimensions.width;
+        const blockMinY = block.y;
+        const blockMaxY = block.y + dimensions.height;
+
+        return (
+          selMinX < blockMaxX &&
+          selMaxX > blockMinX &&
+          selMinY < blockMaxY &&
+          selMaxY > blockMinY
+        );
+      });
+
+      nodeRect = finalRect;
     } else {
-      targetBlocks = blocks.filter(b => b.isHighlighted);
+      return;
     }
 
     if (targetBlocks.length === 0) return;
 
     const nodeId = activeNodeId || `node-${Date.now()}`;
-    const nodeName = `drone name`;
 
     setNodes(prev => {
       const existingNode = prev.find(n => n.id === nodeId);
       if (existingNode) {
         return prev.map(n => n.id === nodeId ? {
           ...n,
-          childIds: Array.from(new Set([...n.childIds, ...targetBlocks.map(b => b.id)]))
+          childIds: Array.from(new Set([...n.childIds, ...targetBlocks.map(b => b.id)])),
+          name: droneName
         } : n);
       }
       return [...prev, {
         id: nodeId,
         childIds: targetBlocks.map(b => b.id),
-        name: nodeName
+        name: droneName,
+        rect: nodeRect
       }];
     });
 
@@ -347,7 +407,8 @@ function App() {
     }));
 
     setActiveNodeId(nodeId);
-  }, [blocks, nodes, activeNodeId]);
+    setFinalRect(null);
+  }, [blocks, nodes, activeNodeId, finalRect, droneName]);
 
   const handleUngroupNode = useCallback(() => {
     if (!activeNodeId) return;
@@ -367,21 +428,25 @@ function App() {
   }, [nodes, activeNodeId]);
 
   const getNodeBoundingBox = useCallback((nodeId: string) => {
-    const nodeBlocks = blocks.filter(b => b.nodeId === nodeId);
-    if (nodeBlocks.length === 0) return null;
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return null;
 
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-    nodeBlocks.forEach(block => {
-      const dimensions = getBlockDimensions(block.type);
-      minX = Math.min(minX, block.x);
-      minY = Math.min(minY, block.y);
-      maxX = Math.max(maxX, block.x + dimensions.width);
-      maxY = Math.max(maxY, block.y + dimensions.height);
-    });
+    const rect = node.rect;
+    const minX = Math.min(rect.startX, rect.endX);
+    const maxX = Math.max(rect.startX, rect.endX);
+    const minY = Math.min(rect.startY, rect.endY);
+    const maxY = Math.max(rect.startY, rect.endY);
 
     return { minX, minY, maxX, maxY };
-  }, [blocks]);
+  }, [nodes]);
+
+  const handleDroneNameChange = useCallback((name: string) => {
+    setDroneName(name);
+    setNodes(prevNodes => prevNodes.map(node => ({
+      ...node,
+      name
+    })));
+  }, []);
 
 
   const handleDragOver = (e: DragEvent) => {
@@ -561,13 +626,16 @@ function App() {
               ? { velocity: 15.2, acceleration: 2.3 }
               : {};
 
+            const isDroneStarter = block.type === 'drone-starter';
+
             return (
               <div
                 key={block.id}
                 className={block.isHighlighted ? 'is-highlighted' : ''}
                 style={{
                   position: 'relative',
-                  display: 'contents'
+                  display: 'contents',
+                  pointerEvents: isDraggingNode && block.nodeId ? 'none' : 'auto'
                 }}
               >
                 <BlockComponent
@@ -581,6 +649,7 @@ function App() {
                   isMinimized={block.isMinimized || false}
                   nodeName={node?.name}
                   isHighlighted={block.isHighlighted}
+                  onDroneNameChange={isDroneStarter ? handleDroneNameChange : undefined}
                   {...extraProps}
                 />
               </div>
@@ -597,6 +666,22 @@ function App() {
                 height: `${Math.abs(selectionRect.endY - selectionRect.startY)}px`,
                 border: '2px dashed rgba(0, 212, 255, 0.8)',
                 background: 'rgba(0, 212, 255, 0.1)',
+                pointerEvents: 'none',
+                borderRadius: '4px',
+              }}
+            />
+          )}
+          {finalRect && (
+            <div
+              className="ghost-rect"
+              style={{
+                position: 'absolute',
+                left: `${Math.min(finalRect.startX, finalRect.endX)}px`,
+                top: `${Math.min(finalRect.startY, finalRect.endY)}px`,
+                width: `${Math.abs(finalRect.endX - finalRect.startX)}px`,
+                height: `${Math.abs(finalRect.endY - finalRect.startY)}px`,
+                border: '2px dashed rgba(0, 212, 255, 0.5)',
+                background: 'rgba(0, 212, 255, 0.05)',
                 pointerEvents: 'none',
                 borderRadius: '4px',
               }}
@@ -621,7 +706,7 @@ function App() {
             onCreateNode={handleCreateNode}
             onUngroupNode={handleUngroupNode}
             isDragSelectMode={isDragSelectMode}
-            canCreateNode={blocks.some(b => b.isHighlighted) || activeNodeId !== null}
+            canCreateNode={finalRect !== null || activeNodeId !== null}
             canUngroup={activeNodeId !== null && (nodes.find(n => n.id === activeNodeId)?.childIds.length ?? 0) > 0}
           />
           <DroneStatus />
