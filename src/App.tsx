@@ -33,6 +33,7 @@ interface Node {
   childIds: string[];
   name: string;
   rect: SelectionRect;
+  transform: { x: number; y: number };
 }
 
 interface BaseBlockProps {
@@ -105,6 +106,7 @@ function App() {
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const [isDraggingNode, setIsDraggingNode] = useState(false);
   const [nodeDragStart, setNodeDragStart] = useState({ x: 0, y: 0 });
+  const [nodeTransforms, setNodeTransforms] = useState<Record<string, { x: number; y: number }>>({});
   const [droneName, setDroneName] = useState<string>('');
 
   const clampPan = useCallback((x: number, y: number, currentZoom: number) => {
@@ -215,16 +217,34 @@ function App() {
   useEffect(() => {
     if (isDraggingNode && activeNodeId) {
       const handleNodeDragMove = (e: MouseEvent) => {
+        e.preventDefault();
         const dx = (e.clientX - nodeDragStart.x) / zoom;
         const dy = (e.clientY - nodeDragStart.y) / zoom;
 
-        const node = nodes.find(n => n.id === activeNodeId);
-        if (!node) return;
+        requestAnimationFrame(() => {
+          setNodeTransforms(prev => ({
+            ...prev,
+            [activeNodeId]: {
+              x: (prev[activeNodeId]?.x || 0) + dx,
+              y: (prev[activeNodeId]?.y || 0) + dy
+            }
+          }));
+        });
+
+        setNodeDragStart({ x: e.clientX, y: e.clientY });
+      };
+
+      const handleNodeDragUp = () => {
+        setIsDraggingNode(false);
+
+        const transform = nodeTransforms[activeNodeId];
+        if (!transform) return;
 
         requestAnimationFrame(() => {
           setBlocks(prevBlocks => prevBlocks.map(block => {
-            if (node.childIds.includes(block.id)) {
-              return { ...block, x: block.x + dx, y: block.y + dy };
+            const node = nodes.find(n => n.id === activeNodeId);
+            if (node && node.childIds.includes(block.id)) {
+              return { ...block, x: block.x + transform.x, y: block.y + transform.y };
             }
             return block;
           }));
@@ -234,33 +254,34 @@ function App() {
               return {
                 ...n,
                 rect: {
-                  startX: n.rect.startX + dx,
-                  startY: n.rect.startY + dy,
-                  endX: n.rect.endX + dx,
-                  endY: n.rect.endY + dy
-                }
+                  startX: n.rect.startX + transform.x,
+                  startY: n.rect.startY + transform.y,
+                  endX: n.rect.endX + transform.x,
+                  endY: n.rect.endY + transform.y
+                },
+                transform: { x: 0, y: 0 }
               };
             }
             return n;
           }));
+
+          setNodeTransforms(prev => {
+            const next = { ...prev };
+            delete next[activeNodeId];
+            return next;
+          });
         });
-
-        setNodeDragStart({ x: e.clientX, y: e.clientY });
       };
 
-      const handleNodeDragUp = () => {
-        setIsDraggingNode(false);
-      };
-
-      document.addEventListener('mousemove', handleNodeDragMove);
-      document.addEventListener('mouseup', handleNodeDragUp);
+      document.addEventListener('pointermove', handleNodeDragMove);
+      document.addEventListener('pointerup', handleNodeDragUp);
 
       return () => {
-        document.removeEventListener('mousemove', handleNodeDragMove);
-        document.removeEventListener('mouseup', handleNodeDragUp);
+        document.removeEventListener('pointermove', handleNodeDragMove);
+        document.removeEventListener('pointerup', handleNodeDragUp);
       };
     }
-  }, [isDraggingNode, activeNodeId, nodeDragStart, nodes, zoom]);
+  }, [isDraggingNode, activeNodeId, nodeDragStart, nodes, zoom, nodeTransforms]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -395,7 +416,8 @@ function App() {
         id: nodeId,
         childIds: targetBlocks.map(b => b.id),
         name: droneName,
-        rect: nodeRect
+        rect: nodeRect,
+        transform: { x: 0, y: 0 }
       }];
     });
 
@@ -588,40 +610,101 @@ function App() {
             if (!bbox) return null;
 
             const isActive = activeNodeId === node.id;
+            const transform = nodeTransforms[node.id] || { x: 0, y: 0 };
+            const nodeBlocks = blocks.filter(b => node.childIds.includes(b.id));
 
             return (
               <div
                 key={node.id}
-                className={`node-bounding-box ${isActive ? 'active' : ''}`}
+                className={`node-container ${isActive ? 'active' : ''} ${isDraggingNode && isActive ? 'dragging' : ''}`}
                 style={{
                   position: 'absolute',
                   left: `${bbox.minX}px`,
                   top: `${bbox.minY}px`,
                   width: `${bbox.maxX - bbox.minX}px`,
                   height: `${bbox.maxY - bbox.minY}px`,
-                  border: `2px solid rgba(0, 212, 255, ${isActive ? 0.9 : 0.6})`,
-                  borderRadius: '8px',
+                  transform: `translate(${transform.x}px, ${transform.y}px)`,
                   pointerEvents: 'all',
-                  cursor: 'move',
-                  boxShadow: `0 0 ${isActive ? 25 : 15}px rgba(0, 212, 255, ${isActive ? 0.5 : 0.3})`,
                 }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setActiveNodeId(node.id);
-                  setIsDraggingNode(true);
-                  setNodeDragStart({ x: e.clientX, y: e.clientY });
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveNodeId(node.id);
-                }}
-              />
+              >
+                <div
+                  className="node-outer-label"
+                  style={{
+                    position: 'absolute',
+                    left: '-8px',
+                    top: '-28px',
+                    pointerEvents: 'none'
+                  }}
+                >
+                  {node.name}
+                </div>
+
+                <div
+                  className={`node-outline ${isActive ? 'active' : ''}`}
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    width: '100%',
+                    height: '100%',
+                    border: `2px solid rgba(0, 212, 255, ${isActive ? 0.9 : 0.6})`,
+                    borderRadius: '8px',
+                    cursor: 'move',
+                    boxShadow: `0 0 ${isActive ? 25 : 15}px rgba(0, 212, 255, ${isActive ? 0.5 : 0.3})`,
+                  }}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+                    setActiveNodeId(node.id);
+                    setIsDraggingNode(true);
+                    setNodeDragStart({ x: e.clientX, y: e.clientY });
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveNodeId(node.id);
+                  }}
+                />
+
+                {nodeBlocks.map(block => {
+                  const BlockComponent = BLOCK_COMPONENT_MAP[block.type] || WorkspaceBlock;
+                  const extraProps = block.type === 'flight-state-info'
+                    ? { velocity: 15.2, acceleration: 2.3 }
+                    : {};
+                  const isDroneStarter = block.type === 'drone-starter';
+
+                  return (
+                    <div
+                      key={block.id}
+                      style={{
+                        position: 'absolute',
+                        left: `${block.x - bbox.minX}px`,
+                        top: `${block.y - bbox.minY}px`,
+                        pointerEvents: isDraggingNode && isActive ? 'none' : 'auto'
+                      }}
+                    >
+                      <BlockComponent
+                        id={block.id}
+                        initialX={block.x}
+                        initialY={block.y}
+                        zoom={zoom}
+                        onRemove={handleRemoveBlock}
+                        onPositionChange={handleBlockPositionChange}
+                        onToggleMinimize={handleToggleMinimize}
+                        isMinimized={block.isMinimized || false}
+                        nodeName={node.name}
+                        isHighlighted={block.isHighlighted}
+                        onDroneNameChange={isDroneStarter ? handleDroneNameChange : undefined}
+                        {...extraProps}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             );
           })}
-          {blocks.map(block => {
+          {blocks.filter(block => !block.nodeId).map(block => {
             const BlockComponent = BLOCK_COMPONENT_MAP[block.type] || WorkspaceBlock;
-            const node = nodes.find(n => n.id === block.nodeId);
             const extraProps = block.type === 'flight-state-info'
               ? { velocity: 15.2, acceleration: 2.3 }
               : {};
@@ -634,8 +717,7 @@ function App() {
                 className={block.isHighlighted ? 'is-highlighted' : ''}
                 style={{
                   position: 'relative',
-                  display: 'contents',
-                  pointerEvents: isDraggingNode && block.nodeId ? 'none' : 'auto'
+                  display: 'contents'
                 }}
               >
                 <BlockComponent
@@ -647,7 +729,6 @@ function App() {
                   onPositionChange={handleBlockPositionChange}
                   onToggleMinimize={handleToggleMinimize}
                   isMinimized={block.isMinimized || false}
-                  nodeName={node?.name}
                   isHighlighted={block.isHighlighted}
                   onDroneNameChange={isDroneStarter ? handleDroneNameChange : undefined}
                   {...extraProps}
