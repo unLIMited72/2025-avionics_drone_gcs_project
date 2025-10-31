@@ -12,6 +12,8 @@ interface ControllerBlockProps {
   onPositionChange: (id: string, x: number, y: number) => void;
   onToggleMinimize: (id: string) => void;
   isMinimized: boolean;
+  nodeName?: string;
+  isHighlighted?: boolean;
 }
 
 type FlightControlMode = 'mission' | 'controller';
@@ -24,7 +26,9 @@ export default function ControllerBlock({
   onRemove,
   onPositionChange,
   onToggleMinimize,
-  isMinimized
+  isMinimized,
+  nodeName,
+  isHighlighted
 }: ControllerBlockProps) {
   const blockRef = useRef<HTMLDivElement>(null);
   const [maxSpeed, setMaxSpeed] = useState('');
@@ -60,7 +64,7 @@ export default function ControllerBlock({
   return (
     <div
       ref={blockRef}
-      className={`controller-block ${isDragging ? 'dragging' : ''}`}
+      className={`controller-block ${isDragging ? 'dragging' : ''} ${isHighlighted ? 'is-highlighted' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`
@@ -74,7 +78,10 @@ export default function ControllerBlock({
         role="button"
         aria-label="Window header"
       >
-        <div className="workspace-block-title">Controller</div>
+        <div className="workspace-block-title">
+          Controller
+          {nodeName && <span className="node-label"> · {nodeName}</span>}
+        </div>
         <div className="header-actions">
           <button
             className="workspace-block-minimize"

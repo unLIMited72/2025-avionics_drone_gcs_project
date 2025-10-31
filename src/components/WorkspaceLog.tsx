@@ -12,6 +12,8 @@ interface WorkspaceLogProps {
   onPositionChange: (id: string, x: number, y: number) => void;
   onToggleMinimize: (id: string) => void;
   isMinimized: boolean;
+  nodeName?: string;
+  isHighlighted?: boolean;
 }
 
 interface LogEntry {
@@ -28,7 +30,9 @@ export default function WorkspaceLog({
   onRemove,
   onPositionChange,
   onToggleMinimize,
-  isMinimized
+  isMinimized,
+  nodeName,
+  isHighlighted
 }: WorkspaceLogProps) {
   const blockRef = useRef<HTMLDivElement>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
@@ -108,7 +112,7 @@ export default function WorkspaceLog({
   return (
     <div
       ref={blockRef}
-      className={`workspace-log ${isDragging ? 'dragging' : ''}`}
+      className={`workspace-log ${isDragging ? 'dragging' : ''} ${isHighlighted ? 'is-highlighted' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`
@@ -122,7 +126,10 @@ export default function WorkspaceLog({
         role="button"
         aria-label="Window header"
       >
-        <div className="workspace-block-title">Log Terminal</div>
+        <div className="workspace-block-title">
+          Log Terminal
+          {nodeName && <span className="node-label"> · {nodeName}</span>}
+        </div>
         <div className="header-actions">
           <button className="log-clear-btn" onClick={handleClearLogs} title="Clear logs">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

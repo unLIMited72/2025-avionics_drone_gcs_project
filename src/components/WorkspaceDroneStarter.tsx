@@ -12,6 +12,8 @@ interface WorkspaceDroneStarterProps {
   onPositionChange: (id: string, x: number, y: number) => void;
   onToggleMinimize: (id: string) => void;
   isMinimized: boolean;
+  nodeName?: string;
+  isHighlighted?: boolean;
 }
 
 
@@ -23,7 +25,9 @@ export default function WorkspaceDroneStarter({
   onRemove,
   onPositionChange,
   onToggleMinimize,
-  isMinimized
+  isMinimized,
+  nodeName,
+  isHighlighted
 }: WorkspaceDroneStarterProps) {
   const blockRef = useRef<HTMLDivElement>(null);
   const [serialNumber, setSerialNumber] = useState('');
@@ -100,7 +104,7 @@ export default function WorkspaceDroneStarter({
   return (
     <div
       ref={blockRef}
-      className={`workspace-drone-starter ${isDragging ? 'dragging' : ''}`}
+      className={`workspace-drone-starter ${isDragging ? 'dragging' : ''} ${isHighlighted ? 'is-highlighted' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`
@@ -123,6 +127,7 @@ export default function WorkspaceDroneStarter({
           ) : (
             'Drone Starter'
           )}
+          {nodeName && <span className="node-label"> · {nodeName}</span>}
         </div>
         <div className="header-actions">
           <button

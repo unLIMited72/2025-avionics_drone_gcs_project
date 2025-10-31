@@ -17,6 +17,21 @@ interface DroppedBlock {
   x: number;
   y: number;
   isMinimized?: boolean;
+  nodeId?: string;
+  isHighlighted?: boolean;
+}
+
+interface SelectionRect {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+
+interface Node {
+  id: string;
+  childIds: string[];
+  name: string;
 }
 
 interface BaseBlockProps {
@@ -28,6 +43,8 @@ interface BaseBlockProps {
   onPositionChange: (id: string, x: number, y: number) => void;
   onToggleMinimize: (id: string) => void;
   isMinimized: boolean;
+  nodeName?: string;
+  isHighlighted?: boolean;
 }
 
 interface FlightBlockProps extends BaseBlockProps {
@@ -78,6 +95,11 @@ function App() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mainRef = useRef<HTMLDivElement>(null);
 
+  const [isDragSelectMode, setIsDragSelectMode] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
+  const [nodes, setNodes] = useState<Node[]>([]);
+
   const clampPan = useCallback((x: number, y: number, currentZoom: number) => {
     if (!mainRef.current) return { x, y };
 
@@ -114,13 +136,71 @@ function App() {
     setPan(clampPan(newPanX, newPanY, newZoom));
   }, [zoom, pan, clampPan]);
 
+  const clientToWorld = useCallback((clientX: number, clientY: number) => {
+    if (!mainRef.current) return { x: 0, y: 0 };
+
+    const rect = mainRef.current.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const offsetX = clientX - rect.left - centerX;
+    const offsetY = clientY - rect.top - centerY;
+
+    const worldX = (offsetX - pan.x) / zoom;
+    const worldY = (offsetY - pan.y) / zoom;
+
+    return { x: worldX, y: worldY };
+  }, [pan, zoom]);
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log')) {
       return;
     }
+
+    if (isDragSelectMode) {
+      const worldPos = clientToWorld(e.clientX, e.clientY);
+      setIsSelecting(true);
+      setSelectionRect({
+        startX: worldPos.x,
+        startY: worldPos.y,
+        endX: worldPos.x,
+        endY: worldPos.y
+      });
+      return;
+    }
+
     setIsDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
+
+  useEffect(() => {
+    if (isSelecting) {
+      const handleSelectMouseMove = (e: MouseEvent) => {
+        if (!selectionRect) return;
+        const worldPos = clientToWorld(e.clientX, e.clientY);
+        setSelectionRect({
+          ...selectionRect,
+          endX: worldPos.x,
+          endY: worldPos.y
+        });
+      };
+
+      const handleSelectMouseUp = () => {
+        setIsSelecting(false);
+        if (selectionRect) {
+          checkIntersections();
+        }
+      };
+
+      document.addEventListener('mousemove', handleSelectMouseMove);
+      document.addEventListener('mouseup', handleSelectMouseUp);
+
+      return () => {
+        document.removeEventListener('mousemove', handleSelectMouseMove);
+        document.removeEventListener('mouseup', handleSelectMouseUp);
+      };
+    }
+  }, [isSelecting, selectionRect, clientToWorld]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -141,10 +221,103 @@ function App() {
     };
   }, [isDragging, dragStart, zoom, clampPan]);
 
-  const handleResetView = () => {
+  const checkIntersections = useCallback(() => {
+    if (!selectionRect) return;
+
+    const selMinX = Math.min(selectionRect.startX, selectionRect.endX);
+    const selMaxX = Math.max(selectionRect.startX, selectionRect.endX);
+    const selMinY = Math.min(selectionRect.startY, selectionRect.endY);
+    const selMaxY = Math.max(selectionRect.startY, selectionRect.endY);
+
+    setBlocks(prevBlocks => prevBlocks.map(block => {
+      const dimensions = getBlockDimensions(block.type);
+      const blockMinX = block.x;
+      const blockMaxX = block.x + dimensions.width;
+      const blockMinY = block.y;
+      const blockMaxY = block.y + dimensions.height;
+
+      const intersects = (
+        selMinX < blockMaxX &&
+        selMaxX > blockMinX &&
+        selMinY < blockMaxY &&
+        selMaxY > blockMinY
+      );
+
+      return { ...block, isHighlighted: intersects };
+    }));
+  }, [selectionRect]);
+
+  const handleResetView = useCallback(() => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
-  };
+    setIsDragSelectMode(false);
+    setIsSelecting(false);
+    setSelectionRect(null);
+    setNodes([]);
+    setBlocks(prevBlocks => prevBlocks.map(block => ({
+      ...block,
+      isHighlighted: false,
+      nodeId: undefined
+    })));
+  }, []);
+
+  const handleToggleDragSelect = useCallback(() => {
+    setIsDragSelectMode(prev => !prev);
+    setIsSelecting(false);
+    setSelectionRect(null);
+  }, []);
+
+  const handleCreateNode = useCallback(() => {
+    const highlightedBlocks = blocks.filter(b => b.isHighlighted);
+    if (highlightedBlocks.length === 0) return;
+
+    const nodeId = `node-${Date.now()}`;
+    const nodeName = `drone name`;
+
+    setNodes(prev => [...prev, {
+      id: nodeId,
+      childIds: highlightedBlocks.map(b => b.id),
+      name: nodeName
+    }]);
+
+    setBlocks(prevBlocks => prevBlocks.map(block => {
+      if (block.isHighlighted) {
+        return { ...block, nodeId };
+      }
+      return block;
+    }));
+  }, [blocks]);
+
+  const handleUngroupNode = useCallback(() => {
+    const lastNode = nodes[nodes.length - 1];
+    if (!lastNode) return;
+
+    setNodes(prev => prev.filter(n => n.id !== lastNode.id));
+    setBlocks(prevBlocks => prevBlocks.map(block => {
+      if (block.nodeId === lastNode.id) {
+        return { ...block, nodeId: undefined, isHighlighted: false };
+      }
+      return block;
+    }));
+  }, [nodes]);
+
+  const getNodeBoundingBox = useCallback((nodeId: string) => {
+    const nodeBlocks = blocks.filter(b => b.nodeId === nodeId);
+    if (nodeBlocks.length === 0) return null;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    nodeBlocks.forEach(block => {
+      const dimensions = getBlockDimensions(block.type);
+      minX = Math.min(minX, block.x);
+      minY = Math.min(minY, block.y);
+      maxX = Math.max(maxX, block.x + dimensions.width);
+      maxY = Math.max(maxY, block.y + dimensions.height);
+    });
+
+    return { minX, minY, maxX, maxY };
+  }, [blocks]);
+
 
   const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
@@ -216,9 +389,15 @@ function App() {
   useEffect(() => {
     const mainElement = mainRef.current;
     if (mainElement) {
-      mainElement.style.cursor = isDragging ? 'grabbing' : 'grab';
+      if (isDragSelectMode) {
+        mainElement.style.cursor = 'crosshair';
+      } else if (isDragging) {
+        mainElement.style.cursor = 'grabbing';
+      } else {
+        mainElement.style.cursor = 'grab';
+      }
     }
-  }, [isDragging]);
+  }, [isDragging, isDragSelectMode]);
 
   useEffect(() => {
     if (activeTab === 'plan') {
@@ -274,27 +453,76 @@ function App() {
               transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`
             }}
           >
+          {nodes.map(node => {
+            const bbox = getNodeBoundingBox(node.id);
+            if (!bbox) return null;
+
+            return (
+              <div
+                key={node.id}
+                className="node-bounding-box"
+                style={{
+                  position: 'absolute',
+                  left: `${bbox.minX}px`,
+                  top: `${bbox.minY}px`,
+                  width: `${bbox.maxX - bbox.minX}px`,
+                  height: `${bbox.maxY - bbox.minY}px`,
+                  border: '2px solid rgba(0, 212, 255, 0.6)',
+                  borderRadius: '8px',
+                  pointerEvents: 'none',
+                  boxShadow: '0 0 15px rgba(0, 212, 255, 0.3)',
+                }}
+              />
+            );
+          })}
           {blocks.map(block => {
             const BlockComponent = BLOCK_COMPONENT_MAP[block.type] || WorkspaceBlock;
+            const node = nodes.find(n => n.id === block.nodeId);
             const extraProps = block.type === 'flight-state-info'
               ? { velocity: 15.2, acceleration: 2.3 }
               : {};
 
             return (
-              <BlockComponent
+              <div
                 key={block.id}
-                id={block.id}
-                initialX={block.x}
-                initialY={block.y}
-                zoom={zoom}
-                onRemove={handleRemoveBlock}
-                onPositionChange={handleBlockPositionChange}
-                onToggleMinimize={handleToggleMinimize}
-                isMinimized={block.isMinimized || false}
-                {...extraProps}
-              />
+                className={block.isHighlighted ? 'is-highlighted' : ''}
+                style={{
+                  position: 'relative',
+                  display: 'contents'
+                }}
+              >
+                <BlockComponent
+                  id={block.id}
+                  initialX={block.x}
+                  initialY={block.y}
+                  zoom={zoom}
+                  onRemove={handleRemoveBlock}
+                  onPositionChange={handleBlockPositionChange}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
+                  nodeName={node?.name}
+                  isHighlighted={block.isHighlighted}
+                  {...extraProps}
+                />
+              </div>
             );
           })}
+          {selectionRect && (
+            <div
+              className="selection-rect"
+              style={{
+                position: 'absolute',
+                left: `${Math.min(selectionRect.startX, selectionRect.endX)}px`,
+                top: `${Math.min(selectionRect.startY, selectionRect.endY)}px`,
+                width: `${Math.abs(selectionRect.endX - selectionRect.startX)}px`,
+                height: `${Math.abs(selectionRect.endY - selectionRect.startY)}px`,
+                border: '2px dashed rgba(0, 212, 255, 0.8)',
+                background: 'rgba(0, 212, 255, 0.1)',
+                pointerEvents: 'none',
+                borderRadius: '4px',
+              }}
+            />
+          )}
           </div>
           <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
           <Minimap
@@ -308,7 +536,13 @@ function App() {
             onPanChange={handleMinimapPan}
             blocks={blocks}
           />
-          <DigitalClock onReset={handleResetView} />
+          <DigitalClock
+            onReset={handleResetView}
+            onDragSelect={handleToggleDragSelect}
+            onCreateNode={handleCreateNode}
+            onUngroupNode={handleUngroupNode}
+            isDragSelectMode={isDragSelectMode}
+          />
           <DroneStatus />
         </div>
         {activeTab === 'map' && <MapView />}

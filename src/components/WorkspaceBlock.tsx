@@ -14,6 +14,8 @@ interface WorkspaceBlockProps {
   isMinimized: boolean;
   velocity: number;
   acceleration: number;
+  nodeName?: string;
+  isHighlighted?: boolean;
 }
 
 export default function WorkspaceBlock({
@@ -26,7 +28,9 @@ export default function WorkspaceBlock({
   onToggleMinimize,
   isMinimized,
   velocity,
-  acceleration
+  acceleration,
+  nodeName,
+  isHighlighted
 }: WorkspaceBlockProps) {
   const blockRef = useRef<HTMLDivElement>(null);
   const [pitch, setPitch] = useState(0);
@@ -62,7 +66,7 @@ export default function WorkspaceBlock({
   return (
     <div
       ref={blockRef}
-      className={`workspace-block ${isDragging ? 'dragging' : ''}`}
+      className={`workspace-block ${isDragging ? 'dragging' : ''} ${isHighlighted ? 'is-highlighted' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`
@@ -76,7 +80,10 @@ export default function WorkspaceBlock({
         role="button"
         aria-label="Window header"
       >
-        <div className="workspace-block-title">Primary Flight Display</div>
+        <div className="workspace-block-title">
+          Primary Flight Display
+          {nodeName && <span className="node-label"> · {nodeName}</span>}
+        </div>
         <div className="header-actions">
           <button
             className="workspace-block-minimize"

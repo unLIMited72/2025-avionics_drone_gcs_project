@@ -93,6 +93,36 @@
   pointer-events: none;
 }
 
+.is-highlighted {
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.6),
+              0 0 20px rgba(0, 212, 255, 0.4) !important;
+  border-color: rgba(0, 212, 255, 0.8) !important;
+}
+
+.node-label {
+  color: rgba(0, 212, 255, 0.8);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.node-bounding-box {
+  pointer-events: none;
+  animation: nodePulse 2s ease-in-out infinite;
+}
+
+@keyframes nodePulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.5);
+  }
+}
+
+.selection-rect {
+  z-index: 100;
+}
+
 .workspace-blocks-container {
   position: absolute;
   top: 50%;
