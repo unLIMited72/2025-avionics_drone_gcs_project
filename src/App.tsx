@@ -1,14 +1,95 @@
-import { useState, useRef, useEffect, useCallback, type DragEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type DragEvent, type ComponentType } from 'react';
 import Header, { type ServerStatus } from './components/Header';
 import Dashboard from './components/Dashboard';
 import DigitalClock from './components/DigitalClock';
 import DroneStatus from './components/DroneStatus';
+import WorkspaceBlock from './components/WorkspaceBlock';
+import WorkspaceDroneStarter from './components/WorkspaceDroneStarter';
+import ControllerBlock from './components/ControllerBlock';
+import WorkspaceLog from './components/WorkspaceLog';
 import Minimap from './components/Minimap';
 import MapView from './components/MapView';
-import type { DroppedBlock, SelectionRect, Node } from './types';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, MIN_ZOOM, MAX_ZOOM, ZOOM_SPEED, getBlockDimensions } from './constants';
-import { getBlockComponent, getBlockCommonProps } from './utils/renderBlockUtils';
 import './App.css';
+
+interface DroppedBlock {
+  id: string;
+  type: 'flight-state-info' | 'drone-starter' | 'controller' | 'log';
+  x: number;
+  y: number;
+  isMinimized?: boolean;
+  nodeId?: string;
+  isHighlighted?: boolean;
+  droneName?: string;
+  serialNumber?: string;
+  isConnected?: boolean;
+}
+
+interface SelectionRect {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+
+interface Node {
+  id: string;
+  childIds: string[];
+  name: string;
+  rect: SelectionRect;
+  transform: { x: number; y: number };
+}
+
+interface BaseBlockProps {
+  id: string;
+  initialX: number;
+  initialY: number;
+  zoom: number;
+  onRemove: (id: string) => void;
+  onPositionChange: (id: string, x: number, y: number) => void;
+  onToggleMinimize: (id: string) => void;
+  isMinimized: boolean;
+  nodeName?: string;
+  isHighlighted?: boolean;
+  onDroneNameChange?: (blockId: string, name: string) => void;
+  disableDrag?: boolean;
+  initialDroneName?: string;
+  initialSerialNumber?: string;
+  initialIsConnected?: boolean;
+  onConnectionChange?: (blockId: string, serialNumber: string, isConnected: boolean) => void;
+}
+
+interface FlightBlockProps extends BaseBlockProps {
+  velocity: number;
+  acceleration: number;
+}
+
+function getBlockDimensions(type: string): { width: number; height: number } {
+  switch (type) {
+    case 'log':
+      return { width: 520, height: 450 };
+    case 'controller':
+      return { width: 320, height: 400 };
+    case 'drone-starter':
+      return { width: 280, height: 380 };
+    case 'flight-state-info':
+      return { width: 560, height: 380 };
+    default:
+      return { width: 300, height: 300 };
+  }
+}
+
+const CANVAS_WIDTH = 4000;
+const CANVAS_HEIGHT = 3000;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 2;
+const ZOOM_SPEED = 0.1;
+
+const BLOCK_COMPONENT_MAP: Record<string, ComponentType<BaseBlockProps | FlightBlockProps>> = {
+  'drone-starter': WorkspaceDroneStarter,
+  'controller': ControllerBlock,
+  'log': WorkspaceLog,
+  'flight-state-info': WorkspaceBlock as ComponentType<BaseBlockProps | FlightBlockProps>
+};
 
 function App() {
   const [serverStatus] = useState<ServerStatus>('disconnected');
@@ -636,7 +717,11 @@ function App() {
                 />
 
                 {nodeBlocks.map(block => {
-                  const BlockComponent = getBlockComponent(block);
+                  const BlockComponent = BLOCK_COMPONENT_MAP[block.type] || WorkspaceBlock;
+                  const extraProps = block.type === 'flight-state-info'
+                    ? { velocity: 15.2, acceleration: 2.3 }
+                    : {};
+                  const isDroneStarter = block.type === 'drone-starter';
                   const relativeX = block.x - bbox.minX;
                   const relativeY = block.y - bbox.minY;
 
@@ -651,17 +736,23 @@ function App() {
                       }}
                     >
                       <BlockComponent
-                        {...getBlockCommonProps({
-                          block,
-                          zoom,
-                          onRemove: handleRemoveBlock,
-                          onPositionChange: handleBlockPositionChange,
-                          onToggleMinimize: handleToggleMinimize,
-                          onDroneNameChange: handleDroneNameChange,
-                          onConnectionChange: handleDroneConnectionChange,
-                          nodeName: node.name,
-                          disableDrag: true
-                        })}
+                        id={block.id}
+                        initialX={block.x}
+                        initialY={block.y}
+                        zoom={zoom}
+                        onRemove={handleRemoveBlock}
+                        onPositionChange={handleBlockPositionChange}
+                        onToggleMinimize={handleToggleMinimize}
+                        isMinimized={block.isMinimized || false}
+                        nodeName={node.name}
+                        isHighlighted={block.isHighlighted}
+                        onDroneNameChange={isDroneStarter ? handleDroneNameChange : undefined}
+                        initialDroneName={isDroneStarter ? block.droneName : undefined}
+                        initialSerialNumber={isDroneStarter ? block.serialNumber : undefined}
+                        initialIsConnected={isDroneStarter ? block.isConnected : undefined}
+                        onConnectionChange={isDroneStarter ? handleDroneConnectionChange : undefined}
+                        disableDrag={true}
+                        {...extraProps}
                       />
                     </div>
                   );
@@ -670,7 +761,12 @@ function App() {
             );
           })}
           {blocks.filter(block => !block.nodeId).map(block => {
-            const BlockComponent = getBlockComponent(block);
+            const BlockComponent = BLOCK_COMPONENT_MAP[block.type] || WorkspaceBlock;
+            const extraProps = block.type === 'flight-state-info'
+              ? { velocity: 15.2, acceleration: 2.3 }
+              : {};
+
+            const isDroneStarter = block.type === 'drone-starter';
 
             return (
               <div
@@ -682,15 +778,21 @@ function App() {
                 }}
               >
                 <BlockComponent
-                  {...getBlockCommonProps({
-                    block,
-                    zoom,
-                    onRemove: handleRemoveBlock,
-                    onPositionChange: handleBlockPositionChange,
-                    onToggleMinimize: handleToggleMinimize,
-                    onDroneNameChange: handleDroneNameChange,
-                    onConnectionChange: handleDroneConnectionChange
-                  })}
+                  id={block.id}
+                  initialX={block.x}
+                  initialY={block.y}
+                  zoom={zoom}
+                  onRemove={handleRemoveBlock}
+                  onPositionChange={handleBlockPositionChange}
+                  onToggleMinimize={handleToggleMinimize}
+                  isMinimized={block.isMinimized || false}
+                  isHighlighted={block.isHighlighted}
+                  onDroneNameChange={isDroneStarter ? handleDroneNameChange : undefined}
+                  initialDroneName={isDroneStarter ? block.droneName : undefined}
+                  initialSerialNumber={isDroneStarter ? block.serialNumber : undefined}
+                  initialIsConnected={isDroneStarter ? block.isConnected : undefined}
+                  onConnectionChange={isDroneStarter ? handleDroneConnectionChange : undefined}
+                  {...extraProps}
                 />
               </div>
             );

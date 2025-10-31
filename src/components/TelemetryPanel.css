@@ -1,0 +1,238 @@
+.telemetry-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #1a1a2e;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.panel-header {
+  padding: 16px 20px;
+  background: #16213e;
+  border-bottom: 1px solid #0f3460;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #e0e0e0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pfd-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  align-items: center;
+}
+
+.pfd-gauges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.pfd-vertical-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.circular-gauge {
+  flex-shrink: 0;
+  width: 110px;
+  height: 110px;
+  background: rgba(22, 33, 62, 0.5);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 50%;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.circular-gauge:hover {
+  border-color: rgba(0, 212, 255, 0.5);
+  background: rgba(22, 33, 62, 0.7);
+  transform: scale(1.05);
+}
+
+.gauge-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.gauge-label {
+  font-size: 10px;
+  font-weight: 700;
+  fill: #00d4ff;
+  letter-spacing: 1px;
+}
+
+.gauge-value {
+  font-size: 24px;
+  font-weight: 700;
+  fill: #e0e0e0;
+  font-family: 'Courier New', monospace;
+}
+
+.gauge-unit {
+  font-size: 10px;
+  font-weight: 500;
+  fill: #888;
+}
+
+.pfd-altitude {
+  flex-shrink: 0;
+  background: rgba(0, 212, 255, 0.1);
+  border: 2px solid rgba(0, 212, 255, 0.4);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 90px;
+  transition: all 0.3s ease;
+}
+
+.pfd-velocity {
+  border-color: rgba(255, 170, 0, 0.4);
+  background: rgba(255, 170, 0, 0.1);
+}
+
+.pfd-velocity:hover {
+  border-color: rgba(255, 170, 0, 0.7);
+  background: rgba(255, 170, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.pfd-acceleration {
+  border-color: rgba(0, 255, 136, 0.4);
+  background: rgba(0, 255, 136, 0.1);
+}
+
+.pfd-acceleration:hover {
+  border-color: rgba(0, 255, 136, 0.7);
+  background: rgba(0, 255, 136, 0.15);
+  transform: translateY(-2px);
+}
+
+.pfd-altitude:hover {
+  border-color: rgba(0, 212, 255, 0.7);
+  background: rgba(0, 212, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.altitude-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #00d4ff;
+  font-family: 'Courier New', monospace;
+  line-height: 1;
+}
+
+.pfd-velocity .altitude-value {
+  color: #ffaa00;
+}
+
+.pfd-acceleration .altitude-value {
+  color: #00ff88;
+}
+
+.altitude-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #00d4ff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.pfd-velocity .altitude-label {
+  color: #ffaa00;
+}
+
+.pfd-acceleration .altitude-label {
+  color: #00ff88;
+}
+
+.pfd-secondary {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.pfd-info-item {
+  flex: 1;
+  background: rgba(22, 33, 62, 0.5);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.pfd-info-item:hover {
+  border-color: rgba(0, 212, 255, 0.5);
+  background: rgba(22, 33, 62, 0.7);
+  transform: translateY(-2px);
+}
+
+.pfd-info-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #00d4ff;
+  letter-spacing: 1px;
+}
+
+.pfd-info-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  line-height: 1;
+}
+
+.battery-bar-mini {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.battery-fill-mini {
+  height: 100%;
+  transition: width 0.5s ease, background-color 0.3s ease;
+  border-radius: 2px;
+}
+
+.pfd-mode-badge {
+  background: linear-gradient(135deg, #00d4ff 0%, #0088ff 100%);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+}
