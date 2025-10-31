@@ -103,7 +103,10 @@ function App() {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
   const [finalRect, setFinalRect] = useState<SelectionRect | null>(null);
-  const [nodes, setNodes] = useState<Node[]>([]);
+  const [nodes, setNodes] = useState<Node[]>(() => {
+    const saved = localStorage.getItem('workspace-nodes');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const [isDraggingNode, setIsDraggingNode] = useState(false);
   const [nodeDragStart, setNodeDragStart] = useState({ x: 0, y: 0 });
@@ -198,26 +201,55 @@ function App() {
       const handleSelectMouseUp = () => {
         setIsSelecting(false);
         if (selectionRect) {
-          checkIntersections();
+          const selMinX = Math.min(selectionRect.startX, selectionRect.endX);
+          const selMaxX = Math.max(selectionRect.startX, selectionRect.endX);
+          const selMinY = Math.min(selectionRect.startY, selectionRect.endY);
+          const selMaxY = Math.max(selectionRect.startY, selectionRect.endY);
+
+          setBlocks(prevBlocks => prevBlocks.map(block => {
+            const dimensions = getBlockDimensions(block.type);
+            const blockMinX = block.x;
+            const blockMaxX = block.x + dimensions.width;
+            const blockMinY = block.y;
+            const blockMaxY = block.y + dimensions.height;
+
+            const intersects = (
+              selMinX < blockMaxX &&
+              selMaxX > blockMinX &&
+              selMinY < blockMaxY &&
+              selMaxY > blockMinY
+            );
+
+            return { ...block, isHighlighted: intersects };
+          }));
+
           setFinalRect(selectionRect);
         }
         setIsDragSelectMode(false);
         setSelectionRect(null);
       };
 
+      const handleWindowBlur = () => {
+        setIsSelecting(false);
+        setIsDragSelectMode(false);
+        setSelectionRect(null);
+      };
+
       document.addEventListener('mousemove', handleSelectMouseMove);
       document.addEventListener('mouseup', handleSelectMouseUp);
+      window.addEventListener('blur', handleWindowBlur);
 
       return () => {
         document.removeEventListener('mousemove', handleSelectMouseMove);
         document.removeEventListener('mouseup', handleSelectMouseUp);
+        window.removeEventListener('blur', handleWindowBlur);
       };
     }
   }, [isSelecting, selectionRect, clientToWorld]);
 
   useEffect(() => {
     if (isDraggingNode && activeNodeId) {
-      const handleNodeDragMove = (e: MouseEvent) => {
+      const handleNodeDragMove = (e: PointerEvent) => {
         e.preventDefault();
         const dx = (e.clientX - nodeDragStart.x) / zoom;
         const dy = (e.clientY - nodeDragStart.y) / zoom;
@@ -235,11 +267,18 @@ function App() {
         setNodeDragStart({ x: e.clientX, y: e.clientY });
       };
 
-      const handleNodeDragUp = () => {
+      const handleNodeDragEnd = () => {
         setIsDraggingNode(false);
 
         const transform = nodeTransforms[activeNodeId];
-        if (!transform) return;
+        if (!transform || (transform.x === 0 && transform.y === 0)) {
+          setNodeTransforms(prev => {
+            const next = { ...prev };
+            delete next[activeNodeId];
+            return next;
+          });
+          return;
+        }
 
         requestAnimationFrame(() => {
           setBlocks(prevBlocks => prevBlocks.map(block => {
@@ -274,12 +313,22 @@ function App() {
         });
       };
 
+      const handleWindowBlur = () => {
+        if (isDraggingNode) {
+          handleNodeDragEnd();
+        }
+      };
+
       document.addEventListener('pointermove', handleNodeDragMove);
-      document.addEventListener('pointerup', handleNodeDragUp);
+      document.addEventListener('pointerup', handleNodeDragEnd);
+      document.addEventListener('pointercancel', handleNodeDragEnd);
+      window.addEventListener('blur', handleWindowBlur);
 
       return () => {
         document.removeEventListener('pointermove', handleNodeDragMove);
-        document.removeEventListener('pointerup', handleNodeDragUp);
+        document.removeEventListener('pointerup', handleNodeDragEnd);
+        document.removeEventListener('pointercancel', handleNodeDragEnd);
+        window.removeEventListener('blur', handleWindowBlur);
       };
     }
   }, [isDraggingNode, activeNodeId, nodeDragStart, nodes, zoom, nodeTransforms]);
@@ -303,31 +352,6 @@ function App() {
     };
   }, [isDragging, dragStart, zoom, clampPan]);
 
-  const checkIntersections = useCallback(() => {
-    if (!selectionRect) return;
-
-    const selMinX = Math.min(selectionRect.startX, selectionRect.endX);
-    const selMaxX = Math.max(selectionRect.startX, selectionRect.endX);
-    const selMinY = Math.min(selectionRect.startY, selectionRect.endY);
-    const selMaxY = Math.max(selectionRect.startY, selectionRect.endY);
-
-    setBlocks(prevBlocks => prevBlocks.map(block => {
-      const dimensions = getBlockDimensions(block.type);
-      const blockMinX = block.x;
-      const blockMaxX = block.x + dimensions.width;
-      const blockMinY = block.y;
-      const blockMaxY = block.y + dimensions.height;
-
-      const intersects = (
-        selMinX < blockMaxX &&
-        selMaxX > blockMinX &&
-        selMinY < blockMaxY &&
-        selMaxY > blockMinY
-      );
-
-      return { ...block, isHighlighted: intersects };
-    }));
-  }, [selectionRect]);
 
   const handleResetView = useCallback(() => {
     setZoom(1);
@@ -538,6 +562,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('workspace-blocks', JSON.stringify(blocks));
   }, [blocks]);
+
+  useEffect(() => {
+    localStorage.setItem('workspace-nodes', JSON.stringify(nodes));
+  }, [nodes]);
 
   useEffect(() => {
     const mainElement = mainRef.current;
