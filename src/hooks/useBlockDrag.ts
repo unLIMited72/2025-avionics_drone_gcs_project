@@ -12,6 +12,7 @@ interface UseBlockDragOptions {
   id: string;
   onPositionChange: (id: string, x: number, y: number) => void;
   shouldPreventDrag?: (target: HTMLElement) => boolean;
+  disabled?: boolean;
 }
 
 export function useBlockDrag({
@@ -20,7 +21,8 @@ export function useBlockDrag({
   zoom,
   id,
   onPositionChange,
-  shouldPreventDrag
+  shouldPreventDrag,
+  disabled = false
 }: UseBlockDragOptions) {
   const [position, setPosition] = useState<Position>({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
@@ -31,6 +33,8 @@ export function useBlockDrag({
   }, [initialX, initialY]);
 
   const handleMouseDown = useCallback((e: MouseEvent) => {
+    if (disabled) return;
+
     const target = e.target as HTMLElement;
 
     if (shouldPreventDrag && shouldPreventDrag(target)) {
@@ -41,7 +45,7 @@ export function useBlockDrag({
     e.stopPropagation();
     setDragStart({ x: e.clientX, y: e.clientY });
     setIsDragging(true);
-  }, [shouldPreventDrag]);
+  }, [shouldPreventDrag, disabled]);
 
   useEffect(() => {
     if (!isDragging) return;

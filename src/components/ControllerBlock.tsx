@@ -14,6 +14,7 @@ interface ControllerBlockProps {
   isMinimized: boolean;
   nodeName?: string;
   isHighlighted?: boolean;
+  disableDrag?: boolean;
 }
 
 type FlightControlMode = 'mission' | 'controller';
@@ -28,7 +29,8 @@ export default function ControllerBlock({
   onToggleMinimize,
   isMinimized,
   nodeName,
-  isHighlighted
+  isHighlighted,
+  disableDrag = false
 }: ControllerBlockProps) {
   const blockRef = useRef<HTMLDivElement>(null);
   const [maxSpeed, setMaxSpeed] = useState('');
@@ -42,7 +44,8 @@ export default function ControllerBlock({
     zoom,
     id,
     onPositionChange,
-    shouldPreventDrag: shouldPreventDragFromInteractiveElements
+    shouldPreventDrag: shouldPreventDragFromInteractiveElements,
+    disabled: disableDrag
   });
 
   const handleRemove = createStopPropagationHandler(() => onRemove(id));
@@ -66,10 +69,11 @@ export default function ControllerBlock({
       ref={blockRef}
       className={`controller-block ${isDragging ? 'dragging' : ''} ${isHighlighted ? 'is-highlighted' : ''}`}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`
+        left: disableDrag ? '0px' : `${position.x}px`,
+        top: disableDrag ? '0px' : `${position.y}px`,
+        cursor: disableDrag ? 'default' : (isDragging ? 'grabbing' : 'grab')
       }}
-      onMouseDown={handleMouseDown}
+      onMouseDown={disableDrag ? undefined : handleMouseDown}
     >
       <div
         className="workspace-block-header"

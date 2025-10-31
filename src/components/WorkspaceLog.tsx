@@ -14,6 +14,7 @@ interface WorkspaceLogProps {
   isMinimized: boolean;
   nodeName?: string;
   isHighlighted?: boolean;
+  disableDrag?: boolean;
 }
 
 interface LogEntry {
@@ -32,7 +33,8 @@ export default function WorkspaceLog({
   onToggleMinimize,
   isMinimized,
   nodeName,
-  isHighlighted
+  isHighlighted,
+  disableDrag = false
 }: WorkspaceLogProps) {
   const blockRef = useRef<HTMLDivElement>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
@@ -114,10 +116,11 @@ export default function WorkspaceLog({
       ref={blockRef}
       className={`workspace-log ${isDragging ? 'dragging' : ''} ${isHighlighted ? 'is-highlighted' : ''}`}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`
+        left: disableDrag ? '0px' : `${position.x}px`,
+        top: disableDrag ? '0px' : `${position.y}px`,
+        cursor: disableDrag ? 'default' : (isDragging ? 'grabbing' : 'grab')
       }}
-      onMouseDown={handleMouseDown}
+      onMouseDown={disableDrag ? undefined : handleMouseDown}
     >
       <div
         className="workspace-block-header"

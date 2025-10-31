@@ -16,6 +16,7 @@ interface WorkspaceBlockProps {
   acceleration: number;
   nodeName?: string;
   isHighlighted?: boolean;
+  disableDrag?: boolean;
 }
 
 export default function WorkspaceBlock({
@@ -30,7 +31,8 @@ export default function WorkspaceBlock({
   velocity,
   acceleration,
   nodeName,
-  isHighlighted
+  isHighlighted,
+  disableDrag = false
 }: WorkspaceBlockProps) {
   const blockRef = useRef<HTMLDivElement>(null);
   const [pitch, setPitch] = useState(0);
@@ -68,10 +70,11 @@ export default function WorkspaceBlock({
       ref={blockRef}
       className={`workspace-block ${isDragging ? 'dragging' : ''} ${isHighlighted ? 'is-highlighted' : ''}`}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`
+        left: disableDrag ? '0px' : `${position.x}px`,
+        top: disableDrag ? '0px' : `${position.y}px`,
+        cursor: disableDrag ? 'default' : (isDragging ? 'grabbing' : 'grab')
       }}
-      onMouseDown={handleMouseDown}
+      onMouseDown={disableDrag ? undefined : handleMouseDown}
     >
       <div
         className="workspace-block-header"

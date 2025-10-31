@@ -15,6 +15,7 @@ interface WorkspaceDroneStarterProps {
   nodeName?: string;
   isHighlighted?: boolean;
   onDroneNameChange?: (name: string) => void;
+  disableDrag?: boolean;
 }
 
 
@@ -29,7 +30,8 @@ export default function WorkspaceDroneStarter({
   isMinimized,
   nodeName,
   isHighlighted,
-  onDroneNameChange
+  onDroneNameChange,
+  disableDrag = false
 }: WorkspaceDroneStarterProps) {
   const blockRef = useRef<HTMLDivElement>(null);
   const [serialNumber, setSerialNumber] = useState('');
@@ -62,7 +64,8 @@ export default function WorkspaceDroneStarter({
     zoom,
     id,
     onPositionChange,
-    shouldPreventDrag: shouldPreventDragFromInteractiveElements
+    shouldPreventDrag: shouldPreventDragFromInteractiveElements,
+    disabled: disableDrag
   });
 
   const handleRemove = createStopPropagationHandler(() => onRemove(id));
@@ -115,10 +118,11 @@ export default function WorkspaceDroneStarter({
       ref={blockRef}
       className={`workspace-drone-starter ${isDragging ? 'dragging' : ''} ${isHighlighted ? 'is-highlighted' : ''}`}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`
+        left: disableDrag ? '0px' : `${position.x}px`,
+        top: disableDrag ? '0px' : `${position.y}px`,
+        cursor: disableDrag ? 'default' : (isDragging ? 'grabbing' : 'grab')
       }}
-      onMouseDown={handleMouseDown}
+      onMouseDown={disableDrag ? undefined : handleMouseDown}
     >
       <div
         className="workspace-block-header"

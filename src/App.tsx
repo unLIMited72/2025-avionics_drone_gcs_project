@@ -48,6 +48,7 @@ interface BaseBlockProps {
   nodeName?: string;
   isHighlighted?: boolean;
   onDroneNameChange?: (name: string) => void;
+  disableDrag?: boolean;
 }
 
 interface FlightBlockProps extends BaseBlockProps {
@@ -687,18 +688,17 @@ function App() {
                     >
                       <BlockComponent
                         id={block.id}
-                        initialX={relativeX}
-                        initialY={relativeY}
+                        initialX={block.x}
+                        initialY={block.y}
                         zoom={zoom}
                         onRemove={handleRemoveBlock}
-                        onPositionChange={(id, newX, newY) => {
-                          handleBlockPositionChange(id, newX + bbox.minX, newY + bbox.minY);
-                        }}
+                        onPositionChange={handleBlockPositionChange}
                         onToggleMinimize={handleToggleMinimize}
                         isMinimized={block.isMinimized || false}
                         nodeName={node.name}
                         isHighlighted={block.isHighlighted}
                         onDroneNameChange={isDroneStarter ? handleDroneNameChange : undefined}
+                        disableDrag={true}
                         {...extraProps}
                       />
                     </div>
