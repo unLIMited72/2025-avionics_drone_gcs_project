@@ -17,6 +17,9 @@ interface WorkspaceDroneStarterProps {
   onDroneNameChange?: (blockId: string, name: string) => void;
   disableDrag?: boolean;
   initialDroneName?: string;
+  initialSerialNumber?: string;
+  initialIsConnected?: boolean;
+  onConnectionChange?: (blockId: string, serialNumber: string, isConnected: boolean) => void;
 }
 
 
@@ -33,12 +36,15 @@ export default function WorkspaceDroneStarter({
   isHighlighted,
   onDroneNameChange,
   disableDrag = false,
-  initialDroneName = ''
+  initialDroneName = '',
+  initialSerialNumber = '',
+  initialIsConnected = false,
+  onConnectionChange
 }: WorkspaceDroneStarterProps) {
   const blockRef = useRef<HTMLDivElement>(null);
-  const [serialNumber, setSerialNumber] = useState('');
+  const [serialNumber, setSerialNumber] = useState(initialSerialNumber);
   const [droneName, setDroneName] = useState(initialDroneName);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(initialIsConnected);
 
   const [px4Connection] = useState<'connected' | 'disconnected'>('disconnected');
   const [failsafe] = useState<'normal' | 'active'>('normal');
@@ -81,6 +87,7 @@ export default function WorkspaceDroneStarter({
     if (serialNumber.trim() && droneName.trim()) {
       setIsConnected(true);
       onDroneNameChange?.(id, droneName);
+      onConnectionChange?.(id, serialNumber, true);
     }
   };
 
@@ -90,8 +97,15 @@ export default function WorkspaceDroneStarter({
     }
   }, [id, droneName, isConnected, onDroneNameChange]);
 
+  useEffect(() => {
+    if (onConnectionChange) {
+      onConnectionChange(id, serialNumber, isConnected);
+    }
+  }, [id, serialNumber, isConnected, onConnectionChange]);
+
   const handleDisconnect = () => {
     setIsConnected(false);
+    onConnectionChange?.(id, serialNumber, false);
   };
 
   const getGpsHealthStatus = (): 'ok' | 'warning' | 'error' => {

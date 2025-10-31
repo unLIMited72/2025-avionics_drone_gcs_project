@@ -20,6 +20,8 @@ interface DroppedBlock {
   nodeId?: string;
   isHighlighted?: boolean;
   droneName?: string;
+  serialNumber?: string;
+  isConnected?: boolean;
 }
 
 interface SelectionRect {
@@ -51,6 +53,9 @@ interface BaseBlockProps {
   onDroneNameChange?: (blockId: string, name: string) => void;
   disableDrag?: boolean;
   initialDroneName?: string;
+  initialSerialNumber?: string;
+  initialIsConnected?: boolean;
+  onConnectionChange?: (blockId: string, serialNumber: string, isConnected: boolean) => void;
 }
 
 interface FlightBlockProps extends BaseBlockProps {
@@ -505,6 +510,12 @@ function App() {
     }));
   }, []);
 
+  const handleDroneConnectionChange = useCallback((blockId: string, serialNumber: string, isConnected: boolean) => {
+    setBlocks(prevBlocks => prevBlocks.map(block =>
+      block.id === blockId ? { ...block, serialNumber, isConnected } : block
+    ));
+  }, []);
+
 
   const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
@@ -736,6 +747,10 @@ function App() {
                         nodeName={node.name}
                         isHighlighted={block.isHighlighted}
                         onDroneNameChange={isDroneStarter ? handleDroneNameChange : undefined}
+                        initialDroneName={isDroneStarter ? block.droneName : undefined}
+                        initialSerialNumber={isDroneStarter ? block.serialNumber : undefined}
+                        initialIsConnected={isDroneStarter ? block.isConnected : undefined}
+                        onConnectionChange={isDroneStarter ? handleDroneConnectionChange : undefined}
                         disableDrag={true}
                         {...extraProps}
                       />
@@ -774,6 +789,9 @@ function App() {
                   isHighlighted={block.isHighlighted}
                   onDroneNameChange={isDroneStarter ? handleDroneNameChange : undefined}
                   initialDroneName={isDroneStarter ? block.droneName : undefined}
+                  initialSerialNumber={isDroneStarter ? block.serialNumber : undefined}
+                  initialIsConnected={isDroneStarter ? block.isConnected : undefined}
+                  onConnectionChange={isDroneStarter ? handleDroneConnectionChange : undefined}
                   {...extraProps}
                 />
               </div>
