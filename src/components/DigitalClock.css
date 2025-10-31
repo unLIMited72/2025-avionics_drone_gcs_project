@@ -103,6 +103,19 @@
   transform: translateX(-2px) scale(0.98);
 }
 
+.settings-panel-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.settings-panel-btn.disabled:hover {
+  background: rgba(0, 212, 255, 0.05);
+  border-color: rgba(0, 212, 255, 0.2);
+  box-shadow: none;
+  transform: none;
+}
+
 .reset-view-btn {
   width: 44px;
   height: 44px;

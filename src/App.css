@@ -106,16 +106,24 @@
 }
 
 .node-bounding-box {
-  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.node-bounding-box:hover {
+  border-color: rgba(0, 212, 255, 0.8) !important;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4) !important;
+}
+
+.node-bounding-box.active {
   animation: nodePulse 2s ease-in-out infinite;
 }
 
 @keyframes nodePulse {
   0%, 100% {
-    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.5);
   }
   50% {
-    box-shadow: 0 0 25px rgba(0, 212, 255, 0.5);
+    box-shadow: 0 0 35px rgba(0, 212, 255, 0.7);
   }
 }
 

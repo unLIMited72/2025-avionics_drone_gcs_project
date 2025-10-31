@@ -7,6 +7,8 @@ interface DigitalClockProps {
   onCreateNode?: () => void;
   onUngroupNode?: () => void;
   isDragSelectMode?: boolean;
+  canCreateNode?: boolean;
+  canUngroup?: boolean;
 }
 
 export default function DigitalClock({
@@ -14,7 +16,9 @@ export default function DigitalClock({
   onDragSelect,
   onCreateNode,
   onUngroupNode,
-  isDragSelectMode
+  isDragSelectMode,
+  canCreateNode = false,
+  canUngroup = false
 }: DigitalClockProps) {
   const [time, setTime] = useState(new Date());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -87,11 +91,13 @@ export default function DigitalClock({
             <span>Drag</span>
           </button>
           <button
-            className="settings-panel-btn"
+            className={`settings-panel-btn ${!canCreateNode ? 'disabled' : ''}`}
             onClick={() => {
+              if (!canCreateNode) return;
               onCreateNode?.();
               setIsSettingsOpen(false);
             }}
+            disabled={!canCreateNode}
             title="Create node from selected boxes"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -101,11 +107,13 @@ export default function DigitalClock({
             <span>Create Node</span>
           </button>
           <button
-            className="settings-panel-btn"
+            className={`settings-panel-btn ${!canUngroup ? 'disabled' : ''}`}
             onClick={() => {
+              if (!canUngroup) return;
               onUngroupNode?.();
               setIsSettingsOpen(false);
             }}
+            disabled={!canUngroup}
             title="Ungroup selected node"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -99,6 +99,9 @@ function App() {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
+  const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
+  const [isDraggingNode, setIsDraggingNode] = useState(false);
+  const [nodeDragStart, setNodeDragStart] = useState({ x: 0, y: 0 });
 
   const clampPan = useCallback((x: number, y: number, currentZoom: number) => {
     if (!mainRef.current) return { x, y };
@@ -190,6 +193,8 @@ function App() {
         if (selectionRect) {
           checkIntersections();
         }
+        setIsDragSelectMode(false);
+        setTimeout(() => setSelectionRect(null), 100);
       };
 
       document.addEventListener('mousemove', handleSelectMouseMove);
@@ -201,6 +206,39 @@ function App() {
       };
     }
   }, [isSelecting, selectionRect, clientToWorld]);
+
+  useEffect(() => {
+    if (isDraggingNode && activeNodeId) {
+      const handleNodeDragMove = (e: MouseEvent) => {
+        const dx = (e.clientX - nodeDragStart.x) / zoom;
+        const dy = (e.clientY - nodeDragStart.y) / zoom;
+
+        const node = nodes.find(n => n.id === activeNodeId);
+        if (!node) return;
+
+        setBlocks(prevBlocks => prevBlocks.map(block => {
+          if (node.childIds.includes(block.id)) {
+            return { ...block, x: block.x + dx, y: block.y + dy };
+          }
+          return block;
+        }));
+
+        setNodeDragStart({ x: e.clientX, y: e.clientY });
+      };
+
+      const handleNodeDragUp = () => {
+        setIsDraggingNode(false);
+      };
+
+      document.addEventListener('mousemove', handleNodeDragMove);
+      document.addEventListener('mouseup', handleNodeDragUp);
+
+      return () => {
+        document.removeEventListener('mousemove', handleNodeDragMove);
+        document.removeEventListener('mouseup', handleNodeDragUp);
+      };
+    }
+  }, [isDraggingNode, activeNodeId, nodeDragStart, nodes, zoom]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -254,6 +292,7 @@ function App() {
     setIsSelecting(false);
     setSelectionRect(null);
     setNodes([]);
+    setActiveNodeId(null);
     setBlocks(prevBlocks => prevBlocks.map(block => ({
       ...block,
       isHighlighted: false,
@@ -263,43 +302,69 @@ function App() {
 
   const handleToggleDragSelect = useCallback(() => {
     setIsDragSelectMode(prev => !prev);
-    setIsSelecting(false);
-    setSelectionRect(null);
-  }, []);
+    if (isSelecting) {
+      setIsSelecting(false);
+    }
+  }, [isSelecting]);
 
   const handleCreateNode = useCallback(() => {
-    const highlightedBlocks = blocks.filter(b => b.isHighlighted);
-    if (highlightedBlocks.length === 0) return;
+    let targetBlocks: DroppedBlock[] = [];
 
-    const nodeId = `node-${Date.now()}`;
+    if (activeNodeId) {
+      const node = nodes.find(n => n.id === activeNodeId);
+      if (node) {
+        targetBlocks = blocks.filter(b => node.childIds.includes(b.id));
+      }
+    } else {
+      targetBlocks = blocks.filter(b => b.isHighlighted);
+    }
+
+    if (targetBlocks.length === 0) return;
+
+    const nodeId = activeNodeId || `node-${Date.now()}`;
     const nodeName = `drone name`;
 
-    setNodes(prev => [...prev, {
-      id: nodeId,
-      childIds: highlightedBlocks.map(b => b.id),
-      name: nodeName
-    }]);
+    setNodes(prev => {
+      const existingNode = prev.find(n => n.id === nodeId);
+      if (existingNode) {
+        return prev.map(n => n.id === nodeId ? {
+          ...n,
+          childIds: Array.from(new Set([...n.childIds, ...targetBlocks.map(b => b.id)]))
+        } : n);
+      }
+      return [...prev, {
+        id: nodeId,
+        childIds: targetBlocks.map(b => b.id),
+        name: nodeName
+      }];
+    });
 
     setBlocks(prevBlocks => prevBlocks.map(block => {
-      if (block.isHighlighted) {
+      if (targetBlocks.some(tb => tb.id === block.id)) {
         return { ...block, nodeId };
       }
       return block;
     }));
-  }, [blocks]);
+
+    setActiveNodeId(nodeId);
+  }, [blocks, nodes, activeNodeId]);
 
   const handleUngroupNode = useCallback(() => {
-    const lastNode = nodes[nodes.length - 1];
-    if (!lastNode) return;
+    if (!activeNodeId) return;
 
-    setNodes(prev => prev.filter(n => n.id !== lastNode.id));
+    const node = nodes.find(n => n.id === activeNodeId);
+    if (!node || node.childIds.length === 0) return;
+
+    setNodes(prev => prev.filter(n => n.id !== activeNodeId));
     setBlocks(prevBlocks => prevBlocks.map(block => {
-      if (block.nodeId === lastNode.id) {
+      if (block.nodeId === activeNodeId) {
         return { ...block, nodeId: undefined, isHighlighted: false };
       }
       return block;
     }));
-  }, [nodes]);
+
+    setActiveNodeId(null);
+  }, [nodes, activeNodeId]);
 
   const getNodeBoundingBox = useCallback((nodeId: string) => {
     const nodeBlocks = blocks.filter(b => b.nodeId === nodeId);
@@ -457,20 +522,34 @@ function App() {
             const bbox = getNodeBoundingBox(node.id);
             if (!bbox) return null;
 
+            const isActive = activeNodeId === node.id;
+
             return (
               <div
                 key={node.id}
-                className="node-bounding-box"
+                className={`node-bounding-box ${isActive ? 'active' : ''}`}
                 style={{
                   position: 'absolute',
                   left: `${bbox.minX}px`,
                   top: `${bbox.minY}px`,
                   width: `${bbox.maxX - bbox.minX}px`,
                   height: `${bbox.maxY - bbox.minY}px`,
-                  border: '2px solid rgba(0, 212, 255, 0.6)',
+                  border: `2px solid rgba(0, 212, 255, ${isActive ? 0.9 : 0.6})`,
                   borderRadius: '8px',
-                  pointerEvents: 'none',
-                  boxShadow: '0 0 15px rgba(0, 212, 255, 0.3)',
+                  pointerEvents: 'all',
+                  cursor: 'move',
+                  boxShadow: `0 0 ${isActive ? 25 : 15}px rgba(0, 212, 255, ${isActive ? 0.5 : 0.3})`,
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setActiveNodeId(node.id);
+                  setIsDraggingNode(true);
+                  setNodeDragStart({ x: e.clientX, y: e.clientY });
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveNodeId(node.id);
                 }}
               />
             );
@@ -542,6 +621,8 @@ function App() {
             onCreateNode={handleCreateNode}
             onUngroupNode={handleUngroupNode}
             isDragSelectMode={isDragSelectMode}
+            canCreateNode={blocks.some(b => b.isHighlighted) || activeNodeId !== null}
+            canUngroup={activeNodeId !== null && (nodes.find(n => n.id === activeNodeId)?.childIds.length ?? 0) > 0}
           />
           <DroneStatus />
         </div>
