@@ -26,7 +26,7 @@ export function useBlockDrag({
 }: UseBlockDragOptions) {
   const [position, setPosition] = useState<Position>({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
+  const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
 
   useEffect(() => {
     setPosition({ x: initialX, y: initialY });
@@ -43,20 +43,27 @@ export function useBlockDrag({
 
     e.preventDefault();
     e.stopPropagation();
-    setDragStart({ x: e.clientX, y: e.clientY });
+
+    const blockElement = target.closest('.workspace-block, .controller-block, .workspace-drone-starter, .workspace-log') as HTMLElement;
+    if (blockElement) {
+      const rect = blockElement.getBoundingClientRect();
+      const offsetX = (e.clientX - rect.left) / zoom;
+      const offsetY = (e.clientY - rect.top) / zoom;
+      setDragOffset({ x: offsetX, y: offsetY });
+    }
+
     setIsDragging(true);
-  }, [shouldPreventDrag, disabled]);
+  }, [shouldPreventDrag, disabled, zoom]);
 
   useEffect(() => {
     if (!isDragging) return;
 
     const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
       e.preventDefault();
-      const deltaX = (e.clientX - dragStart.x) / zoom;
-      const deltaY = (e.clientY - dragStart.y) / zoom;
+      const newX = (e.clientX / zoom) - dragOffset.x;
+      const newY = (e.clientY / zoom) - dragOffset.y;
 
-      setPosition(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
-      setDragStart({ x: e.clientX, y: e.clientY });
+      setPosition({ x: newX, y: newY });
     };
 
     const handleGlobalMouseUp = (e: globalThis.MouseEvent) => {
@@ -72,7 +79,7 @@ export function useBlockDrag({
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [isDragging, dragStart, position, zoom, id, onPositionChange]);
+  }, [isDragging, dragOffset, position, zoom, id, onPositionChange]);
 
   return {
     position,

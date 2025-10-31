@@ -14,8 +14,9 @@ interface WorkspaceDroneStarterProps {
   isMinimized: boolean;
   nodeName?: string;
   isHighlighted?: boolean;
-  onDroneNameChange?: (name: string) => void;
+  onDroneNameChange?: (blockId: string, name: string) => void;
   disableDrag?: boolean;
+  initialDroneName?: string;
 }
 
 
@@ -31,11 +32,12 @@ export default function WorkspaceDroneStarter({
   nodeName,
   isHighlighted,
   onDroneNameChange,
-  disableDrag = false
+  disableDrag = false,
+  initialDroneName = ''
 }: WorkspaceDroneStarterProps) {
   const blockRef = useRef<HTMLDivElement>(null);
   const [serialNumber, setSerialNumber] = useState('');
-  const [droneName, setDroneName] = useState('');
+  const [droneName, setDroneName] = useState(initialDroneName);
   const [isConnected, setIsConnected] = useState(false);
 
   const [px4Connection] = useState<'connected' | 'disconnected'>('disconnected');
@@ -78,15 +80,15 @@ export default function WorkspaceDroneStarter({
   const handleConnect = () => {
     if (serialNumber.trim() && droneName.trim()) {
       setIsConnected(true);
-      onDroneNameChange?.(droneName);
+      onDroneNameChange?.(id, droneName);
     }
   };
 
   useEffect(() => {
     if (isConnected && droneName) {
-      onDroneNameChange?.(droneName);
+      onDroneNameChange?.(id, droneName);
     }
-  }, [droneName, isConnected, onDroneNameChange]);
+  }, [id, droneName, isConnected, onDroneNameChange]);
 
   const handleDisconnect = () => {
     setIsConnected(false);

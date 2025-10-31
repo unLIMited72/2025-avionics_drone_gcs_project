@@ -19,6 +19,7 @@ interface DroppedBlock {
   isMinimized?: boolean;
   nodeId?: string;
   isHighlighted?: boolean;
+  droneName?: string;
 }
 
 interface SelectionRect {
@@ -47,8 +48,9 @@ interface BaseBlockProps {
   isMinimized: boolean;
   nodeName?: string;
   isHighlighted?: boolean;
-  onDroneNameChange?: (name: string) => void;
+  onDroneNameChange?: (blockId: string, name: string) => void;
   disableDrag?: boolean;
+  initialDroneName?: string;
 }
 
 interface FlightBlockProps extends BaseBlockProps {
@@ -382,11 +384,6 @@ function App() {
       return;
     }
 
-    if (!droneName.trim()) {
-      alert('드론 이름이 설정되지 않았습니다. drone starter에서 먼저 지정하세요.');
-      return;
-    }
-
     let targetBlocks: DroppedBlock[] = [];
     let nodeRect: SelectionRect;
 
@@ -426,6 +423,14 @@ function App() {
 
     if (targetBlocks.length === 0) return;
 
+    const droneStarterBlock = targetBlocks.find(b => b.type === 'drone-starter');
+    const nodeName = droneStarterBlock?.droneName || droneName || 'Unnamed Node';
+
+    if (!nodeName.trim() || nodeName === 'Unnamed Node') {
+      alert('드론 이름이 설정되지 않았습니다. drone starter에서 먼저 지정하세요.');
+      return;
+    }
+
     const nodeId = activeNodeId || `node-${Date.now()}`;
 
     setNodes(prev => {
@@ -434,13 +439,13 @@ function App() {
         return prev.map(n => n.id === nodeId ? {
           ...n,
           childIds: Array.from(new Set([...n.childIds, ...targetBlocks.map(b => b.id)])),
-          name: droneName
+          name: nodeName
         } : n);
       }
       return [...prev, {
         id: nodeId,
         childIds: targetBlocks.map(b => b.id),
-        name: droneName,
+        name: nodeName,
         rect: nodeRect,
         transform: { x: 0, y: 0 }
       }];
@@ -487,12 +492,17 @@ function App() {
     return { minX, minY, maxX, maxY };
   }, [nodes]);
 
-  const handleDroneNameChange = useCallback((name: string) => {
+  const handleDroneNameChange = useCallback((blockId: string, name: string) => {
     setDroneName(name);
-    setNodes(prevNodes => prevNodes.map(node => ({
-      ...node,
-      name
-    })));
+    setBlocks(prevBlocks => prevBlocks.map(block =>
+      block.id === blockId ? { ...block, droneName: name } : block
+    ));
+    setNodes(prevNodes => prevNodes.map(node => {
+      if (node.childIds.includes(blockId)) {
+        return { ...node, name };
+      }
+      return node;
+    }));
   }, []);
 
 
@@ -763,6 +773,7 @@ function App() {
                   isMinimized={block.isMinimized || false}
                   isHighlighted={block.isHighlighted}
                   onDroneNameChange={isDroneStarter ? handleDroneNameChange : undefined}
+                  initialDroneName={isDroneStarter ? block.droneName : undefined}
                   {...extraProps}
                 />
               </div>
