@@ -672,24 +672,28 @@ function App() {
                     ? { velocity: 15.2, acceleration: 2.3 }
                     : {};
                   const isDroneStarter = block.type === 'drone-starter';
+                  const relativeX = block.x - bbox.minX;
+                  const relativeY = block.y - bbox.minY;
 
                   return (
                     <div
                       key={block.id}
                       style={{
                         position: 'absolute',
-                        left: `${block.x - bbox.minX}px`,
-                        top: `${block.y - bbox.minY}px`,
+                        left: `${relativeX}px`,
+                        top: `${relativeY}px`,
                         pointerEvents: isDraggingNode && isActive ? 'none' : 'auto'
                       }}
                     >
                       <BlockComponent
                         id={block.id}
-                        initialX={block.x}
-                        initialY={block.y}
+                        initialX={relativeX}
+                        initialY={relativeY}
                         zoom={zoom}
                         onRemove={handleRemoveBlock}
-                        onPositionChange={handleBlockPositionChange}
+                        onPositionChange={(id, newX, newY) => {
+                          handleBlockPositionChange(id, newX + bbox.minX, newY + bbox.minY);
+                        }}
                         onToggleMinimize={handleToggleMinimize}
                         isMinimized={block.isMinimized || false}
                         nodeName={node.name}
