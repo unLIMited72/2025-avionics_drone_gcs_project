@@ -5,7 +5,7 @@ interface DroneStatusProps {
 }
 
 export default function DroneStatus({ connectedDroneCount }: DroneStatusProps) {
-  const countColor = connectedDroneCount > 0 ? '#00A84F' : '#1E90FF';
+  const countColor = connectedDroneCount > 0 ? '#00A84F' : 'rgba(0, 212, 255, 0.4)';
   const iconColor = connectedDroneCount > 0 ? '#00A84F' : '#00d4ff';
   const glowColor = connectedDroneCount > 0 ? 'rgba(0, 168, 79, 0.5)' : 'rgba(0, 212, 255, 0.5)';
   const iconBgColor = connectedDroneCount > 0
