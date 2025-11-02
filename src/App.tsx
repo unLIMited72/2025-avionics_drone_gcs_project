@@ -390,12 +390,9 @@ function App() {
     setIsSelecting(false);
     setSelectionRect(null);
     setFinalRect(null);
-    setNodes([]);
-    setActiveNodeId(null);
     setBlocks(prevBlocks => prevBlocks.map(block => ({
       ...block,
-      isHighlighted: false,
-      nodeId: undefined
+      isHighlighted: false
     })));
   }, []);
 

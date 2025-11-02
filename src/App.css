@@ -189,6 +189,13 @@
   height: 0;
   pointer-events: none;
   transform-origin: center center;
+  will-change: transform;
+}
+
+.workspace-blocks-container * {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .left-panel {
