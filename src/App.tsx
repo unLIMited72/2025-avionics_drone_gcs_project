@@ -1,100 +1,25 @@
-import { useState, useRef, useEffect, useCallback, type DragEvent, type ComponentType } from 'react';
+import { useState, useEffect, useCallback, type DragEvent } from 'react';
 import Header, { type ServerStatus } from './components/Header';
 import Dashboard from './components/Dashboard';
 import DigitalClock from './components/DigitalClock';
 import DroneStatus from './components/DroneStatus';
 import WorkspaceBlock from './components/WorkspaceBlock';
-import WorkspaceDroneStarter from './components/WorkspaceDroneStarter';
-import ControllerBlock from './components/ControllerBlock';
-import WorkspaceLog from './components/WorkspaceLog';
 import Minimap from './components/Minimap';
 import MapView from './components/MapView';
+import { type DroppedBlock } from './types/workspace';
+import { BLOCK_COMPONENT_MAP, getBlockDimensions } from './constants/workspace';
+import { useWorkspaceZoom } from './hooks/useWorkspaceZoom';
+import { useWorkspaceSelection } from './hooks/useWorkspaceSelection';
+import { useWorkspaceNodes } from './hooks/useWorkspaceNodes';
 import './App.css';
-
-interface DroppedBlock {
-  id: string;
-  type: 'flight-state-info' | 'drone-starter' | 'controller' | 'log';
-  x: number;
-  y: number;
-  isMinimized?: boolean;
-  nodeId?: string;
-  isHighlighted?: boolean;
-  droneName?: string;
-  serialNumber?: string;
-  isConnected?: boolean;
-}
-
-interface SelectionRect {
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-}
-
-interface Node {
-  id: string;
-  childIds: string[];
-  name: string;
-  rect: SelectionRect;
-  transform: { x: number; y: number };
-}
-
-interface BaseBlockProps {
-  id: string;
-  initialX: number;
-  initialY: number;
-  zoom: number;
-  onRemove: (id: string) => void;
-  onPositionChange: (id: string, x: number, y: number) => void;
-  onToggleMinimize: (id: string) => void;
-  isMinimized: boolean;
-  nodeName?: string;
-  isHighlighted?: boolean;
-  onDroneNameChange?: (blockId: string, name: string) => void;
-  disableDrag?: boolean;
-  initialDroneName?: string;
-  initialSerialNumber?: string;
-  initialIsConnected?: boolean;
-  onConnectionChange?: (blockId: string, serialNumber: string, isConnected: boolean) => void;
-}
-
-interface FlightBlockProps extends BaseBlockProps {
-  velocity: number;
-  acceleration: number;
-}
-
-function getBlockDimensions(type: string): { width: number; height: number } {
-  switch (type) {
-    case 'log':
-      return { width: 520, height: 450 };
-    case 'controller':
-      return { width: 320, height: 400 };
-    case 'drone-starter':
-      return { width: 280, height: 380 };
-    case 'flight-state-info':
-      return { width: 560, height: 380 };
-    default:
-      return { width: 300, height: 300 };
-  }
-}
-
-const CANVAS_WIDTH = 4000;
-const CANVAS_HEIGHT = 3000;
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 2;
-const ZOOM_SPEED = 0.1;
-
-const BLOCK_COMPONENT_MAP: Record<string, ComponentType<BaseBlockProps | FlightBlockProps>> = {
-  'drone-starter': WorkspaceDroneStarter,
-  'controller': ControllerBlock,
-  'log': WorkspaceLog,
-  'flight-state-info': WorkspaceBlock as ComponentType<BaseBlockProps | FlightBlockProps>
-};
 
 function App() {
   const [serverStatus] = useState<ServerStatus>('disconnected');
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'plan' | 'map'>('plan');
+  const [connectedDrones, setConnectedDrones] = useState<Set<string>>(new Set());
+  const [droneName, setDroneName] = useState<string>('');
+
   const [blocks, setBlocks] = useState<DroppedBlock[]>(() => {
     const saved = localStorage.getItem('workspace-blocks');
     const savedBlocks: DroppedBlock[] = saved ? JSON.parse(saved) : [];
@@ -113,78 +38,42 @@ function App() {
     return savedBlocks;
   });
 
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const mainRef = useRef<HTMLDivElement>(null);
+  const {
+    zoom,
+    pan,
+    isDragging,
+    dragStart,
+    mainRef,
+    setIsDragging,
+    setDragStart,
+    setPan,
+    clampPan,
+    handleWheel,
+    clientToWorld,
+    resetView
+  } = useWorkspaceZoom();
 
-  const [isDragSelectMode, setIsDragSelectMode] = useState(false);
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
-  const [finalRect, setFinalRect] = useState<SelectionRect | null>(null);
-  const [nodes, setNodes] = useState<Node[]>(() => {
-    const saved = localStorage.getItem('workspace-nodes');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
-  const [isDraggingNode, setIsDraggingNode] = useState(false);
-  const [nodeDragStart, setNodeDragStart] = useState({ x: 0, y: 0 });
-  const [nodeTransforms, setNodeTransforms] = useState<Record<string, { x: number; y: number }>>({});
-  const [droneName, setDroneName] = useState<string>('');
-  const [connectedDrones, setConnectedDrones] = useState<Set<string>>(new Set());
+  const {
+    isDragSelectMode,
+    selectionRect,
+    finalRect,
+    setFinalRect,
+    handleToggleDragSelect,
+    startSelection
+  } = useWorkspaceSelection(setBlocks, clientToWorld);
 
-  const clampPan = useCallback((x: number, y: number, currentZoom: number) => {
-    if (!mainRef.current) return { x, y };
+  const {
+    nodes,
+    activeNodeId,
+    isDraggingNode,
+    nodeTransforms,
+    setActiveNodeId,
+    handleCreateNode,
+    handleUngroupNode,
+    getNodeBoundingBox,
+    handleNodePointerDown
+  } = useWorkspaceNodes(blocks, setBlocks, zoom);
 
-    const { clientWidth, clientHeight } = mainRef.current;
-    const maxPanX = (CANVAS_WIDTH * currentZoom - clientWidth) / 2;
-    const maxPanY = (CANVAS_HEIGHT * currentZoom - clientHeight) / 2;
-
-    return {
-      x: Math.max(-maxPanX, Math.min(maxPanX, x)),
-      y: Math.max(-maxPanY, Math.min(maxPanY, y))
-    };
-  }, []);
-
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    if (!mainRef.current) return;
-
-    const rect = mainRef.current.getBoundingClientRect();
-    const pointerX = e.clientX - rect.left;
-    const pointerY = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-
-    const delta = e.deltaY > 0 ? (1 - ZOOM_SPEED) : (1 + ZOOM_SPEED);
-    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * delta));
-
-    if (newZoom === zoom) return;
-
-    const scaleRatio = newZoom / zoom;
-    const newPanX = pointerX - (pointerX - centerX - pan.x) * scaleRatio - centerX;
-    const newPanY = pointerY - (pointerY - centerY - pan.y) * scaleRatio - centerY;
-
-    setZoom(newZoom);
-    setPan(clampPan(newPanX, newPanY, newZoom));
-  }, [zoom, pan, clampPan]);
-
-  const clientToWorld = useCallback((clientX: number, clientY: number) => {
-    if (!mainRef.current) return { x: 0, y: 0 };
-
-    const rect = mainRef.current.getBoundingClientRect();
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-
-    const viewportX = clientX - rect.left;
-    const viewportY = clientY - rect.top;
-
-    const worldX = (viewportX - centerX) / zoom - pan.x;
-    const worldY = (viewportY - centerY) / zoom - pan.y;
-
-    return { x: worldX, y: worldY };
-  }, [pan, zoom]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log')) {
@@ -192,21 +81,9 @@ function App() {
     }
 
     if (isDragSelectMode) {
-      setFinalRect(null);
-      setActiveNodeId(null);
-      setBlocks(prevBlocks => prevBlocks.map(block => ({
-        ...block,
-        isHighlighted: false
-      })));
-
       const worldPos = clientToWorld(e.clientX, e.clientY);
-      setIsSelecting(true);
-      setSelectionRect({
-        startX: worldPos.x,
-        startY: worldPos.y,
-        endX: worldPos.x,
-        endY: worldPos.y
-      });
+      startSelection(worldPos.x, worldPos.y);
+      setActiveNodeId(null);
       return;
     }
 
@@ -214,154 +91,7 @@ function App() {
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
 
-  useEffect(() => {
-    if (isSelecting) {
-      const handleSelectMouseMove = (e: MouseEvent) => {
-        if (!selectionRect) return;
-        const worldPos = clientToWorld(e.clientX, e.clientY);
-        setSelectionRect({
-          ...selectionRect,
-          endX: worldPos.x,
-          endY: worldPos.y
-        });
-      };
 
-      const handleSelectMouseUp = () => {
-        setIsSelecting(false);
-        if (selectionRect) {
-          const selMinX = Math.min(selectionRect.startX, selectionRect.endX);
-          const selMaxX = Math.max(selectionRect.startX, selectionRect.endX);
-          const selMinY = Math.min(selectionRect.startY, selectionRect.endY);
-          const selMaxY = Math.max(selectionRect.startY, selectionRect.endY);
-
-          setBlocks(prevBlocks => prevBlocks.map(block => {
-            if (block.nodeId) return block;
-
-            const dimensions = getBlockDimensions(block.type);
-            const blockMinX = block.x;
-            const blockMaxX = block.x + dimensions.width;
-            const blockMinY = block.y;
-            const blockMaxY = block.y + dimensions.height;
-
-            const intersects = (
-              selMinX < blockMaxX &&
-              selMaxX > blockMinX &&
-              selMinY < blockMaxY &&
-              selMaxY > blockMinY
-            );
-
-            return { ...block, isHighlighted: intersects };
-          }));
-
-          setFinalRect(selectionRect);
-        }
-        setIsDragSelectMode(false);
-        setSelectionRect(null);
-      };
-
-      const handleWindowBlur = () => {
-        setIsSelecting(false);
-        setIsDragSelectMode(false);
-        setSelectionRect(null);
-      };
-
-      document.addEventListener('mousemove', handleSelectMouseMove);
-      document.addEventListener('mouseup', handleSelectMouseUp);
-      window.addEventListener('blur', handleWindowBlur);
-
-      return () => {
-        document.removeEventListener('mousemove', handleSelectMouseMove);
-        document.removeEventListener('mouseup', handleSelectMouseUp);
-        window.removeEventListener('blur', handleWindowBlur);
-      };
-    }
-  }, [isSelecting, selectionRect, clientToWorld]);
-
-  useEffect(() => {
-    if (isDraggingNode && activeNodeId) {
-      const handleNodeDragMove = (e: PointerEvent) => {
-        e.preventDefault();
-        const dx = (e.clientX - nodeDragStart.x) / zoom;
-        const dy = (e.clientY - nodeDragStart.y) / zoom;
-
-        requestAnimationFrame(() => {
-          setNodeTransforms(prev => ({
-            ...prev,
-            [activeNodeId]: {
-              x: (prev[activeNodeId]?.x || 0) + dx,
-              y: (prev[activeNodeId]?.y || 0) + dy
-            }
-          }));
-        });
-
-        setNodeDragStart({ x: e.clientX, y: e.clientY });
-      };
-
-      const handleNodeDragEnd = () => {
-        setIsDraggingNode(false);
-
-        const transform = nodeTransforms[activeNodeId];
-        if (!transform || (transform.x === 0 && transform.y === 0)) {
-          setNodeTransforms(prev => {
-            const next = { ...prev };
-            delete next[activeNodeId];
-            return next;
-          });
-          return;
-        }
-
-        requestAnimationFrame(() => {
-          setBlocks(prevBlocks => prevBlocks.map(block => {
-            const node = nodes.find(n => n.id === activeNodeId);
-            if (node && node.childIds.includes(block.id)) {
-              return { ...block, x: block.x + transform.x, y: block.y + transform.y };
-            }
-            return block;
-          }));
-
-          setNodes(prevNodes => prevNodes.map(n => {
-            if (n.id === activeNodeId) {
-              return {
-                ...n,
-                rect: {
-                  startX: n.rect.startX + transform.x,
-                  startY: n.rect.startY + transform.y,
-                  endX: n.rect.endX + transform.x,
-                  endY: n.rect.endY + transform.y
-                },
-                transform: { x: 0, y: 0 }
-              };
-            }
-            return n;
-          }));
-
-          setNodeTransforms(prev => {
-            const next = { ...prev };
-            delete next[activeNodeId];
-            return next;
-          });
-        });
-      };
-
-      const handleWindowBlur = () => {
-        if (isDraggingNode) {
-          handleNodeDragEnd();
-        }
-      };
-
-      document.addEventListener('pointermove', handleNodeDragMove);
-      document.addEventListener('pointerup', handleNodeDragEnd);
-      document.addEventListener('pointercancel', handleNodeDragEnd);
-      window.addEventListener('blur', handleWindowBlur);
-
-      return () => {
-        document.removeEventListener('pointermove', handleNodeDragMove);
-        document.removeEventListener('pointerup', handleNodeDragEnd);
-        document.removeEventListener('pointercancel', handleNodeDragEnd);
-        window.removeEventListener('blur', handleWindowBlur);
-      };
-    }
-  }, [isDraggingNode, activeNodeId, nodeDragStart, nodes, zoom, nodeTransforms]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -384,131 +114,23 @@ function App() {
 
 
   const handleResetView = useCallback(() => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-    setIsDragSelectMode(false);
-    setIsSelecting(false);
-    setSelectionRect(null);
+    resetView();
     setFinalRect(null);
     setBlocks(prevBlocks => prevBlocks.map(block => ({
       ...block,
       isHighlighted: false
     })));
-  }, []);
-
-  const handleToggleDragSelect = useCallback(() => {
-    setIsDragSelectMode(prev => !prev);
-    if (isSelecting) {
-      setIsSelecting(false);
-    }
-    setActiveNodeId(null);
-    setFinalRect(null);
-  }, [isSelecting]);
-
-  const handleCreateNode = useCallback(() => {
-    if (!finalRect) {
-      alert('먼저 드래그로 영역을 지정하세요.');
-      return;
-    }
-
-    const selMinX = Math.min(finalRect.startX, finalRect.endX);
-    const selMaxX = Math.max(finalRect.startX, finalRect.endX);
-    const selMinY = Math.min(finalRect.startY, finalRect.endY);
-    const selMaxY = Math.max(finalRect.startY, finalRect.endY);
-
-    const targetBlocks = blocks.filter(block => {
-      if (block.nodeId) return false;
-
-      const dimensions = getBlockDimensions(block.type);
-      const blockMinX = block.x;
-      const blockMaxX = block.x + dimensions.width;
-      const blockMinY = block.y;
-      const blockMaxY = block.y + dimensions.height;
-
-      return (
-        selMinX < blockMaxX &&
-        selMaxX > blockMinX &&
-        selMinY < blockMaxY &&
-        selMaxY > blockMinY
-      );
-    });
-
-    if (targetBlocks.length === 0) {
-      alert('선택 영역 내에 블록이 없습니다.');
-      return;
-    }
-
-    const droneStarterBlock = targetBlocks.find(b => b.type === 'drone-starter');
-    const nodeName = droneStarterBlock?.droneName || droneName || 'Unnamed Node';
-
-    if (!nodeName.trim() || nodeName === 'Unnamed Node') {
-      alert('드론 이름이 설정되지 않았습니다. drone starter에서 먼저 지정하세요.');
-      return;
-    }
-
-    const nodeId = `node-${Date.now()}`;
-
-    setNodes(prev => [...prev, {
-      id: nodeId,
-      childIds: targetBlocks.map(b => b.id),
-      name: nodeName,
-      rect: finalRect,
-      transform: { x: 0, y: 0 }
-    }]);
-
-    setBlocks(prevBlocks => prevBlocks.map(block => {
-      if (targetBlocks.some(tb => tb.id === block.id)) {
-        return { ...block, nodeId, isHighlighted: false };
-      }
-      return block;
-    }));
+  }, [resetView]);
 
 
-    setActiveNodeId(nodeId);
-    setFinalRect(null);
-  }, [blocks, finalRect, droneName]);
 
-  const handleUngroupNode = useCallback(() => {
-    if (!activeNodeId) return;
 
-    const node = nodes.find(n => n.id === activeNodeId);
-    if (!node || node.childIds.length === 0) return;
-
-    setNodes(prev => prev.filter(n => n.id !== activeNodeId));
-    setBlocks(prevBlocks => prevBlocks.map(block => {
-      if (block.nodeId === activeNodeId) {
-        return { ...block, nodeId: undefined, isHighlighted: false };
-      }
-      return block;
-    }));
-
-    setActiveNodeId(null);
-  }, [nodes, activeNodeId]);
-
-  const getNodeBoundingBox = useCallback((nodeId: string) => {
-    const node = nodes.find(n => n.id === nodeId);
-    if (!node) return null;
-
-    const rect = node.rect;
-    const minX = Math.min(rect.startX, rect.endX);
-    const maxX = Math.max(rect.startX, rect.endX);
-    const minY = Math.min(rect.startY, rect.endY);
-    const maxY = Math.max(rect.startY, rect.endY);
-
-    return { minX, minY, maxX, maxY };
-  }, [nodes]);
 
   const handleDroneNameChange = useCallback((blockId: string, name: string) => {
     setDroneName(name);
     setBlocks(prevBlocks => prevBlocks.map(block =>
       block.id === blockId ? { ...block, droneName: name } : block
     ));
-    setNodes(prevNodes => prevNodes.map(node => {
-      if (node.childIds.includes(blockId)) {
-        return { ...node, name };
-      }
-      return node;
-    }));
   }, []);
 
   const handleDroneConnectionChange = useCallback((blockId: string, serialNumber: string, isConnected: boolean) => {
@@ -727,14 +349,7 @@ function App() {
                     cursor: 'move',
                     boxShadow: `0 0 ${isActive ? 25 : 15}px rgba(0, 212, 255, ${isActive ? 0.5 : 0.3})`,
                   }}
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-                    setActiveNodeId(node.id);
-                    setIsDraggingNode(true);
-                    setNodeDragStart({ x: e.clientX, y: e.clientY });
-                  }}
+                  onPointerDown={(e) => handleNodePointerDown(e, node.id)}
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveNodeId(node.id);
@@ -870,7 +485,7 @@ function App() {
           <DigitalClock
             onReset={handleResetView}
             onDragSelect={handleToggleDragSelect}
-            onCreateNode={handleCreateNode}
+            onCreateNode={() => handleCreateNode(finalRect, droneName)}
             onUngroupNode={handleUngroupNode}
             isDragSelectMode={isDragSelectMode}
             canCreateNode={finalRect !== null || activeNodeId !== null}
