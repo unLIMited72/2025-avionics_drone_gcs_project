@@ -45,7 +45,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  z-index: 150;
+  z-index: 1000;
 }
 
 .map-settings-btn {
@@ -78,9 +78,9 @@
 }
 
 .map-settings-panel {
-  position: absolute;
-  top: 0;
-  right: calc(100% + 12px);
+  position: fixed;
+  top: 72px;
+  right: 72px;
   background: linear-gradient(135deg, rgba(26, 26, 46, 0.98) 0%, rgba(22, 33, 62, 0.98) 100%);
   border: 1px solid rgba(0, 212, 255, 0.4);
   border-radius: 8px;
@@ -93,6 +93,7 @@
   backdrop-filter: blur(15px);
   min-width: 160px;
   animation: slideIn 0.2s ease-out;
+  z-index: 1001;
 }
 
 @keyframes slideIn {
@@ -295,7 +296,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
               0 0 15px rgba(0, 212, 255, 0.15);
   backdrop-filter: blur(10px);
-  z-index: 150;
+  z-index: 1000;
 }
 
 .map-drone-status-icon {
