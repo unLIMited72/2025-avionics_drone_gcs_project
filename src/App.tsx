@@ -174,12 +174,14 @@ function App() {
     if (!mainRef.current) return { x: 0, y: 0 };
 
     const rect = mainRef.current.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
 
     const viewportX = clientX - rect.left;
     const viewportY = clientY - rect.top;
 
-    const worldX = (viewportX - pan.x * zoom) / zoom;
-    const worldY = (viewportY - pan.y * zoom) / zoom;
+    const worldX = (viewportX - centerX) / zoom - pan.x;
+    const worldY = (viewportY - centerY) / zoom - pan.y;
 
     return { x: worldX, y: worldY };
   }, [pan, zoom]);
@@ -546,12 +548,14 @@ function App() {
     }
 
     const rect = mainRef.current.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
 
     const clientX = e.clientX - rect.left;
     const clientY = e.clientY - rect.top;
 
-    const worldX = (clientX - pan.x * zoom) / zoom;
-    const worldY = (clientY - pan.y * zoom) / zoom;
+    const worldX = (clientX - centerX) / zoom - pan.x;
+    const worldY = (clientY - centerY) / zoom - pan.y;
 
     const dimensions = getBlockDimensions(blockType);
     const x = worldX - dimensions.width / 2;
@@ -676,8 +680,7 @@ function App() {
           <div
             className="workspace-blocks-container"
             style={{
-              transform: `translate(${pan.x * zoom}px, ${pan.y * zoom}px) scale(${zoom})`,
-              transformOrigin: '0 0'
+              transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`
             }}
           >
           {nodes.map(node => {
