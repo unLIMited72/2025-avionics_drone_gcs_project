@@ -97,7 +97,20 @@ function App() {
   const [activeTab, setActiveTab] = useState<'plan' | 'map'>('plan');
   const [blocks, setBlocks] = useState<DroppedBlock[]>(() => {
     const saved = localStorage.getItem('workspace-blocks');
-    return saved ? JSON.parse(saved) : [];
+    const savedBlocks: DroppedBlock[] = saved ? JSON.parse(saved) : [];
+
+    const connected = new Set<string>();
+    savedBlocks.forEach(block => {
+      if (block.type === 'drone-starter' && block.isConnected && block.serialNumber) {
+        connected.add(block.serialNumber);
+      }
+    });
+
+    setTimeout(() => {
+      setConnectedDrones(connected);
+    }, 0);
+
+    return savedBlocks;
   });
 
   const [zoom, setZoom] = useState(1);
@@ -119,19 +132,7 @@ function App() {
   const [nodeDragStart, setNodeDragStart] = useState({ x: 0, y: 0 });
   const [nodeTransforms, setNodeTransforms] = useState<Record<string, { x: number; y: number }>>({});
   const [droneName, setDroneName] = useState<string>('');
-  const [connectedDrones, setConnectedDrones] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('workspace-blocks');
-    if (!saved) return new Set();
-
-    const savedBlocks: DroppedBlock[] = JSON.parse(saved);
-    const connected = new Set<string>();
-    savedBlocks.forEach(block => {
-      if (block.type === 'drone-starter' && block.isConnected && block.serialNumber) {
-        connected.add(block.serialNumber);
-      }
-    });
-    return connected;
-  });
+  const [connectedDrones, setConnectedDrones] = useState<Set<string>>(new Set());
 
   const clampPan = useCallback((x: number, y: number, currentZoom: number) => {
     if (!mainRef.current) return { x, y };
@@ -253,7 +254,6 @@ function App() {
           }));
 
           setFinalRect(selectionRect);
-          setActiveNodeId(null);
         }
         setIsDragSelectMode(false);
         setSelectionRect(null);
@@ -515,18 +515,20 @@ function App() {
   }, []);
 
   const handleDroneConnectionChange = useCallback((blockId: string, serialNumber: string, isConnected: boolean) => {
-    setBlocks(prevBlocks => prevBlocks.map(block =>
-      block.id === blockId ? { ...block, serialNumber, isConnected } : block
-    ));
+    setBlocks(prevBlocks => {
+      const updatedBlocks = prevBlocks.map(block =>
+        block.id === blockId ? { ...block, serialNumber, isConnected } : block
+      );
 
-    setConnectedDrones(prev => {
-      const next = new Set(prev);
-      if (isConnected && serialNumber.trim()) {
-        next.add(serialNumber);
-      } else {
-        next.delete(serialNumber);
-      }
-      return next;
+      const connected = new Set<string>();
+      updatedBlocks.forEach(block => {
+        if (block.type === 'drone-starter' && block.isConnected && block.serialNumber) {
+          connected.add(block.serialNumber);
+        }
+      });
+      setConnectedDrones(connected);
+
+      return updatedBlocks;
     });
   }, []);
 
@@ -575,16 +577,20 @@ function App() {
   };
 
   const handleRemoveBlock = useCallback((id: string) => {
-    const blockToRemove = blocks.find(b => b.id === id);
-    if (blockToRemove?.type === 'drone-starter' && blockToRemove.isConnected && blockToRemove.serialNumber) {
-      setConnectedDrones(prev => {
-        const next = new Set(prev);
-        next.delete(blockToRemove.serialNumber!);
-        return next;
+    setBlocks(prev => {
+      const filtered = prev.filter(block => block.id !== id);
+
+      const connected = new Set<string>();
+      filtered.forEach(block => {
+        if (block.type === 'drone-starter' && block.isConnected && block.serialNumber) {
+          connected.add(block.serialNumber);
+        }
       });
-    }
-    setBlocks(prev => prev.filter(block => block.id !== id));
-  }, [blocks]);
+      setConnectedDrones(connected);
+
+      return filtered;
+    });
+  }, []);
 
   const handleToggleMinimize = useCallback((id: string) => {
     setBlocks(prev => prev.map(block =>
