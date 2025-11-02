@@ -86,14 +86,27 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
     setIsWaypointMode(!isWaypointMode);
   };
 
+  const handleClearWaypoints = () => {
+    if (mapInstanceRef.current) {
+      setWaypoints(prev => {
+        prev.forEach(wp => {
+          mapInstanceRef.current.removeLayer(wp.marker);
+        });
+        localStorage.removeItem('map-waypoints');
+        return [];
+      });
+    }
+    setIsSettingsOpen(false);
+  };
+
   const handleUpload = () => {
     if (serverStatus !== 'connected') {
-      setUploadMessage({ text: '서버 연결이 필요합니다', type: 'error' });
+      setUploadMessage({ text: 'Server connection required', type: 'error' });
       setTimeout(() => setUploadMessage(null), 3000);
       return;
     }
 
-    setUploadMessage({ text: '서버에 전송이 완료되었습니다', type: 'success' });
+    setUploadMessage({ text: 'Successfully uploaded to server', type: 'success' });
     setTimeout(() => setUploadMessage(null), 3000);
   };
 
@@ -101,29 +114,79 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
     <div className="map-scope">
       <div ref={mapContainerRef} className="map-container" />
 
-      <button
-        className="map-settings-button"
-        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-      >
-        ⚙️
-      </button>
+      <div className="map-clock-controls">
+        <button
+          className="map-settings-btn"
+          onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+          title="Settings"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
+          </svg>
+        </button>
 
-      {isSettingsOpen && (
-        <div className="map-settings-panel">
-          <button
-            className={`map-settings-option ${isWaypointMode ? 'active' : ''}`}
-            onClick={handleWaypointToggle}
-          >
-            {isWaypointMode ? '✓ ' : ''}웨이포인트 모드
-          </button>
-          <button
-            className="map-settings-option upload"
-            onClick={handleUpload}
-          >
-            업로드
-          </button>
+        {isSettingsOpen && (
+          <div className="map-settings-panel">
+            <button
+              className={`map-settings-panel-btn ${isWaypointMode ? 'active' : ''}`}
+              onClick={handleWaypointToggle}
+              title="Toggle waypoint mode"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              <span>Waypoint</span>
+            </button>
+            <button
+              className="map-settings-panel-btn clear"
+              onClick={handleClearWaypoints}
+              title="Clear all waypoints"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+              <span>Clear</span>
+            </button>
+            <button
+              className={`map-settings-panel-btn upload ${serverStatus !== 'connected' ? 'disabled' : ''}`}
+              onClick={handleUpload}
+              disabled={serverStatus !== 'connected'}
+              title="Upload waypoints to server"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span>Upload</span>
+            </button>
+          </div>
+        )}
+
+        <button
+          className="map-reset-view-btn"
+          onClick={onResetView}
+          title="Reset view to default"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+            <path d="M3 21v-5h5"/>
+          </svg>
+        </button>
+        <div className="map-digital-clock">
+          <div className="map-clock-display">
+            <span className="map-time-segment">{currentTime.split(':')[0]}</span>
+            <span className="map-time-separator">:</span>
+            <span className="map-time-segment">{currentTime.split(':')[1]}</span>
+            <span className="map-time-separator">:</span>
+            <span className="map-time-segment">{currentTime.split(':')[2]}</span>
+          </div>
         </div>
-      )}
+      </div>
 
       {uploadMessage && (
         <div className={`map-upload-message ${uploadMessage.type}`}>
@@ -131,20 +194,18 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
         </div>
       )}
 
-      <button
-        className="map-reset-button"
-        onClick={onResetView}
-      >
-        Reset View
-      </button>
-
-      <div className="map-digital-clock">
-        {currentTime}
-      </div>
-
       <div className="map-drone-status">
-        <div className="map-drone-count">{connectedDroneCount}</div>
-        <div className="map-drone-label">DRONES</div>
+        <div className="map-drone-status-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div className="map-drone-status-display">
+          <div className="map-drone-status-label">CONNECTED</div>
+          <div className="map-drone-status-count">{connectedDroneCount}</div>
+        </div>
       </div>
     </div>
   );
