@@ -878,7 +878,13 @@ function App() {
           />
           <DroneStatus connectedDroneCount={connectedDrones.size} />
         </div>
-        {activeTab === 'map' && <MapView />}
+        {activeTab === 'map' && (
+          <MapView
+            serverStatus={serverStatus}
+            onResetView={handleResetView}
+            connectedDroneCount={connectedDrones.size}
+          />
+        )}
       </main>
     </div>
   );
