@@ -206,7 +206,10 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
           <div className="map-drone-status-label">CONNECTED</div>
           <div
             className="map-drone-status-count"
-            style={{ color: connectedDroneCount === 0 ? 'rgba(0, 212, 255, 0.4)' : '#00d4ff' }}
+            style={{
+              color: connectedDroneCount === 0 ? 'rgba(0, 212, 255, 0.4)' : '#00d4ff',
+              textShadow: connectedDroneCount === 0 ? 'none' : '0 0 8px rgba(0, 212, 255, 0.5)'
+            }}
           >
             {connectedDroneCount}
           </div>
