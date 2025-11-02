@@ -119,6 +119,7 @@ function App() {
   const [nodeDragStart, setNodeDragStart] = useState({ x: 0, y: 0 });
   const [nodeTransforms, setNodeTransforms] = useState<Record<string, { x: number; y: number }>>({});
   const [droneName, setDroneName] = useState<string>('');
+  const [connectedDrones, setConnectedDrones] = useState<Set<string>>(new Set());
 
   const clampPan = useCallback((x: number, y: number, currentZoom: number) => {
     if (!mainRef.current) return { x, y };
@@ -514,6 +515,16 @@ function App() {
     setBlocks(prevBlocks => prevBlocks.map(block =>
       block.id === blockId ? { ...block, serialNumber, isConnected } : block
     ));
+
+    setConnectedDrones(prev => {
+      const next = new Set(prev);
+      if (isConnected && serialNumber.trim()) {
+        next.add(serialNumber);
+      } else {
+        next.delete(serialNumber);
+      }
+      return next;
+    });
   }, []);
 
 
@@ -561,8 +572,16 @@ function App() {
   };
 
   const handleRemoveBlock = useCallback((id: string) => {
+    const blockToRemove = blocks.find(b => b.id === id);
+    if (blockToRemove?.type === 'drone-starter' && blockToRemove.isConnected && blockToRemove.serialNumber) {
+      setConnectedDrones(prev => {
+        const next = new Set(prev);
+        next.delete(blockToRemove.serialNumber!);
+        return next;
+      });
+    }
     setBlocks(prev => prev.filter(block => block.id !== id));
-  }, []);
+  }, [blocks]);
 
   const handleToggleMinimize = useCallback((id: string) => {
     setBlocks(prev => prev.map(block =>
@@ -851,7 +870,7 @@ function App() {
             canCreateNode={finalRect !== null || activeNodeId !== null}
             canUngroup={activeNodeId !== null && (nodes.find(n => n.id === activeNodeId)?.childIds.length ?? 0) > 0}
           />
-          <DroneStatus />
+          <DroneStatus connectedDroneCount={connectedDrones.size} />
         </div>
         {activeTab === 'map' && <MapView />}
       </main>
