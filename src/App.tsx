@@ -164,11 +164,11 @@ function App() {
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
 
-    const offsetX = clientX - rect.left - centerX;
-    const offsetY = clientY - rect.top - centerY;
+    const viewportX = clientX - rect.left;
+    const viewportY = clientY - rect.top;
 
-    const worldX = (offsetX - pan.x) / zoom;
-    const worldY = (offsetY - pan.y) / zoom;
+    const worldX = (viewportX - centerX - pan.x) / zoom;
+    const worldY = (viewportY - centerY - pan.y) / zoom;
 
     return { x: worldX, y: worldY };
   }, [pan, zoom]);
@@ -215,6 +215,8 @@ function App() {
           const selMaxY = Math.max(selectionRect.startY, selectionRect.endY);
 
           setBlocks(prevBlocks => prevBlocks.map(block => {
+            if (block.nodeId) return block;
+
             const dimensions = getBlockDimensions(block.type);
             const blockMinX = block.x;
             const blockMaxX = block.x + dimensions.width;
@@ -232,6 +234,7 @@ function App() {
           }));
 
           setFinalRect(selectionRect);
+          setActiveNodeId(null);
         }
         setIsDragSelectMode(false);
         setSelectionRect(null);
@@ -385,49 +388,37 @@ function App() {
   }, [isSelecting]);
 
   const handleCreateNode = useCallback(() => {
-    if (!finalRect && !activeNodeId) {
+    if (!finalRect) {
       alert('먼저 드래그로 영역을 지정하세요.');
       return;
     }
 
-    let targetBlocks: DroppedBlock[] = [];
-    let nodeRect: SelectionRect;
+    const selMinX = Math.min(finalRect.startX, finalRect.endX);
+    const selMaxX = Math.max(finalRect.startX, finalRect.endX);
+    const selMinY = Math.min(finalRect.startY, finalRect.endY);
+    const selMaxY = Math.max(finalRect.startY, finalRect.endY);
 
-    if (activeNodeId) {
-      const node = nodes.find(n => n.id === activeNodeId);
-      if (node) {
-        targetBlocks = blocks.filter(b => node.childIds.includes(b.id));
-        nodeRect = node.rect;
-      } else {
-        return;
-      }
-    } else if (finalRect) {
-      const selMinX = Math.min(finalRect.startX, finalRect.endX);
-      const selMaxX = Math.max(finalRect.startX, finalRect.endX);
-      const selMinY = Math.min(finalRect.startY, finalRect.endY);
-      const selMaxY = Math.max(finalRect.startY, finalRect.endY);
+    const targetBlocks = blocks.filter(block => {
+      if (block.nodeId) return false;
 
-      targetBlocks = blocks.filter(block => {
-        const dimensions = getBlockDimensions(block.type);
-        const blockMinX = block.x;
-        const blockMaxX = block.x + dimensions.width;
-        const blockMinY = block.y;
-        const blockMaxY = block.y + dimensions.height;
+      const dimensions = getBlockDimensions(block.type);
+      const blockMinX = block.x;
+      const blockMaxX = block.x + dimensions.width;
+      const blockMinY = block.y;
+      const blockMaxY = block.y + dimensions.height;
 
-        return (
-          selMinX < blockMaxX &&
-          selMaxX > blockMinX &&
-          selMinY < blockMaxY &&
-          selMaxY > blockMinY
-        );
-      });
+      return (
+        selMinX < blockMaxX &&
+        selMaxX > blockMinX &&
+        selMinY < blockMaxY &&
+        selMaxY > blockMinY
+      );
+    });
 
-      nodeRect = finalRect;
-    } else {
+    if (targetBlocks.length === 0) {
+      alert('선택 영역 내에 블록이 없습니다.');
       return;
     }
-
-    if (targetBlocks.length === 0) return;
 
     const droneStarterBlock = targetBlocks.find(b => b.type === 'drone-starter');
     const nodeName = droneStarterBlock?.droneName || droneName || 'Unnamed Node';
@@ -437,36 +428,26 @@ function App() {
       return;
     }
 
-    const nodeId = activeNodeId || `node-${Date.now()}`;
+    const nodeId = `node-${Date.now()}`;
 
-    setNodes(prev => {
-      const existingNode = prev.find(n => n.id === nodeId);
-      if (existingNode) {
-        return prev.map(n => n.id === nodeId ? {
-          ...n,
-          childIds: Array.from(new Set([...n.childIds, ...targetBlocks.map(b => b.id)])),
-          name: nodeName
-        } : n);
-      }
-      return [...prev, {
-        id: nodeId,
-        childIds: targetBlocks.map(b => b.id),
-        name: nodeName,
-        rect: nodeRect,
-        transform: { x: 0, y: 0 }
-      }];
-    });
+    setNodes(prev => [...prev, {
+      id: nodeId,
+      childIds: targetBlocks.map(b => b.id),
+      name: nodeName,
+      rect: finalRect,
+      transform: { x: 0, y: 0 }
+    }]);
 
     setBlocks(prevBlocks => prevBlocks.map(block => {
       if (targetBlocks.some(tb => tb.id === block.id)) {
-        return { ...block, nodeId };
+        return { ...block, nodeId, isHighlighted: false };
       }
       return block;
     }));
 
     setActiveNodeId(nodeId);
     setFinalRect(null);
-  }, [blocks, nodes, activeNodeId, finalRect, droneName]);
+  }, [blocks, finalRect, droneName]);
 
   const handleUngroupNode = useCallback(() => {
     if (!activeNodeId) return;
