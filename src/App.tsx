@@ -174,14 +174,12 @@ function App() {
     if (!mainRef.current) return { x: 0, y: 0 };
 
     const rect = mainRef.current.getBoundingClientRect();
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
 
     const viewportX = clientX - rect.left;
     const viewportY = clientY - rect.top;
 
-    const worldX = (viewportX - centerX - pan.x) / zoom;
-    const worldY = (viewportY - centerY - pan.y) / zoom;
+    const worldX = (viewportX - pan.x * zoom) / zoom;
+    const worldY = (viewportY - pan.y * zoom) / zoom;
 
     return { x: worldX, y: worldY };
   }, [pan, zoom]);
@@ -548,18 +546,16 @@ function App() {
     }
 
     const rect = mainRef.current.getBoundingClientRect();
-    const viewportCenterX = rect.width / 2;
-    const viewportCenterY = rect.height / 2;
 
     const clientX = e.clientX - rect.left;
     const clientY = e.clientY - rect.top;
 
-    const canvasX = (clientX - viewportCenterX) / zoom - pan.x;
-    const canvasY = (clientY - viewportCenterY) / zoom - pan.y;
+    const worldX = (clientX - pan.x * zoom) / zoom;
+    const worldY = (clientY - pan.y * zoom) / zoom;
 
     const dimensions = getBlockDimensions(blockType);
-    const x = canvasX - dimensions.width / 2;
-    const y = canvasY - dimensions.height / 2;
+    const x = worldX - dimensions.width / 2;
+    const y = worldY - dimensions.height / 2;
 
     if (!isFinite(x) || !isFinite(y)) {
       console.error('Invalid drop coordinates:', { x, y, clientX, clientY, zoom, pan });
@@ -680,7 +676,8 @@ function App() {
           <div
             className="workspace-blocks-container"
             style={{
-              transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`
+              transform: `translate(${pan.x * zoom}px, ${pan.y * zoom}px) scale(${zoom})`,
+              transformOrigin: '0 0'
             }}
           >
           {nodes.map(node => {
