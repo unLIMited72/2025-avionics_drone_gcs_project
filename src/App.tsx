@@ -179,6 +179,13 @@ function App() {
     }
 
     if (isDragSelectMode) {
+      setFinalRect(null);
+      setActiveNodeId(null);
+      setBlocks(prevBlocks => prevBlocks.map(block => ({
+        ...block,
+        isHighlighted: false
+      })));
+
       const worldPos = clientToWorld(e.clientX, e.clientY);
       setIsSelecting(true);
       setSelectionRect({
@@ -385,6 +392,8 @@ function App() {
     if (isSelecting) {
       setIsSelecting(false);
     }
+    setActiveNodeId(null);
+    setFinalRect(null);
   }, [isSelecting]);
 
   const handleCreateNode = useCallback(() => {
@@ -444,6 +453,20 @@ function App() {
       }
       return block;
     }));
+
+    const connectedDroneStarters = targetBlocks.filter(b =>
+      b.type === 'drone-starter' && b.isConnected && b.serialNumber
+    );
+
+    setConnectedDrones(prev => {
+      const next = new Set(prev);
+      connectedDroneStarters.forEach(block => {
+        if (block.serialNumber) {
+          next.add(block.serialNumber);
+        }
+      });
+      return next;
+    });
 
     setActiveNodeId(nodeId);
     setFinalRect(null);
@@ -582,6 +605,14 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem('workspace-blocks', JSON.stringify(blocks));
+
+    const connected = new Set<string>();
+    blocks.forEach(block => {
+      if (block.type === 'drone-starter' && block.isConnected && block.serialNumber) {
+        connected.add(block.serialNumber);
+      }
+    });
+    setConnectedDrones(connected);
   }, [blocks]);
 
   useEffect(() => {
