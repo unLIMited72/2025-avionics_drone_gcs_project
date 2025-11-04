@@ -3,7 +3,6 @@ import FlightStateBlock from './FlightStateBlock';
 import DroneStarterBlock from './DroneStarterBlock';
 import ControllerBlockButton from './ControllerBlockButton';
 import LogBlock from './LogBlock';
-import DronePackBlock from './DronePackBlock';
 
 interface DashboardProps {
   isOpen: boolean;
@@ -19,7 +18,6 @@ export default function Dashboard({ isOpen }: DashboardProps) {
       <div className="dashboard-content">
         <div className="blocks-section">
           <div className="blocks-list">
-            <DronePackBlock />
             <DroneStarterBlock />
             <FlightStateBlock />
             <ControllerBlockButton />

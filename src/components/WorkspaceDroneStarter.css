@@ -10,12 +10,10 @@
   backdrop-filter: blur(10px);
   cursor: move;
   user-select: none;
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
   z-index: 10;
   pointer-events: auto;
-  transform-origin: top left;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  will-change: transform;
 }
 
 .workspace-drone-starter:hover {
@@ -758,30 +756,4 @@
     inset 0 2px 4px rgba(255, 255, 255, 0.3),
     inset 0 -2px 4px rgba(0, 0, 0, 0.3);
   animation: pulse 1s ease-in-out infinite;
-}
-.header-actions {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.workspace-block-minimize {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  background: rgba(100, 150, 255, 0.1);
-  border: 1px solid rgba(100, 150, 255, 0.3);
-  border-radius: 4px;
-  color: #6496ff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.workspace-block-minimize:hover {
-  background: rgba(100, 150, 255, 0.2);
-  border-color: rgba(100, 150, 255, 0.5);
-  color: #8ab4ff;
 }
