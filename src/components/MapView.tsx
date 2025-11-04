@@ -1,127 +1,217 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './MapView.css';
 
 interface MapViewProps {
-  dronePosition: { lat: number; lon: number };
-  altitude: number;
+  serverStatus: 'connected' | 'disconnected' | 'connecting';
+  onResetView: () => void;
+  connectedDroneCount: number;
 }
 
-export default function MapView({ dronePosition, altitude }: MapViewProps) {
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const mapRef = useRef<HTMLDivElement>(null);
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom(prevZoom => Math.min(Math.max(0.5, prevZoom * delta), 3));
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-  };
+export default function MapView({ serverStatus, onResetView, connectedDroneCount }: MapViewProps) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isWaypointMode, setIsWaypointMode] = useState(false);
+  const [, setWaypoints] = useState<Array<{lat: number; lng: number; marker: any}>>([]);
+  const [uploadMessage, setUploadMessage] = useState<{text: string; type: 'success' | 'error'} | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString('en-US', { hour12: false }));
 
   useEffect(() => {
-    const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
-      if (isDragging) {
-        setPan({
-          x: e.clientX - dragStart.x,
-          y: e.clientY - dragStart.y
-        });
-      }
-    };
+    if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    const handleGlobalMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleGlobalMouseMove);
-      document.addEventListener('mouseup', handleGlobalMouseUp);
+    const L = (window as any).L;
+    if (!L) {
+      console.error('Leaflet not loaded');
+      return;
     }
+
+    const map = L.map(mapContainerRef.current, {
+      center: [37.7749, -122.4194],
+      zoom: 13,
+      zoomControl: true,
+    });
+
+    L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '&copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+      maxZoom: 18,
+    }).addTo(map);
+
+    const savedWaypoints = localStorage.getItem('map-waypoints');
+    if (savedWaypoints) {
+      const points = JSON.parse(savedWaypoints);
+      const markers = points.map((point: {lat: number; lng: number}) => {
+        const marker = L.marker([point.lat, point.lng]).addTo(map);
+        return { lat: point.lat, lng: point.lng, marker };
+      });
+      setWaypoints(markers);
+    }
+
+    map.on('click', (e: any) => {
+      if (!isWaypointMode) return;
+      const marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+      setWaypoints(prev => {
+        const newWaypoints = [...prev, { lat: e.latlng.lat, lng: e.latlng.lng, marker }];
+        localStorage.setItem('map-waypoints', JSON.stringify(newWaypoints.map(w => ({ lat: w.lat, lng: w.lng }))));
+        return newWaypoints;
+      });
+    });
+
+    mapInstanceRef.current = map;
 
     return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
     };
-  }, [isDragging, dragStart]);
+  }, [isWaypointMode]);
 
   useEffect(() => {
-    const mapElement = mapRef.current;
-    if (mapElement) {
-      mapElement.style.cursor = isDragging ? 'grabbing' : 'grab';
+    if (mapInstanceRef.current) {
+      setTimeout(() => {
+        mapInstanceRef.current.invalidateSize();
+      }, 100);
     }
-  }, [isDragging]);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString('en-US', { hour12: false }));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleWaypointToggle = () => {
+    setIsWaypointMode(!isWaypointMode);
+  };
+
+  const handleClearWaypoints = () => {
+    if (mapInstanceRef.current) {
+      setWaypoints(prev => {
+        prev.forEach(wp => {
+          mapInstanceRef.current.removeLayer(wp.marker);
+        });
+        localStorage.removeItem('map-waypoints');
+        return [];
+      });
+    }
+    setIsSettingsOpen(false);
+  };
+
+  const handleUpload = () => {
+    if (serverStatus !== 'connected') {
+      setUploadMessage({ text: 'Server connection required', type: 'error' });
+      setTimeout(() => setUploadMessage(null), 3000);
+      return;
+    }
+
+    setUploadMessage({ text: 'Successfully uploaded to server', type: 'success' });
+    setTimeout(() => setUploadMessage(null), 3000);
+  };
 
   return (
-    <div className="map-view">
-      <div className="map-header">
-        <h2>Map View</h2>
-        <div className="zoom-controls">
-          <button
-            className="zoom-btn"
-            onClick={() => setZoom(prev => Math.min(3, prev * 1.2))}
-            aria-label="Zoom in"
-          >
-            +
-          </button>
-          <span className="zoom-level">{Math.round(zoom * 100)}%</span>
-          <button
-            className="zoom-btn"
-            onClick={() => setZoom(prev => Math.max(0.5, prev / 1.2))}
-            aria-label="Zoom out"
-          >
-            −
-          </button>
-          <button
-            className="reset-btn"
-            onClick={() => {
-              setZoom(1);
-              setPan({ x: 0, y: 0 });
-            }}
-            aria-label="Reset view"
-          >
-            Reset
-          </button>
+    <div className="map-scope">
+      <div ref={mapContainerRef} className="map-container" />
+
+      <div className="map-clock-controls">
+        <button
+          className="map-settings-btn"
+          onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+          title="Settings"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+
+        {isSettingsOpen && (
+          <div className="map-settings-panel">
+            <button
+              className={`map-settings-panel-btn ${isWaypointMode ? 'active' : ''}`}
+              onClick={handleWaypointToggle}
+              title="Toggle waypoint mode"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              <span>Waypoint</span>
+            </button>
+            <button
+              className="map-settings-panel-btn clear"
+              onClick={handleClearWaypoints}
+              title="Clear all waypoints"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+              <span>Clear</span>
+            </button>
+            <button
+              className={`map-settings-panel-btn upload ${serverStatus !== 'connected' ? 'disabled' : ''}`}
+              onClick={handleUpload}
+              disabled={serverStatus !== 'connected'}
+              title="Upload waypoints to server"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span>Upload</span>
+            </button>
+          </div>
+        )}
+
+        <button
+          className="map-reset-view-btn"
+          onClick={onResetView}
+          title="Reset view to default"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+            <path d="M3 21v-5h5"/>
+          </svg>
+        </button>
+        <div className="map-digital-clock">
+          <div className="map-clock-display">
+            <span className="map-time-segment">{currentTime.split(':')[0]}</span>
+            <span className="map-time-separator">:</span>
+            <span className="map-time-segment">{currentTime.split(':')[1]}</span>
+            <span className="map-time-separator">:</span>
+            <span className="map-time-segment">{currentTime.split(':')[2]}</span>
+          </div>
         </div>
       </div>
-      <div className="map-container">
-        <div
-          ref={mapRef}
-          className="map-placeholder"
-          onWheel={handleWheel}
-          onMouseDown={handleMouseDown}
-          style={{
-            transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
-            transformOrigin: 'center center'
-          }}
-        >
-          <div className="drone-marker" style={{
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)'
-          }}>
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="16" r="14" stroke="#00d4ff" strokeWidth="2" fill="rgba(0, 212, 255, 0.2)"/>
-              <path d="M16 8 L20 16 L16 14 L12 16 Z" fill="#00d4ff"/>
-            </svg>
-          </div>
-          <div className="coordinate-display">
-            <div className="coord-item">
-              <span className="coord-label">LAT</span>
-              <span className="coord-value">{dronePosition.lat.toFixed(6)}</span>
-            </div>
-            <div className="coord-item">
-              <span className="coord-label">LON</span>
-              <span className="coord-value">{dronePosition.lon.toFixed(6)}</span>
-            </div>
-            <div className="coord-item">
-              <span className="coord-label">ALT</span>
-              <span className="coord-value">{altitude.toFixed(1)} m</span>
-            </div>
+
+      {uploadMessage && (
+        <div className={`map-upload-message ${uploadMessage.type}`}>
+          {uploadMessage.text}
+        </div>
+      )}
+
+      <div className="map-drone-status">
+        <div className="map-drone-status-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div className="map-drone-status-display">
+          <div className="map-drone-status-label">CONNECTED</div>
+          <div
+            className="map-drone-status-count"
+            style={{
+              color: connectedDroneCount === 0 ? 'rgba(0, 212, 255, 0.4)' : '#00d4ff',
+              textShadow: connectedDroneCount === 0 ? 'none' : '0 0 8px rgba(0, 212, 255, 0.5)'
+            }}
+          >
+            {connectedDroneCount}
           </div>
         </div>
       </div>

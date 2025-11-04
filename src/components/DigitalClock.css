@@ -1,11 +1,119 @@
 .clock-controls {
-  position: absolute;
-  top: 16px;
+  position: fixed;
+  top: 72px;
   right: 16px;
   display: flex;
   align-items: center;
   gap: 12px;
-  z-index: 50;
+  z-index: 150;
+}
+
+.settings-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  color: #00d4ff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
+              0 0 15px rgba(0, 212, 255, 0.15);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.settings-btn:hover {
+  background: linear-gradient(135deg, rgba(32, 32, 56, 0.95) 0%, rgba(28, 43, 72, 0.95) 100%);
+  border-color: rgba(0, 212, 255, 0.6);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5),
+              0 0 20px rgba(0, 212, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.settings-btn:active {
+  transform: scale(0.95);
+}
+
+.settings-panel {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 12px);
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.98) 0%, rgba(22, 33, 62, 0.98) 100%);
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6),
+              0 0 20px rgba(0, 212, 255, 0.2);
+  backdrop-filter: blur(15px);
+  min-width: 160px;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.settings-panel-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 6px;
+  color: #00d4ff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.settings-panel-btn:hover {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: rgba(0, 212, 255, 0.4);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+  transform: translateX(-2px);
+}
+
+.settings-panel-btn.active {
+  background: rgba(0, 212, 255, 0.25);
+  border-color: rgba(0, 212, 255, 0.6);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+}
+
+.settings-panel-btn svg {
+  flex-shrink: 0;
+}
+
+.settings-panel-btn:active {
+  transform: translateX(-2px) scale(0.98);
+}
+
+.settings-panel-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.settings-panel-btn.disabled:hover {
+  background: rgba(0, 212, 255, 0.05);
+  border-color: rgba(0, 212, 255, 0.2);
+  box-shadow: none;
+  transform: none;
 }
 
 .reset-view-btn {

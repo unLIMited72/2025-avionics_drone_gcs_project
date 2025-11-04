@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect, type MouseEvent } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useBlockDrag } from '../hooks/useBlockDrag';
+import { createHeaderKeyDownHandler, createStopPropagationHandler, shouldPreventDragFromInteractiveElements } from '../utils/blockUtils';
 import './WorkspaceDroneStarter.css';
 
 interface WorkspaceDroneStarterProps {
@@ -8,6 +10,16 @@ interface WorkspaceDroneStarterProps {
   zoom: number;
   onRemove: (id: string) => void;
   onPositionChange: (id: string, x: number, y: number) => void;
+  onToggleMinimize: (id: string) => void;
+  isMinimized: boolean;
+  nodeName?: string;
+  isHighlighted?: boolean;
+  onDroneNameChange?: (blockId: string, name: string) => void;
+  disableDrag?: boolean;
+  initialDroneName?: string;
+  initialSerialNumber?: string;
+  initialIsConnected?: boolean;
+  onConnectionChange?: (blockId: string, serialNumber: string, isConnected: boolean) => void;
 }
 
 
@@ -17,19 +29,22 @@ export default function WorkspaceDroneStarter({
   initialY,
   zoom,
   onRemove,
-  onPositionChange
+  onPositionChange,
+  onToggleMinimize,
+  isMinimized,
+  nodeName,
+  isHighlighted,
+  onDroneNameChange,
+  disableDrag = false,
+  initialDroneName = '',
+  initialSerialNumber = '',
+  initialIsConnected = false,
+  onConnectionChange
 }: WorkspaceDroneStarterProps) {
-  const [position, setPosition] = useState({ x: initialX, y: initialY });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const blockRef = useRef<HTMLDivElement>(null);
-
-  const [serialNumber, setSerialNumber] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
-
-  const [pitch, setPitch] = useState(0);
-  const [roll, setRoll] = useState(0);
-  const [heading, setHeading] = useState(0);
+  const [serialNumber, setSerialNumber] = useState(initialSerialNumber);
+  const [droneName, setDroneName] = useState(initialDroneName);
+  const [isConnected, setIsConnected] = useState(initialIsConnected);
 
   const [px4Connection] = useState<'connected' | 'disconnected'>('disconnected');
   const [failsafe] = useState<'normal' | 'active'>('normal');
@@ -51,84 +66,47 @@ export default function WorkspaceDroneStarter({
   const [armState, setArmState] = useState<'disarmed' | 'arming' | 'armed' | 'disarming'>('disarmed');
   const [flightMode] = useState<'Pre-flight' | 'Offboard' | 'RTL - Land'>('Pre-flight');
 
-  useEffect(() => {
-    setPosition({ x: initialX, y: initialY });
-  }, [initialX, initialY]);
+  const { position, isDragging, handleMouseDown } = useBlockDrag({
+    initialX,
+    initialY,
+    zoom,
+    id,
+    onPositionChange,
+    shouldPreventDrag: shouldPreventDragFromInteractiveElements,
+    disabled: disableDrag
+  });
 
-  const handleMouseDown = (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.closest('input, button')) {
-      return;
-    }
-
-    setDragStart({ x: e.clientX, y: e.clientY });
-    setIsDragging(true);
-    e.stopPropagation();
-  };
-
-  useEffect(() => {
-    const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
-      if (isDragging) {
-        const deltaX = (e.clientX - dragStart.x) / zoom;
-        const deltaY = (e.clientY - dragStart.y) / zoom;
-
-        const newX = position.x + deltaX;
-        const newY = position.y + deltaY;
-
-        setPosition({ x: newX, y: newY });
-        setDragStart({ x: e.clientX, y: e.clientY });
-      }
-    };
-
-    const handleGlobalMouseUp = () => {
-      if (isDragging) {
-        onPositionChange(id, position.x, position.y);
-      }
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleGlobalMouseMove);
-      document.addEventListener('mouseup', handleGlobalMouseUp);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-    };
-  }, [isDragging, dragStart, position, zoom, id, onPositionChange]);
-
-  const handleRemove = (e: MouseEvent) => {
-    e.stopPropagation();
-    onRemove(id);
-  };
+  const handleRemove = createStopPropagationHandler(() => onRemove(id));
+  const handleMinimize = createStopPropagationHandler(() => onToggleMinimize(id));
+  const handleHeaderKeyDown = createHeaderKeyDownHandler(
+    () => onToggleMinimize(id),
+    () => onRemove(id)
+  );
 
   const handleConnect = () => {
-    if (serialNumber.trim()) {
+    if (serialNumber.trim() && droneName.trim()) {
       setIsConnected(true);
+      onDroneNameChange?.(id, droneName);
+      onConnectionChange?.(id, serialNumber, true);
     }
   };
+
+  useEffect(() => {
+    if (isConnected && droneName) {
+      onDroneNameChange?.(id, droneName);
+    }
+  }, [id, droneName, isConnected, onDroneNameChange]);
+
+  useEffect(() => {
+    if (onConnectionChange) {
+      onConnectionChange(id, serialNumber, isConnected);
+    }
+  }, [id, serialNumber, isConnected, onConnectionChange]);
 
   const handleDisconnect = () => {
     setIsConnected(false);
+    onConnectionChange?.(id, serialNumber, false);
   };
-
-  useEffect(() => {
-    if (isConnected) {
-      setPitch(0);
-      setRoll(0);
-      setHeading(0);
-
-      const animationInterval = setInterval(() => {
-        const time = Date.now() / 1000;
-        setPitch(Math.sin(time * 0.5) * 15);
-        setRoll(Math.sin(time * 0.3) * 30);
-        setHeading((prev) => (prev + 1) % 360);
-      }, 50);
-
-      return () => clearInterval(animationInterval);
-    }
-  }, [isConnected]);
 
   const getGpsHealthStatus = (): 'ok' | 'warning' | 'error' => {
     if (gpsStatus.glitch || gpsStatus.fixType === 0) return 'error';
@@ -154,30 +132,58 @@ export default function WorkspaceDroneStarter({
   return (
     <div
       ref={blockRef}
-      className={`workspace-drone-starter ${isDragging ? 'dragging' : ''}`}
+      className={`workspace-drone-starter ${isDragging ? 'dragging' : ''} ${isHighlighted ? 'is-highlighted' : ''}`}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`
+        left: disableDrag ? '0px' : `${position.x}px`,
+        top: disableDrag ? '0px' : `${position.y}px`,
+        cursor: disableDrag ? 'default' : (isDragging ? 'grabbing' : 'grab')
       }}
-      onMouseDown={handleMouseDown}
+      onMouseDown={disableDrag ? undefined : handleMouseDown}
     >
-      <div className="workspace-block-header">
+      <div
+        className="workspace-block-header"
+        tabIndex={0}
+        onKeyDown={handleHeaderKeyDown}
+        role="button"
+        aria-label="Window header"
+      >
         <div className="workspace-block-title">
           {isConnected ? (
-            <span className="drone-serial">Drone #{serialNumber}</span>
+            <>
+              <span className="drone-name">{droneName}</span>
+              <span className="drone-serial">#{serialNumber}</span>
+            </>
           ) : (
             'Drone Starter'
           )}
+          {nodeName && <span className="node-label"> · {nodeName}</span>}
         </div>
-        <button className="workspace-block-remove" onClick={handleRemove}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+        <div className="header-actions">
+          <button
+            className="workspace-block-minimize"
+            onClick={handleMinimize}
+            aria-label={isMinimized ? "Restore" : "Minimize"}
+            title={isMinimized ? "Restore" : "Minimize"}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <button
+            className="workspace-block-remove"
+            onClick={handleRemove}
+            aria-label="Close"
+            title="Close"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <div className="drone-starter-body">
+      {!isMinimized && <div className="drone-starter-body">
         <div className="connection-section">
           {!isConnected && (
             <div className="input-wrapper">
@@ -188,13 +194,20 @@ export default function WorkspaceDroneStarter({
                 value={serialNumber}
                 onChange={(e) => setSerialNumber(e.target.value)}
               />
+              <input
+                type="text"
+                className="drone-input"
+                placeholder="Drone Name"
+                value={droneName}
+                onChange={(e) => setDroneName(e.target.value)}
+              />
             </div>
           )}
           {!isConnected ? (
             <button
               className="connect-btn"
               onClick={handleConnect}
-              disabled={!serialNumber.trim()}
+              disabled={!serialNumber.trim() || !droneName.trim()}
             >
               Connect
             </button>
@@ -206,137 +219,7 @@ export default function WorkspaceDroneStarter({
         </div>
 
         {isConnected && (
-          <div className="integrated-display-container">
-            <div className="pfd-section">
-              <div className="left-instruments">
-                <div className="attitude-indicator">
-                  <div className="attitude-frame-outer"></div>
-                  <div className="attitude-frame-inner"></div>
-                  <div className="roll-marker"></div>
-                  <div
-                    className="roll-scale"
-                    style={{
-                      transform: `rotate(${roll}deg)`
-                    }}
-                  >
-                    <div className="roll-tick roll-tick-0"></div>
-                    <div className="roll-tick roll-tick-20"></div>
-                    <div className="roll-tick roll-tick-45"></div>
-                    <div className="roll-tick roll-tick-340"></div>
-                    <div className="roll-tick roll-tick-315"></div>
-                  </div>
-                  <div className="horizon" style={{ clipPath: 'circle(50px at 50px 50px)' }}>
-                    <div
-                      className="horizon-rotating"
-                      style={{
-                        transform: `translate(-50%, -50%) rotate(${roll}deg) translateY(${pitch * 2}px)`
-                      }}
-                    >
-                      <div className="sky"></div>
-                      <div className="ground"></div>
-                      <div className="horizon-line"></div>
-
-                      <div className="pitch-line pitch-25">
-                        <span className="pitch-bar short"></span>
-                      </div>
-                      <div className="pitch-line pitch-20">
-                        <span className="pitch-label left">20</span>
-                        <span className="pitch-bar"></span>
-                        <span className="pitch-label right">20</span>
-                      </div>
-                      <div className="pitch-line pitch-15">
-                        <span className="pitch-bar short"></span>
-                      </div>
-                      <div className="pitch-line pitch-10">
-                        <span className="pitch-label left">10</span>
-                        <span className="pitch-bar"></span>
-                        <span className="pitch-label right">10</span>
-                      </div>
-                      <div className="pitch-line pitch-5">
-                        <span className="pitch-bar short"></span>
-                      </div>
-                      <div className="pitch-line pitch-minus-5">
-                        <span className="pitch-bar short"></span>
-                      </div>
-                      <div className="pitch-line pitch-minus-10">
-                        <span className="pitch-label left">10</span>
-                        <span className="pitch-bar"></span>
-                        <span className="pitch-label right">10</span>
-                      </div>
-                      <div className="pitch-line pitch-minus-15">
-                        <span className="pitch-bar short"></span>
-                      </div>
-                      <div className="pitch-line pitch-minus-20">
-                        <span className="pitch-label left">20</span>
-                        <span className="pitch-bar"></span>
-                        <span className="pitch-label right">20</span>
-                      </div>
-                      <div className="pitch-line pitch-minus-25">
-                        <span className="pitch-bar short"></span>
-                      </div>
-                    </div>
-                    <div className="aircraft-symbol">
-                      <div className="aircraft-line left"></div>
-                      <div className="aircraft-center"></div>
-                      <div className="aircraft-line right"></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="heading-indicator">
-                  <div className="heading-frame-outer"></div>
-                  <div className="heading-frame-inner"></div>
-                  <div className="compass">
-                    <div className="compass-rose">
-                      <div className="compass-marker marker-0">N</div>
-                      <div className="compass-marker marker-90">E</div>
-                      <div className="compass-marker marker-180">S</div>
-                      <div className="compass-marker marker-270">W</div>
-                      <div className="compass-tick tick-30"></div>
-                      <div className="compass-tick tick-60"></div>
-                      <div className="compass-tick tick-120"></div>
-                      <div className="compass-tick tick-150"></div>
-                      <div className="compass-tick tick-210"></div>
-                      <div className="compass-tick tick-240"></div>
-                      <div className="compass-tick tick-300"></div>
-                      <div className="compass-tick tick-330"></div>
-                    </div>
-                    <div className="heading-arrow" style={{ transform: `translate(-50%, -50%) rotate(${heading}deg)` }}></div>
-                    <div className="heading-value">{String(heading).padStart(3, '0')}°</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pfd-vertical-metrics">
-                <div className="altitude-display">
-                  <div className="altitude-label">Altitude</div>
-                  <div className="altitude-value">120 m</div>
-                </div>
-                <div className="altitude-display velocity-display">
-                  <div className="altitude-label">Velocity</div>
-                  <div className="altitude-value">12.5 m/s</div>
-                </div>
-                <div className="altitude-display acceleration-display">
-                  <div className="altitude-label">Acceleration</div>
-                  <div className="altitude-value">2.3 m/s²</div>
-                </div>
-                <div className="altitude-display position-display">
-                  <div className="altitude-label">Position</div>
-                  <div className="position-values">
-                    <div className="position-item">
-                      <span className="position-label">Lat:</span>
-                      <span className="position-value">37.7749°</span>
-                    </div>
-                    <div className="position-item">
-                      <span className="position-label">Lon:</span>
-                      <span className="position-value">-122.4194°</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="health-arm-container">
+          <div className="health-arm-container">
             <div className="system-health-panel">
               <div className="panel-header">System Health</div>
 
@@ -485,9 +368,8 @@ export default function WorkspaceDroneStarter({
               </div>
             </div>
           </div>
-          </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

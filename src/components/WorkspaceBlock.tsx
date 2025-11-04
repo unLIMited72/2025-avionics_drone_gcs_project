@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect, type MouseEvent } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useBlockDrag } from '../hooks/useBlockDrag';
+import { createHeaderKeyDownHandler, createStopPropagationHandler } from '../utils/blockUtils';
 import './WorkspaceBlock.css';
 
 interface WorkspaceBlockProps {
@@ -8,8 +10,13 @@ interface WorkspaceBlockProps {
   zoom: number;
   onRemove: (id: string) => void;
   onPositionChange: (id: string, x: number, y: number) => void;
+  onToggleMinimize: (id: string) => void;
+  isMinimized: boolean;
   velocity: number;
   acceleration: number;
+  nodeName?: string;
+  isHighlighted?: boolean;
+  disableDrag?: boolean;
 }
 
 export default function WorkspaceBlock({
@@ -19,26 +26,28 @@ export default function WorkspaceBlock({
   zoom,
   onRemove,
   onPositionChange,
+  onToggleMinimize,
+  isMinimized,
   velocity,
-  acceleration
+  acceleration,
+  nodeName,
+  isHighlighted,
+  disableDrag = false
 }: WorkspaceBlockProps) {
-  const [position, setPosition] = useState({ x: initialX, y: initialY });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const blockRef = useRef<HTMLDivElement>(null);
   const [pitch, setPitch] = useState(0);
   const [roll, setRoll] = useState(0);
   const [heading, setHeading] = useState(0);
-  const blockRef = useRef<HTMLDivElement>(null);
+
+  const { position, isDragging, handleMouseDown } = useBlockDrag({
+    initialX,
+    initialY,
+    zoom,
+    id,
+    onPositionChange
+  });
 
   useEffect(() => {
-    setPosition({ x: initialX, y: initialY });
-  }, [initialX, initialY]);
-
-  useEffect(() => {
-    setPitch(0);
-    setRoll(0);
-    setHeading(0);
-
     const animationInterval = setInterval(() => {
       const time = Date.now() / 1000;
       setPitch(Math.sin(time * 0.5) * 15);
@@ -49,74 +58,60 @@ export default function WorkspaceBlock({
     return () => clearInterval(animationInterval);
   }, []);
 
-  const handleMouseDown = (e: MouseEvent) => {
-    if (blockRef.current) {
-      setDragStart({
-        x: e.clientX,
-        y: e.clientY
-      });
-      setIsDragging(true);
-    }
-    e.stopPropagation();
-  };
-
-  useEffect(() => {
-    const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
-      if (isDragging) {
-        const deltaX = (e.clientX - dragStart.x) / zoom;
-        const deltaY = (e.clientY - dragStart.y) / zoom;
-
-        const newX = position.x + deltaX;
-        const newY = position.y + deltaY;
-
-        setPosition({ x: newX, y: newY });
-        setDragStart({ x: e.clientX, y: e.clientY });
-      }
-    };
-
-    const handleGlobalMouseUp = () => {
-      if (isDragging) {
-        onPositionChange(id, position.x, position.y);
-      }
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleGlobalMouseMove);
-      document.addEventListener('mouseup', handleGlobalMouseUp);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-    };
-  }, [isDragging, dragStart, position, zoom, id, onPositionChange]);
-
-  const handleRemove = (e: MouseEvent) => {
-    e.stopPropagation();
-    onRemove(id);
-  };
+  const handleRemove = createStopPropagationHandler(() => onRemove(id));
+  const handleMinimize = createStopPropagationHandler(() => onToggleMinimize(id));
+  const handleHeaderKeyDown = createHeaderKeyDownHandler(
+    () => onToggleMinimize(id),
+    () => onRemove(id)
+  );
 
   return (
     <div
       ref={blockRef}
-      className={`workspace-block ${isDragging ? 'dragging' : ''}`}
+      className={`workspace-block ${isDragging ? 'dragging' : ''} ${isHighlighted ? 'is-highlighted' : ''}`}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`
+        left: disableDrag ? '0px' : `${position.x}px`,
+        top: disableDrag ? '0px' : `${position.y}px`,
+        cursor: disableDrag ? 'default' : (isDragging ? 'grabbing' : 'grab')
       }}
-      onMouseDown={handleMouseDown}
+      onMouseDown={disableDrag ? undefined : handleMouseDown}
     >
-      <div className="workspace-block-header">
-        <div className="workspace-block-title">Primary Flight Display</div>
-        <button className="workspace-block-remove" onClick={handleRemove}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+      <div
+        className="workspace-block-header"
+        tabIndex={0}
+        onKeyDown={handleHeaderKeyDown}
+        role="button"
+        aria-label="Window header"
+      >
+        <div className="workspace-block-title">
+          Primary Flight Display
+          {nodeName && <span className="node-label"> · {nodeName}</span>}
+        </div>
+        <div className="header-actions">
+          <button
+            className="workspace-block-minimize"
+            onClick={handleMinimize}
+            aria-label={isMinimized ? "Restore" : "Minimize"}
+            title={isMinimized ? "Restore" : "Minimize"}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <button
+            className="workspace-block-remove"
+            onClick={handleRemove}
+            aria-label="Close"
+            title="Close"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <div className="workspace-block-body">
+      {!isMinimized && <div className="workspace-block-body">
         <div className="instruments-row">
           <div className="left-instruments">
             <div className="attitude-indicator">
@@ -245,7 +240,7 @@ export default function WorkspaceBlock({
             </div>
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
