@@ -6,12 +6,11 @@ import DroneStatus from './components/DroneStatus';
 import WorkspaceBlock from './components/WorkspaceBlock';
 import WorkspaceDroneStarter from './components/WorkspaceDroneStarter';
 import ControllerBlock from './components/ControllerBlock';
-import WorkspaceLog from './components/WorkspaceLog';
 import './App.css';
 
 interface DroppedBlock {
   id: string;
-  type: 'flight-state-info' | 'drone-starter' | 'controller' | 'log';
+  type: 'flight-state-info' | 'drone-starter' | 'controller';
   x: number;
   y: number;
 }
@@ -35,7 +34,7 @@ function App() {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter, .workspace-log')) {
+    if ((e.target as HTMLElement).closest('.dashboard-panel, .digital-clock, .workspace-block, .controller-block, .workspace-drone-starter')) {
       return;
     }
     setIsDragging(true);
@@ -106,7 +105,7 @@ function App() {
 
       const newBlock: DroppedBlock = {
         id: `block-${Date.now()}`,
-        type: blockType as 'flight-state-info' | 'drone-starter' | 'controller' | 'log',
+        type: blockType as 'flight-state-info' | 'drone-starter' | 'controller',
         x,
         y
       };
@@ -174,22 +173,6 @@ function App() {
             } else if (block.type === 'controller') {
               return (
                 <ControllerBlock
-                  key={block.id}
-                  id={block.id}
-                  initialX={block.x}
-                  initialY={block.y}
-                  zoom={zoom}
-                  onRemove={handleRemoveBlock}
-                  onPositionChange={(id, newX, newY) => {
-                    setBlocks(prev => prev.map(b =>
-                      b.id === id ? { ...b, x: newX, y: newY } : b
-                    ));
-                  }}
-                />
-              );
-            } else if (block.type === 'log') {
-              return (
-                <WorkspaceLog
                   key={block.id}
                   id={block.id}
                   initialX={block.x}
