@@ -7,6 +7,9 @@ import WorkspaceBlock from './components/WorkspaceBlock';
 import WorkspaceDroneStarter from './components/WorkspaceDroneStarter';
 import ControllerBlock from './components/ControllerBlock';
 import WorkspaceLog from './components/WorkspaceLog';
+import MapView from './components/MapView';
+import MissionControl from './components/MissionControl';
+import TelemetryPanel from './components/TelemetryPanel';
 import './App.css';
 
 interface DroppedBlock {
@@ -21,11 +24,28 @@ function App() {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [blocks, setBlocks] = useState<DroppedBlock[]>([]);
 
+  const [dronePosition] = useState({ lat: 37.7749, lon: -122.4194 });
+  const [altitude] = useState(25.5);
+  const [telemetryData] = useState({
+    altitude: 25.5,
+    speed: 12.3,
+    battery: 87,
+    heading: 245,
+    satellites: 12,
+    flightMode: 'GUIDED',
+    velocity: 15.2,
+    acceleration: 2.3
+  });
+
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mainRef = useRef<HTMLDivElement>(null);
+
+  const handleCommand = (command: string) => {
+    console.log('Command issued:', command);
+  };
 
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -227,6 +247,11 @@ function App() {
         <Dashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
         <DigitalClock onReset={handleResetView} />
         <DroneStatus />
+        <div className="side-panels">
+          <TelemetryPanel data={telemetryData} />
+          <MapView dronePosition={dronePosition} altitude={altitude} />
+          <MissionControl onCommand={handleCommand} />
+        </div>
       </main>
     </div>
   );
