@@ -2,7 +2,7 @@ import { type ComponentType } from 'react';
 
 export interface DroppedBlock {
   id: string;
-  type: 'flight-state-info' | 'drone-starter' | 'controller' | 'log';
+  type: 'flight-state-info' | 'drone-starter' | 'controller' | 'log' | 'drone-pack';
   x: number;
   y: number;
   isMinimized?: boolean;

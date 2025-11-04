@@ -3,6 +3,7 @@ import WorkspaceDroneStarter from '../components/WorkspaceDroneStarter';
 import ControllerBlock from '../components/ControllerBlock';
 import WorkspaceLog from '../components/WorkspaceLog';
 import WorkspaceBlock from '../components/WorkspaceBlock';
+import WorkspaceDronePack from '../components/WorkspaceDronePack';
 
 export const CANVAS_WIDTH = 4000;
 export const CANVAS_HEIGHT = 3000;
@@ -14,6 +15,7 @@ export const BLOCK_COMPONENT_MAP: Record<string, BlockComponentType> = {
   'drone-starter': WorkspaceDroneStarter,
   'controller': ControllerBlock,
   'log': WorkspaceLog,
+  'drone-pack': WorkspaceDronePack as BlockComponentType,
   'flight-state-info': WorkspaceBlock as BlockComponentType
 };
 
@@ -25,6 +27,8 @@ export function getBlockDimensions(type: string): { width: number; height: numbe
       return { width: 320, height: 400 };
     case 'drone-starter':
       return { width: 280, height: 380 };
+    case 'drone-pack':
+      return { width: 1100, height: 450 };
     case 'flight-state-info':
       return { width: 560, height: 380 };
     default:
