@@ -73,58 +73,9 @@
   }
 }
 
-.side-panels {
-  position: absolute;
-  right: 16px;
-  top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 400px;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-  pointer-events: auto;
-  z-index: 10;
-}
-
-.side-panels::-webkit-scrollbar {
-  width: 6px;
-}
-
-.side-panels::-webkit-scrollbar-track {
-  background: rgba(15, 20, 25, 0.4);
-  border-radius: 3px;
-}
-
-.side-panels::-webkit-scrollbar-thumb {
-  background: rgba(0, 212, 255, 0.3);
-  border-radius: 3px;
-}
-
-.side-panels::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 212, 255, 0.5);
-}
-
-@media (max-width: 1200px) {
-  .gcs-main {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr 1fr;
-  }
-
-  .side-panels {
-    width: 320px;
-  }
-}
-
 @media (max-width: 768px) {
   .gcs-main {
     padding: 8px;
     gap: 8px;
-  }
-
-  .side-panels {
-    width: 280px;
-    right: 8px;
-    top: 8px;
   }
 }
