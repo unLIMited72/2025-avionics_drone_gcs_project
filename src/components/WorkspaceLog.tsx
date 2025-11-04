@@ -51,7 +51,7 @@ export default function WorkspaceLog({
 
   const handleMouseDown = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (target.closest('.terminal-body, .terminal-header, .terminal-footer, button')) {
+    if (target.closest('.log-terminal, button')) {
       return;
     }
 
@@ -159,7 +159,7 @@ export default function WorkspaceLog({
         </div>
       </div>
 
-      <div className="log-terminal" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="log-terminal">
         <div className="terminal-header">
           <div className="terminal-buttons">
             <span className="terminal-button terminal-close"></span>
