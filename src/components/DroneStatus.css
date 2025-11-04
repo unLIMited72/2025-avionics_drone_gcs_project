@@ -1,5 +1,5 @@
 .drone-status {
-  position: fixed;
+  position: absolute;
   bottom: 16px;
   right: 16px;
   display: flex;
@@ -12,7 +12,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
               0 0 15px rgba(0, 212, 255, 0.15);
   backdrop-filter: blur(10px);
-  z-index: 150;
+  z-index: 50;
 }
 
 .drone-status-icon {
