@@ -231,6 +231,7 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
         return remaining;
       });
     }
+    setIsSelectMode(false);
     setIsSettingsOpen(false);
   };
 
