@@ -181,6 +181,30 @@
   transform: none;
 }
 
+.map-settings-panel-btn.delete {
+  background: rgba(255, 50, 50, 0.05);
+  border-color: rgba(255, 50, 50, 0.2);
+  color: #ff5050;
+}
+
+.map-settings-panel-btn.delete:hover {
+  background: rgba(255, 50, 50, 0.15);
+  border-color: rgba(255, 50, 50, 0.4);
+  box-shadow: 0 0 10px rgba(255, 50, 50, 0.3);
+}
+
+.map-settings-panel-btn.delete:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.map-settings-panel-btn.delete:disabled:hover {
+  background: rgba(255, 50, 50, 0.05);
+  border-color: rgba(255, 50, 50, 0.2);
+  box-shadow: none;
+  transform: none;
+}
+
 .map-reset-view-btn {
   width: 44px;
   height: 44px;

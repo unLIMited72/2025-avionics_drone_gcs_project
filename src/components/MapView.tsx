@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import './MapView.css';
 
+interface Waypoint {
+  lat: number;
+  lng: number;
+  marker: any;
+  isSelected: boolean;
+}
+
 interface MapViewProps {
   serverStatus: 'connected' | 'disconnected' | 'connecting';
   onResetView: () => void;
@@ -12,7 +19,8 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
   const mapInstanceRef = useRef<any>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isWaypointMode, setIsWaypointMode] = useState(false);
-  const [, setWaypoints] = useState<Array<{lat: number; lng: number; marker: any}>>([]);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [uploadMessage, setUploadMessage] = useState<{text: string; type: 'success' | 'error'} | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString('en-US', { hour12: false }));
 
@@ -41,7 +49,16 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
       const points = JSON.parse(savedWaypoints);
       const markers = points.map((point: {lat: number; lng: number}) => {
         const marker = L.marker([point.lat, point.lng]).addTo(map);
-        return { lat: point.lat, lng: point.lng, marker };
+
+        marker.bindPopup(`
+          <div style="font-family: 'Courier New', monospace; color: #00d4ff; background: rgba(26, 26, 46, 0.95); padding: 8px; border-radius: 4px;">
+            <div style="font-size: 11px; color: #888; margin-bottom: 4px;">COORDINATES</div>
+            <div style="font-size: 13px; font-weight: 600;">Lat: ${point.lat.toFixed(6)}</div>
+            <div style="font-size: 13px; font-weight: 600;">Lng: ${point.lng.toFixed(6)}</div>
+          </div>
+        `);
+
+        return { lat: point.lat, lng: point.lng, marker, isSelected: false };
       });
       setWaypoints(markers);
     }
@@ -49,8 +66,53 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
     map.on('click', (e: any) => {
       if (!isWaypointMode) return;
       const marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+
+      marker.bindPopup(`
+        <div style="font-family: 'Courier New', monospace; color: #00d4ff; background: rgba(26, 26, 46, 0.95); padding: 8px; border-radius: 4px;">
+          <div style="font-size: 11px; color: #888; margin-bottom: 4px;">COORDINATES</div>
+          <div style="font-size: 13px; font-weight: 600;">Lat: ${e.latlng.lat.toFixed(6)}</div>
+          <div style="font-size: 13px; font-weight: 600;">Lng: ${e.latlng.lng.toFixed(6)}</div>
+        </div>
+      `);
+
+      marker.on('click', () => {
+        if (isSelectMode) {
+          setWaypoints(prev => {
+            const index = prev.findIndex(w => w.marker === marker);
+            if (index !== -1) {
+              const updated = [...prev];
+              updated[index] = { ...updated[index], isSelected: !updated[index].isSelected };
+
+              const L = (window as any).L;
+              if (updated[index].isSelected) {
+                marker.setIcon(L.icon({
+                  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
+                  iconSize: [25, 41],
+                  iconAnchor: [12, 41],
+                  popupAnchor: [1, -34],
+                  shadowSize: [41, 41]
+                }));
+              } else {
+                marker.setIcon(L.icon({
+                  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                  iconSize: [25, 41],
+                  iconAnchor: [12, 41],
+                  popupAnchor: [1, -34],
+                  shadowSize: [41, 41]
+                }));
+              }
+
+              return updated;
+            }
+            return prev;
+          });
+        }
+      });
+
       setWaypoints(prev => {
-        const newWaypoints = [...prev, { lat: e.latlng.lat, lng: e.latlng.lng, marker }];
+        const newWaypoints = [...prev, { lat: e.latlng.lat, lng: e.latlng.lng, marker, isSelected: false }];
         localStorage.setItem('map-waypoints', JSON.stringify(newWaypoints.map(w => ({ lat: w.lat, lng: w.lng }))));
         return newWaypoints;
       });
@@ -64,7 +126,7 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
         mapInstanceRef.current = null;
       }
     };
-  }, [isWaypointMode]);
+  }, [isWaypointMode, isSelectMode]);
 
   useEffect(() => {
     if (mapInstanceRef.current) {
@@ -84,6 +146,16 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
 
   const handleWaypointToggle = () => {
     setIsWaypointMode(!isWaypointMode);
+    if (isSelectMode) {
+      setIsSelectMode(false);
+    }
+  };
+
+  const handleSelectToggle = () => {
+    setIsSelectMode(!isSelectMode);
+    if (isWaypointMode) {
+      setIsWaypointMode(false);
+    }
   };
 
   const handleClearWaypoints = () => {
@@ -94,6 +166,23 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
         });
         localStorage.removeItem('map-waypoints');
         return [];
+      });
+    }
+    setIsSettingsOpen(false);
+  };
+
+  const handleDeleteSelected = () => {
+    if (mapInstanceRef.current) {
+      setWaypoints(prev => {
+        const remaining = prev.filter(wp => {
+          if (wp.isSelected) {
+            mapInstanceRef.current.removeLayer(wp.marker);
+            return false;
+          }
+          return true;
+        });
+        localStorage.setItem('map-waypoints', JSON.stringify(remaining.map(w => ({ lat: w.lat, lng: w.lng }))));
+        return remaining;
       });
     }
     setIsSettingsOpen(false);
@@ -140,6 +229,32 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
               <span>Waypoint</span>
             </button>
             <button
+              className={`map-settings-panel-btn ${isSelectMode ? 'active' : ''}`}
+              onClick={handleSelectToggle}
+              title="Toggle select mode"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+              <span>Select</span>
+            </button>
+            <button
+              className="map-settings-panel-btn delete"
+              onClick={handleDeleteSelected}
+              title="Delete selected waypoints"
+              disabled={waypoints.filter(w => w.isSelected).length === 0}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+              </svg>
+              <span>Delete</span>
+            </button>
+            <button
               className="map-settings-panel-btn clear"
               onClick={handleClearWaypoints}
               title="Clear all waypoints"
@@ -147,7 +262,7 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6L6 18M6 6l12 12"/>
               </svg>
-              <span>Clear</span>
+              <span>Clear All</span>
             </button>
             <button
               className={`map-settings-panel-btn upload ${serverStatus !== 'connected' ? 'disabled' : ''}`}
@@ -203,7 +318,7 @@ export default function MapView({ serverStatus, onResetView, connectedDroneCount
           </svg>
         </div>
         <div className="map-drone-status-display">
-          <div className="map-drone-status-label">CONNECTED</div>
+          <div className="map-drone-status-label">DRONE COUNT</div>
           <div
             className="map-drone-status-count"
             style={{
